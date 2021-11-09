@@ -1,0 +1,6 @@
+out/
+build/
+.vs/
+.code/
+CMakeSettings.json
+get_cache_vars.cmake
