@@ -3,5 +3,6 @@ build/
 cl_build/
 .vs/
 .code/
+.cache/
 CMakeSettings.json
 get_cache_vars.cmake
