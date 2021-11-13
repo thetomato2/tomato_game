@@ -2,7 +2,7 @@
 
 namespace tomato
 {
-#ifdef TOM_INTERNAL
+#ifdef TOM_DEBUG
 
 DEBUG_PLATFORM_FREE_FILE_MEMORY(debug_PlatformFreeFileMemory)
 {
@@ -394,7 +394,7 @@ void debug_DrawVerticalLine(OffScreenBuffer* backBuffer, i32 x, i32 top, i32 bot
 	}
 }
 
-#ifdef TOM_INTERNAL
+#if _DEBUG
 void debug_SyncDisplay(OffScreenBuffer* backBuffer, SoundOutput* soundOutput,
 					   debug_MarkerArr& soundTimeMarkers, f32 targetSecondsPerFrame)
 
@@ -536,9 +536,9 @@ i32 Main(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLine, i32 nSh
 		return 0;
 	}
 
-	HWND hWnd = CreateWindowEx(0, wndCls.lpszClassName, L"TomatoGame",
-							   WS_OVERLAPPEDWINDOW | WS_VISIBLE, CW_USEDEFAULT, CW_USEDEFAULT,
-							   CW_USEDEFAULT, CW_USEDEFAULT, nullptr, nullptr, hInstance, nullptr);
+	HWND hWnd = CreateWindowExA(0, wndCls.lpszClassName, L"TomatoGame",
+								WS_OVERLAPPEDWINDOW | WS_VISIBLE, CW_USEDEFAULT, CW_USEDEFAULT,
+								CW_USEDEFAULT, CW_USEDEFAULT, nullptr, nullptr, hInstance, nullptr);
 
 	if (!hWnd) {
 		printf("Failed to create window!");
@@ -588,7 +588,7 @@ i32 Main(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLine, i32 nSh
 	GameInput input[2]	= {};
 	GameInput* newInput = &input[0];
 	GameInput* oldInput = &input[1];
-#ifdef TOM_INTERNAL
+#if _DEBUG
 	debug_MarkerArr debug_SoundTimeMarkers {};
 	auto debug_curTimeMarker = debug_SoundTimeMarkers.begin();
 #endif

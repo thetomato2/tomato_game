@@ -1,34 +1,5 @@
 #pragma once
-
-#include <array>
-#include <cstdint>
-#include <cassert>
-#include <string>
-#include <vector>
-
-using i8  = int8_t;
-using i16 = int16_t;
-using i32 = int32_t;
-using i64 = int64_t;
-
-using u8  = uint8_t;
-using u16 = uint16_t;
-using u32 = uint32_t;
-using u64 = uint64_t;
-
-using f32 = float;
-using f64 = double;
-
-using szt = size_t;
-using byt = unsigned char;
-
-using bool32 = i32;
-
-constexpr f32 pi_32 = 3.14159265359f;
-
-#define internal		static
-#define local_persist	static
-#define global_variable static
+#include "TomatoFramework.h"
 
 #ifdef _DEBUG
 	#define TOM_INTERNAL
@@ -40,6 +11,7 @@ constexpr f32 pi_32 = 3.14159265359f;
 #else
 	#define TOM_DLL_EXPORT
 #endif
+
 namespace tomato
 {
 #define Kilobytes(val) ((val)*1024)
@@ -63,7 +35,8 @@ typedef DEBUG_PLATFORM_FREE_FILE_MEMORY(debug_Platform_Free_File_Memory);
 	#define DEBUG_PLATFORM_READ_ENTIRE_FILE(name) debug_ReadFileResult name(const char* fileName)
 typedef DEBUG_PLATFORM_READ_ENTIRE_FILE(debug_Platform_Read_Entire_File);
 
-	#define DEBUG_PLATFORM_WRITE_ENTIRE_FILE(name) bool32 name(const char* fileName, u64 memorySize, void* mem)
+	#define DEBUG_PLATFORM_WRITE_ENTIRE_FILE(name) \
+		bool32 name(const char* fileName, u64 memorySize, void* mem)
 typedef DEBUG_PLATFORM_WRITE_ENTIRE_FILE(debug_Platform_Write_Entire_File);
 #endif
 
@@ -161,7 +134,8 @@ struct Keyboard
 
 //! part of the main loop
 // static void GameUpdateAndRender(GameMemory* memory, GameInput* input, Keyboard* keyboard,
-//								GameOffscreenBuffer* videoBuffer, GameSoundOutputBuffer* soundBuffer);
+//								GameOffscreenBuffer* videoBuffer, GameSoundOutputBuffer*
+// soundBuffer);
 // static void GameGetSoundSamples(GameMemory* mem, GameSoundOutputBuffer* soudBuf);
 
 struct GameState

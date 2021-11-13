@@ -1,4 +1,5 @@
 #pragma once
+#include "TomatoGame.h"
 
 namespace tomato::win32
 {
@@ -29,7 +30,7 @@ struct SoundOutput
 	// TODO: add bytes per second
 };
 
-#ifdef TOM_DEBUG
+#ifdef TOM_INTERNAL
 struct debug_SoundTimeMarker
 {
 	DWORD playCursor;

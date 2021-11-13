@@ -1,51 +1,17 @@
 #pragma once
+#include "TomatoFramework.h"
 
 namespace tomato::util
 {
-
-template<typename T>
-consteval T to_kilobytes(T val)
-{
-	return T * val;
-}
-
-template<typename T>
-consteval T to_megabytes(T val)
-{
-	return T * kilobytes(val);
-}
-
-template<typename T>
-consteval T to_gigagbytes(T val)
-{
-	return T * megabytes(val);
-}
-
-template<typename T>
-consteval T to_teragbytes(T val)
-{
-	return T * megabytes(val);
-}
-
-// custom std::format print
-template<typename... Args>
-std::string fmt(std::string_view rt_fmt_str, Args&&... args)
-{
-	return std::vformat(rt_fmt_str, std::make_format_args(args...));
-}
-template<typename... Args>
-void Print(std::string_view rt_fmt_str, Args&&... args)
-{
-	std::cout << std::vformat(rt_fmt_str, std::make_format_args(args...)) + '\n';
-}
 namespace win32
 {
 static std::wstring TranslateHRESULT(HRESULT hr) noexcept
 {
 	wchar_t* msgBuf	   = nullptr;
-	const DWORD msgLen = FormatMessage(
-		FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS, nullptr, hr,
-		MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), reinterpret_cast<LPWSTR>(&msgBuf), 0, nullptr);
+	const DWORD msgLen = FormatMessageW(
+		FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
+		nullptr, hr, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), reinterpret_cast<LPWSTR>(&msgBuf),
+		0, nullptr);
 	if (msgLen == 0) {
 		return L"Unidentified error code";
 	}
@@ -58,7 +24,8 @@ static std::wstring TranslateHRESULT(HRESULT hr) noexcept
 inline std::string ws2s(const std::wstring& wstr) noexcept
 {
 	if (wstr.empty()) return std::string();
-	int size_needed = WideCharToMultiByte(CP_UTF8, 0, &wstr[0], (int)wstr.size(), NULL, 0, NULL, NULL);
+	int size_needed =
+		WideCharToMultiByte(CP_UTF8, 0, &wstr[0], (int)wstr.size(), NULL, 0, NULL, NULL);
 	std::string strTo(size_needed, 0);
 	WideCharToMultiByte(CP_UTF8, 0, &wstr[0], (int)wstr.size(), &strTo[0], size_needed, NULL, NULL);
 	return strTo;

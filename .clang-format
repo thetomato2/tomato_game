@@ -31,7 +31,7 @@ BraceWrapping:
 	SplitEmptyFunction: 'true'
 BreakConstructorInitializers: AfterColon
 BreakInheritanceList: BeforeColon
-ColumnLimit: '120'
+ColumnLimit: '100'
 CompactNamespaces: 'true'
 ConstructorInitializerAllOnOneLineOrOnePerLine: 'true'
 ContinuationIndentWidth: '4'
