@@ -1,5 +1,6 @@
 out/
 build/
+cl_build/
 .vs/
 .code/
 CMakeSettings.json
