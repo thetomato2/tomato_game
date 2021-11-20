@@ -322,6 +322,14 @@ DisplayBufferInWindow(HDC hdc, OffScreenBuffer* buffer, i32 x, i32 y, i32 width,
 	StretchDIBits(hdc, 0, 0, width, height, 0, 0, g_winDims.width, g_winDims.height, buffer->mem,
 				  &buffer->info, DIB_RGB_COLORS, SRCCOPY);
 }
+void
+ProcessKbdMsg(GameButtonState& newState, bool32 isDown)
+{
+	if (newState.endedDown != (isDown != 0) {
+		newState.endedDown = isDown;
+		++newState.halfTransitionCount;
+	}
+}
 
 void
 ProcessXInputDigitalButton(DWORD XInputButtonState, GameButtonState* oldState, DWORD buttonBit,
@@ -334,13 +342,18 @@ ProcessXInputDigitalButton(DWORD XInputButtonState, GameButtonState* oldState, D
 void
 DoControllerInput(GameInput* oldInput, GameInput* newInput, HWND hWnd)
 {
-	// mouse
+	// mouse cursor
 	POINT mouseP;
 	GetCursorPos(&mouseP);
 	ScreenToClient(hWnd, &mouseP);
 	newInput->mouseX = mouseP.x;
 	newInput->mouseY = mouseP.y;
 	newInput->mouseZ = 0;
+
+	// mouse buttons
+	ProcessKbdMsg(newInput->mouseButtons[0], ::GetKeyState(VK_LBUTTON) & (1 << 15));
+	ProcessKbdMsg(newInput->mouseButtons[1], ::GetKeyState(VK_RBUTTON) & (1 << 15));
+	ProcessKbdMsg(newInput->mouseButtons[2], ::GetKeyState(VK_MBUTTON) & (1 << 15));
 
 	printf("x: %d, y: %d\n", newInput->mouseX, newInput->mouseY);
 

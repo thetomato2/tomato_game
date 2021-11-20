@@ -129,6 +129,7 @@ extern "C" TOM_DLL_EXPORT GAME_UPDATE_AND_RENDER(GameUpdateAndRender)
 		// TODO: this might be more appropriate in the platform layer
 		mem->isInitialized = true;
 	}
+
 	f32 offsetYMul	= 0.2f;
 	f32 offsetXMul	= 1.f;
 	f32 playerSpeed = 8.f;
@@ -190,15 +191,17 @@ extern "C" TOM_DLL_EXPORT GAME_UPDATE_AND_RENDER(GameUpdateAndRender)
 
 	gameState->playerLast = player;
 
-	Color mouseCol;
-	i32 mouseSz = 10;
-	DrawSquare(videoBuf, input->mouseX, input->mouseY, mouseSz, mouseCol);
-	mouseTrails[mouseTrailsInd].x	= input->mouseX;
-	mouseTrails[mouseTrailsInd++].y = input->mouseY;
-	if (mouseTrailsInd > ArrayCount(mouseTrails)) mouseTrailsInd = 0;
+	if (input->mouseButtons[0].endedDown) {
+		Color mouseCol;
+		i32 mouseSz = 10;
+		DrawSquare(videoBuf, input->mouseX, input->mouseY, mouseSz, mouseCol);
+		mouseTrails[mouseTrailsInd].x	= input->mouseX;
+		mouseTrails[mouseTrailsInd++].y = input->mouseY;
+		if (mouseTrailsInd > ArrayCount(mouseTrails)) mouseTrailsInd = 0;
 
-	for (szt i {}; i < nMouseTrails; ++i) {
-		DrawSquare(videoBuf, mouseTrails[i].x, mouseTrails[i].y, mouseSz, mouseCol);
+		for (szt i {}; i < nMouseTrails; ++i) {
+			DrawSquare(videoBuf, mouseTrails[i].x, mouseTrails[i].y, mouseSz, mouseCol);
+		}
 	}
 }
 
