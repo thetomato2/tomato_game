@@ -26,5 +26,5 @@ set(WIN32_INCLUDE_DIRS
     "/mnt/c/dev/include/for_emacs/c++/"
     )
 
-target_compile_definitions(Win32TomatoGame PRIVATE _WIN32 _UNICODE UNICODE TOM_INTERNAL)
+target_compile_definitions(Win32TomatoGame PRIVATE _WIN32 _UNICODE UNICODE TOM_INTERNAL EMACS)
 target_include_directories(Win32TomatoGame PUBLIC ${WIN32_INCLUDE_DIRS})

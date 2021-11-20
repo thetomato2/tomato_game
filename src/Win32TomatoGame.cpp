@@ -13,24 +13,24 @@ DEBUG_PLATFORM_FREE_FILE_MEMORY(debug_PlatformFreeFileMemory)
 
 DEBUG_PLATFORM_READ_ENTIRE_FILE(debug_PlatformReadEntireFile)
 {
-	debug_ReadFileResult result = {};
+	debug_ReadFileResult file = {};
 
 	HANDLE fileHandle =
-		CreateFileA(fileName, GENERIC_READ, FILE_SHARE_READ, 0, OPEN_EXISTING, 0, 0);
+		CreateFileA(fileName, GENERIC_READ, 0, 0, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, 0);
 	if (fileHandle != INVALID_HANDLE_VALUE) {
 		LARGE_INTEGER fileSize;
 		if (GetFileSizeEx(fileHandle, &fileSize)) {
-			u32 fileSize32	= SafeTruncateUint64(fileSize.QuadPart);
-			result.contents = VirtualAlloc(0, fileSize32, MEM_RESERVE | MEM_COMMIT, PAGE_READWRITE);
-			if (result.contents) {
+			u32 fileSize32 = SafeTruncateUint64(fileSize.QuadPart);
+			file.contents  = VirtualAlloc(0, fileSize32, MEM_RESERVE | MEM_COMMIT, PAGE_READWRITE);
+			if (file.contents) {
 				DWORD bytesRead;
-				if (ReadFile(fileHandle, result.contents, fileSize.QuadPart, &bytesRead, 0) &&
+				if (ReadFile(fileHandle, file.contents, (DWORD)fileSize.QuadPart, &bytesRead, 0) &&
 					fileSize32 == bytesRead) {
 					// NOTE: file read successfully
-					result.contentSize = fileSize32;
+					file.contentSize = fileSize32;
 				} else {
-					debug_PlatformFreeFileMemory(result.contents);
-					result.contents = 0;
+					debug_PlatformFreeFileMemory(file.contents);
+					file.contents = 0;
 				}
 			} else {
 				// TODO: logging
@@ -40,19 +40,19 @@ DEBUG_PLATFORM_READ_ENTIRE_FILE(debug_PlatformReadEntireFile)
 		}
 		CloseHandle(fileHandle);
 	}
-	return result;
+	return file;
 }
 
 DEBUG_PLATFORM_WRITE_ENTIRE_FILE(debug_PlatformWriteEntireFile)
 {
-	bool32 result = false;
+	bool32 success = false;
 
 	HANDLE fileHandle = CreateFileA(fileName, GENERIC_WRITE, 0, 0, CREATE_ALWAYS, 0, 0);
 	if (fileHandle != INVALID_HANDLE_VALUE) {
 		DWORD bytesWritten;
-		if (WriteFile(fileHandle, mem, memorySize, &bytesWritten, 0)) {
+		if (WriteFile(fileHandle, mem, (DWORD)memorySize, &bytesWritten, 0)) {
 			// NOTE: file wrote successfully
-			result = (bytesWritten == memorySize);
+			success = (bytesWritten == memorySize);
 		} else {
 			// TODO: logging
 		}
@@ -60,7 +60,7 @@ DEBUG_PLATFORM_WRITE_ENTIRE_FILE(debug_PlatformWriteEntireFile)
 	} else {
 		// TODO: logging
 	}
-	return result;
+	return success;
 }
 
 #endif
@@ -90,44 +90,67 @@ static x_input_set_state* XInputSetState_ = XInputSetStateStub;
 namespace
 {
 // #Globals
-constexpr u32 monitorRefreshRate	= 144;
 constexpr u32 gameUpdateHz			= 60;
 constexpr f32 targetSecondsPerFrame = 1.0f / (f32)gameUpdateHz;
 
 bool g_isRunning;
 bool g_pause;
-std::string_view g_gameDLLName { "TomatoGame.dll" };
-Keyboard kbd;
+const _TCHAR* g_gameDLLName = _T("TomatoGame.dll");
+
 OffScreenBuffer g_backBuffer;
 WindowDimensions g_winDims;
 i64 g_perfCountFrequency;
 
-// NOTE: the sleep precision issue is keeping this above 1 frame... I think
+// TODO: the sleep precision issue is keeping this above 1 frame... I think
 constexpr f32 framesOfAudioLatency = (1.1f / 30) * gameUpdateHz;
 IAudioClient* g_audioClient;
 IAudioRenderClient* g_audioRenderClient;
 IAudioClock* g_audioClock;
 
-#ifdef TOM_INTERNAL
-using debug_MarkerArr = std::array<debug_SoundTimeMarker, debug_nTimeMarkers(gameUpdateHz)>;
-#endif
-
 struct GameCode
 {
 	HMODULE gameCodeDLL;
+	FILETIME lastWriteTimeDLL;
 	Game_Update_And_Render* updateAndRender;
 	Game_Get_Sound_Samples* getSoundSamples;
 	bool isValid;
 };
 
-GameCode LoadGameCode(const char* dllName)
+inline FILETIME
+GetLastWritTime(const _TCHAR* fileName)
+{
+	FILETIME lastWriteTime {};
+
+#if 0
+	// NOTE: old way with a handle
+	WIN32_FIND_DATA findData;
+	HANDLE findHandle = FindFirstFile(fileName, &findData);
+	if (findHandle != INVALID_HANDLE_VALUE) {
+		lastWriteTime = findData.ftLastWriteTime;
+		FindClose(findHandle);
+	}
+#endif
+
+	// NOTE: this has no handle
+	WIN32_FILE_ATTRIBUTE_DATA data;
+	if (GetFileAttributesEx(fileName, GetFileExInfoStandard, &data)) {
+		lastWriteTime = data.ftLastWriteTime;
+	}
+
+	return lastWriteTime;
+}
+
+GameCode
+LoadGameCode(const _TCHAR* dllName)
 {
 	GameCode gameCode {};
-	const char* dll_copy = "loaded_copy.dll";
+	const _TCHAR* dll_copy = _T("loaded_gamecode_copy.dll");
 
-	CopyFileA(dllName, dll_copy, FALSE);
+	gameCode.lastWriteTimeDLL = GetLastWritTime(dllName);
 
-	HMODULE(gameCode.gameCodeDLL = LoadLibraryA(dll_copy));
+	CopyFile(dllName, dll_copy, FALSE);
+
+	gameCode.gameCodeDLL = LoadLibrary(dll_copy);
 	if (gameCode.gameCodeDLL) {
 		gameCode.updateAndRender =
 			(Game_Update_And_Render*)GetProcAddress(gameCode.gameCodeDLL, "GameUpdateAndRender");
@@ -137,27 +160,29 @@ GameCode LoadGameCode(const char* dllName)
 	}
 
 	if (!gameCode.isValid) {
-		printf("Failed to load game code!");
-		gameCode.updateAndRender = GameUpdateAndRenderStub;
-		gameCode.getSoundSamples = GameGetSoundSamplesStub;
+		printf("Failed to load game code!\n");
+		gameCode.updateAndRender = 0;
+		gameCode.getSoundSamples = 0;
 	} else {
-		printf("Game code successfully loaded.");
+		printf("Game code successfully loaded.\n");
 	}
 
 	return gameCode;
 }
 
-void UnloadGameCode(GameCode* gameCode)
+void
+UnloadGameCode(GameCode* gameCode)
 {
 	if (gameCode->gameCodeDLL) {
 		FreeLibrary(gameCode->gameCodeDLL);
-		gameCode->updateAndRender = GameUpdateAndRenderStub;
-		gameCode->getSoundSamples = GameGetSoundSamplesStub;
+		gameCode->updateAndRender = 0;
+		gameCode->getSoundSamples = 0;
 	}
 	printf("Game code unloaded.");
 }
 
-void LoadXinput()
+void
+LoadXinput()
 {
 	// TODO: test this on other windows version
 	HMODULE XInputLibrary = LoadLibraryA("xinput1_4.dll");
@@ -172,7 +197,8 @@ void LoadXinput()
 	}
 }
 
-void InitWASAPI(i32 samplesPerSec, i32 bufSzInSamples)
+void
+InitWASAPI(i32 samplesPerSec, i32 bufSzInSamples)
 {
 	if (FAILED(CoInitializeEx(0, COINIT_SPEED_OVER_MEMORY))) {
 		assert(false);
@@ -232,8 +258,8 @@ void InitWASAPI(i32 samplesPerSec, i32 bufSzInSamples)
 	// as real buffer size)
 	assert(bufSzInSamples <= (i32)soundFrmCnt);
 }
-void FillSoundBuffer(SoundOutput* soundOutput, i32 samplesToWrite,
-					 GameSoundOutputBuffer* sourceBuffer)
+void
+FillSoundBuffer(SoundOutput* soundOutput, i32 samplesToWrite, GameSoundOutputBuffer* sourceBuffer)
 {
 	{
 		BYTE* soundBufDat;
@@ -251,17 +277,19 @@ void FillSoundBuffer(SoundOutput* soundOutput, i32 samplesToWrite,
 	}
 }
 
-WindowDimensions GetWindowDimension(HWND hWnd)
+WindowDimensions
+GetWindowDimension(HWND hWnd)
 {
 	RECT clientRect;
-	WindowDimensions result;
+	WindowDimensions winDim;
 	GetClientRect(hWnd, &clientRect);
-	result.width  = clientRect.right - clientRect.left;
-	result.height = clientRect.bottom - clientRect.top;
-	return result;
+	winDim.width  = clientRect.right - clientRect.left;
+	winDim.height = clientRect.bottom - clientRect.top;
+	return winDim;
 }
 
-void ResizeDIBSection(OffScreenBuffer* buffer, i32 width, i32 height)
+void
+ResizeDIBSection(OffScreenBuffer* buffer, i32 width, i32 height)
 {
 	// TODO: bulletproof this
 	// maybe don't free first, free after, then free first if that fails
@@ -285,30 +313,44 @@ void ResizeDIBSection(OffScreenBuffer* buffer, i32 width, i32 height)
 	buffer->mem = VirtualAlloc(0, bitmapMemorySize, MEM_RESERVE | MEM_COMMIT, PAGE_READWRITE);
 
 	buffer->pitch = width * buffer->bytPerPix;
-	// TODO: clear to black
 }
 
-void DisplayBufferInWindow(HDC hdc, OffScreenBuffer* buffer, i32 x, i32 y, i32 width, i32 height)
+void
+DisplayBufferInWindow(HDC hdc, OffScreenBuffer* buffer, i32 x, i32 y, i32 width, i32 height)
 {
+	// NOTE: this is matches the windows dimensions
 	StretchDIBits(hdc, 0, 0, width, height, 0, 0, g_winDims.width, g_winDims.height, buffer->mem,
 				  &buffer->info, DIB_RGB_COLORS, SRCCOPY);
 }
 
-void ProcessXInputDigitalButton(DWORD XInputButtonState, GameButtonState* oldState, DWORD buttonBit,
-								GameButtonState* newState)
+void
+ProcessXInputDigitalButton(DWORD XInputButtonState, GameButtonState* oldState, DWORD buttonBit,
+						   GameButtonState* newState)
 {
 	newState->endedDown			  = ((XInputButtonState & buttonBit) == buttonBit);
 	newState->halfTransitionCount = (oldState->endedDown != newState->endedDown) ? 1 : 0;
 }
 
-void DoControllerInput(GameInput* oldInput, GameInput* newInput)
+void
+DoControllerInput(GameInput* oldInput, GameInput* newInput, HWND hWnd)
 {
+	// mouse
+	POINT mouseP;
+	GetCursorPos(&mouseP);
+	ScreenToClient(hWnd, &mouseP);
+	newInput->mouseX = mouseP.x;
+	newInput->mouseY = mouseP.y;
+	newInput->mouseZ = 0;
+
+	printf("x: %d, y: %d\n", newInput->mouseX, newInput->mouseY);
+
+	// Controller
 	// poll the input device
-	// TODO: apply this to input
 	i32 maxControllerCount = XUSER_MAX_COUNT;
 	if (maxControllerCount > 4) {
 		maxControllerCount = 4;
 	}
+
 	for (DWORD controllerIndex = 0; controllerIndex < XUSER_MAX_COUNT; controllerIndex++) {
 		GameControllerInput* oldController = &oldInput->controllers[controllerIndex];
 		GameControllerInput* newController = &newInput->controllers[controllerIndex];
@@ -318,19 +360,26 @@ void DoControllerInput(GameInput* oldInput, GameInput* newInput)
 			//! the controller is plugged in
 			XINPUT_GAMEPAD* pad = &controllerState.Gamepad;
 
+			newController->isConnnected = true;
+
+			// NOTE: this is hardcoded for convenience
+			// newController->isAnalog		= oldController->isAnalog;
 			newController->isAnalog = true;
 
-			// normal sick input
+			//  no rmal stick input
 			auto normalize = [](SHORT val) {
 				if (val < 0)
 					return (f32)val / 32768.0f;
 				else
 					return (f32)val / 32767.0f;
 			};
+
 			f32 sLX				= normalize(pad->sThumbLX);
 			f32 sLY				= normalize(pad->sThumbLY) * -1.0f;
-			newController->minX = newController->maxX = newController->endX = sLX;
-			newController->minY = newController->maxY = newController->endY = sLY;
+			f32 sRX				= normalize(pad->sThumbRX);
+			f32 sRY				= normalize(pad->sThumbRY) * -1.0f;
+			newController->minX = newController->maxX = newController->endLX = sLX;
+			newController->minY = newController->maxY = newController->endLY = sLY;
 
 			ProcessXInputDigitalButton(pad->wButtons, &oldController->dpad_up,
 									   XINPUT_GAMEPAD_DPAD_UP, &newController->dpad_up);
@@ -366,26 +415,29 @@ void DoControllerInput(GameInput* oldInput, GameInput* newInput)
 			// bool dPadLB = (pad->wButtons & XINPUT_GAMEPAD_LEFT_SHOULDER);
 			// bool dPadR3 = (pad->wButtons & XINPUT_GAMEPAD_RIGHT_THUMB);
 			// bool dPadL3 = (pad->wButtons & XINPUT_GAMEPAD_LEFT_THUMB);
-			// unsigned char dPadRT = pad->bRightTrigger;
-			// unsigned char dPadLT = pad->bLeftTrigger;
+			// unsigned _TCHAR dPadRT = pad->bRightTrigger;
+			// unsigned _TCHAR dPadLT = pad->bLeftTrigger;
 		}
 	}
 }
 
-inline LARGE_INTEGER GetWallClock()
+inline LARGE_INTEGER
+GetWallClock()
 {
-	LARGE_INTEGER result;
-	QueryPerformanceCounter(&result);
-	return result;
+	LARGE_INTEGER time;
+	QueryPerformanceCounter(&time);
+	return time;
 }
 
-inline f32 GetSecondsElapsed(LARGE_INTEGER start, LARGE_INTEGER end)
+inline f32
+GetSecondsElapsed(LARGE_INTEGER start, LARGE_INTEGER end)
 {
-	f32 result = f32(end.QuadPart - start.QuadPart) / f32(g_perfCountFrequency);
-	return result;
+	f32 seconds = f32(end.QuadPart - start.QuadPart) / f32(g_perfCountFrequency);
+	return seconds;
 }
 
-void debug_DrawVerticalLine(OffScreenBuffer* backBuffer, i32 x, i32 top, i32 bot, u32 color)
+void
+debug_DrawVerticalLine(OffScreenBuffer* backBuffer, i32 x, i32 top, i32 bot, u32 color)
 {
 	u8* pixel = (u8*)backBuffer->mem + x * backBuffer->bytPerPix + top * backBuffer->pitch;
 	for (i32 y = top; y < bot; ++y) {
@@ -395,8 +447,10 @@ void debug_DrawVerticalLine(OffScreenBuffer* backBuffer, i32 x, i32 top, i32 bot
 }
 
 #ifdef TOM_INTERNAL
-void debug_SyncDisplay(OffScreenBuffer* backBuffer, SoundOutput* soundOutput,
-					   debug_MarkerArr& soundTimeMarkers, f32 targetSecondsPerFrame)
+void
+debug_SyncDisplay(OffScreenBuffer* backBuffer, SoundOutput* soundOutput,
+				  debug_SoundTimeMarker* debug_markerArr, szt debug_markerArrSz,
+				  szt debug_markerInd, f32 targetSecondsPerFrame)
 
 {
 	i32 padX = 16;
@@ -409,23 +463,143 @@ void debug_SyncDisplay(OffScreenBuffer* backBuffer, SoundOutput* soundOutput,
 	f32 c		 = f32(backBuffer->width) / f32(soundOutput->secondaryBufSz);
 
 	auto drawSoundBufferMarker = [=](DWORD cursor, i32 top, i32 bot, u32 color) {
-		assert(cursor < soundOutput->secondaryBufSz);
+		// assert(cursor < soundOutput->secondaryBufSz);
 		i32 x = padX + i32(c * (f32)cursor);
 		debug_DrawVerticalLine(backBuffer, x, top, bot, color);
 	};
 
-	for (const auto& timeMarkers : soundTimeMarkers) {
-		drawSoundBufferMarker(timeMarkers.playCursor, topPlay, botPlay, 0xFFFFFFFF);
-		drawSoundBufferMarker(timeMarkers.writeCursor, topWrite, botWrite, 0xFFFF0000);
+	for (szt i {}; i < debug_markerArrSz; ++i) {
+		drawSoundBufferMarker(debug_markerArr[i].playCursor, topPlay, botPlay, 0xFFFFFFFF);
+		drawSoundBufferMarker(debug_markerArr[i].writeCursor, topWrite, botWrite, 0xFFFF0000);
 	}
 }
 
 #endif
 
+// ===============================================================================================
+// #PLAYBACK
+// ===============================================================================================
+
+void
+BeginRecordingInput(Win32State* state, i32 inputRecordingInd)
+{
+	printf("Recording...\n");
+	state->inputRecordingInd = inputRecordingInd;
+	const _TCHAR* fileName	 = _T("replay.ti");
+	state->recordingHandle =
+		CreateFile(fileName, GENERIC_WRITE, 0, 0, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, 0);
+	// dump the whole game state to a file
+	DWORD bytesToWrite = (DWORD)state->totalSz;
+	assert(state->totalSz == bytesToWrite);
+	DWORD bytesWritten;
+	WriteFile(state->recordingHandle, state->gameMemoryBlock, bytesToWrite, &bytesWritten, 0);
+}
+
+void
+EndRecordingInput(Win32State* state)
+{
+	printf("Recording ended.\n");
+	CloseHandle(state->recordingHandle);
+	state->inputRecordingInd = 0;
+}
+
+void
+BeginInputPlayBack(Win32State* state, i32 inputPlaBackIndex)
+{
+	printf("Input Playback started...\n");
+	state->inputPlayBackInd = inputPlaBackIndex;
+	const _TCHAR* fileName	= _T("replay.ti");
+	state->playBackHandle =
+		CreateFile(fileName, GENERIC_READ, 0, 0, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, 0);
+
+	// get the whole game state from file
+	DWORD bytesToRead = (DWORD)state->totalSz;
+	assert(state->totalSz == bytesToRead);
+	DWORD bytesRead;
+	ReadFile(state->recordingHandle, state->gameMemoryBlock, bytesToRead, &bytesRead, 0);
+}
+
+void
+EndInputPlayback(Win32State* state)
+{
+	printf("Input playback ended.\n");
+	CloseHandle(state->playBackHandle);
+	state->inputPlayBackInd = 0;
+}
+
+void
+RecordInput(Win32State* state, GameInput* newInput)
+{
+	DWORD bytesWritten;
+	WriteFile(state->recordingHandle, newInput, sizeof(*newInput), &bytesWritten, 0);
+}
+
+void
+PlayBackInput(Win32State* state, GameInput* newInput)
+{
+	DWORD bytesRead;
+	if (ReadFile(state->playBackHandle, newInput, sizeof(*newInput), &bytesRead, 0)) {
+		if (bytesRead == 0) {
+			// NOTE: hit end of stream, go back to begining;
+			i32 playInd = state->inputPlayBackInd;
+			EndInputPlayback(state);
+			BeginInputPlayBack(state, playInd);
+			ReadFile(state->playBackHandle, newInput, sizeof(*newInput), &bytesRead, 0);
+		}
+	}
+}
+
+void
+ProcessPendingMSG(Win32State* state, GameInput* input)
+{
+	MSG msg;
+	while (PeekMessage(&msg, 0, 0, 0, PM_REMOVE)) {
+		switch (msg.message) {
+			case WM_QUIT: g_isRunning = false; break;
+			case WM_SYSKEYDOWN:
+			case WM_SYSKEYUP:
+			case WM_KEYDOWN:
+			case WM_KEYUP: {
+				u32 VKCode	 = (u32)msg.wParam;
+				bool wasDown = ((msg.lParam & (1 << 30)) != 0);
+				bool isDown	 = ((msg.lParam & (1 << 29)) == 0);
+				if (wasDown != isDown) {
+					switch (VKCode) {
+						case VK_ESCAPE: g_isRunning = false; break;
+#ifdef TOM_INTERNAL
+						case 'P': {
+							if (isDown) {
+								g_pause = !g_pause;
+							}
+						} break;
+						case 'L': {
+							if (isDown) {
+								if (state->inputRecordingInd == 0) {
+									BeginRecordingInput(state, 1);
+								} else {
+									EndRecordingInput(state);
+									BeginInputPlayBack(state, 1);
+								}
+							}
+						} break;
+#endif
+						default: break;
+					}
+				}
+			} break;
+			default: {
+				TranslateMessage(&msg);
+				DispatchMessage(&msg);
+			} break;
+		}
+	}
+}
+
 }  // namespace
 //==================================================================================
 
-LRESULT CALLBACK WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
+LRESULT CALLBACK
+WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
 {
 	LRESULT result = 0;
 	switch (msg) {
@@ -441,42 +615,6 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
 			PostQuitMessage(0);
 		} break;
 		case WM_ACTIVATEAPP: break;
-		case WM_SYSKEYDOWN:
-		case WM_SYSKEYUP:
-		case WM_KEYDOWN: {
-			u32 VKCode	 = (u32)wParam;
-			bool wasDown = ((lParam & (1 << 30)) != 0);
-			bool isdown	 = ((lParam & (1 << 29)) == 0);
-
-			// key codes
-			switch (VKCode) {
-				case 'W': kbd.w = true; break;
-				case 'A': kbd.a = true; break;
-				case 'S': kbd.s = true; break;
-				case 'D': kbd.d = true; break;
-				case 'U': kbd.u = true; break;
-				case 'Q': break;
-				case 'P': {
-					g_pause = !g_pause;
-				} break;
-				case VK_SPACE: break;
-				case VK_SHIFT: kbd.shift = true; break;
-				case VK_ESCAPE: g_isRunning = false; break;
-				default: break;
-			}
-		} break;
-		case WM_KEYUP: {
-			u32 VKCode = (u32)wParam;
-			switch (VKCode) {
-				case 'W': kbd.w = false; break;
-				case 'A': kbd.a = false; break;
-				case 'S': kbd.s = false; break;
-				case 'D': kbd.d = false; break;
-				case 'U': kbd.u = false; break;
-				case VK_SHIFT: kbd.shift = false; break;
-				default: break;
-			}
-		} break;
 		case WM_PAINT: {
 			PAINTSTRUCT paint;
 			HDC deviceContext = BeginPaint(hWnd, &paint);
@@ -496,66 +634,82 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
 	return result;
 }
 
-// #start
+// ===============================================================================================
+// #START
+// ===============================================================================================
 
-i32 Main(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLine, i32 nShowCmd)
+i32
+Main(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLine, i32 nShowCmd)
 {
 	// Init
 	auto console = new Console();
-	printf("Starting...");
+	assert(console);
+	printf("Starting...\n");
+
+	Win32State state {};
+
+	DWORD exePathLen = GetModuleFileNameA(NULL, state.exePath, sizeof(state.exePath));
+	printf("exe path %s\n", state.exePath);
 
 	LARGE_INTEGER perfCountFrequencyResult;
 	QueryPerformanceFrequency(&perfCountFrequencyResult);
 	g_perfCountFrequency = perfCountFrequencyResult.QuadPart;
 
-	std::cout << std::filesystem::current_path() << '\n';
-	auto gameCode = LoadGameCode(g_gameDLLName.data());
+	auto gameCode = LoadGameCode(g_gameDLLName);
 	LoadXinput();
 
 	WNDCLASS wndCls = {};  // should init to 0n
 
 	ResizeDIBSection(&g_backBuffer, 1280, 720);
 
-	auto iconBg = static_cast<HICON>(
-		LoadImage(GetModuleHandle(nullptr), MAKEINTRESOURCE(IDI_APPICON), IMAGE_ICON, 32, 32, 0));
+	// TODO: install assets eventuallly
+	const _TCHAR* iconPath = _T("C:\\dev\\TomatoGame\\assets\\icon\\tomato.ico");
+	auto iconBg			   = (HICON)(LoadImage(NULL, iconPath, IMAGE_ICON, 0, 0,
+									   LR_LOADFROMFILE | LR_DEFAULTSIZE | LR_SHARED));
+
+	// console->setIcon(iconBg);
 
 	wndCls.style		 = CS_HREDRAW | CS_VREDRAW | CS_OWNDC;
 	wndCls.lpfnWndProc	 = WndProc;
 	wndCls.hInstance	 = hInstance;
 	wndCls.hIcon		 = iconBg;
-	wndCls.lpszClassName = L"TomatoWinCls";
+	wndCls.lpszClassName = _T("TomatoWinCls");
+
+	if (!RegisterClass(&wndCls)) {
+		printf("ERROR--> Failed to register window class!\n");
+		assert(false);
+		return 0;
+	}
+
+	HWND hWnd = CreateWindowEx(0, wndCls.lpszClassName, _T("TomatoGame"),
+							   WS_OVERLAPPEDWINDOW | WS_VISIBLE, CW_USEDEFAULT, CW_USEDEFAULT,
+							   CW_USEDEFAULT, CW_USEDEFAULT, nullptr, nullptr, hInstance, nullptr);
+
+	if (!hWnd) {
+		printf("Failed to create window!\n");
+		assert(hWnd);
+		return 0;
+	}
 
 	// NOTE: Set the windows schedule granularity to 1ms
 	// so sleep will be more granular
 	UINT desiredSchedulerMS = 1;
 	bool32 sleepIsGranular	= (timeBeginPeriod(desiredSchedulerMS) == TIMERR_NOERROR);
 
-	if (!RegisterClass(&wndCls)) {
-		printf("ERROR--> Failed to register window class!");
-		assert(false);
-		return 0;
-	}
-
-	HWND hWnd = CreateWindowEx(0, wndCls.lpszClassName, L"TomatoGame",
-							   WS_OVERLAPPEDWINDOW | WS_VISIBLE, CW_USEDEFAULT, CW_USEDEFAULT,
-							   CW_USEDEFAULT, CW_USEDEFAULT, nullptr, nullptr, hInstance, nullptr);
-
-	if (!hWnd) {
-		printf("Failed to create window!");
-		assert(hWnd);
-		return 0;
-	}
 	HDC deviceContext	   = GetDC(hWnd);
 	g_isRunning			   = true;
 	g_pause				   = false;
 	g_backBuffer.bytPerPix = 4;
+
+	i32 monitorRefreshRate = GetDeviceCaps(deviceContext, VREFRESH);
+	printf("Monitor Refresh Rate: %d\n", monitorRefreshRate);
 
 	SoundOutput soundOutput	   = {};
 	soundOutput.samplesPerSec  = 48000;
 	soundOutput.bytPerSample   = sizeof(i16) * 2;
 	soundOutput.secondaryBufSz = soundOutput.samplesPerSec;
 	soundOutput.latencySampleCnt =
-		framesOfAudioLatency * (soundOutput.samplesPerSec / gameUpdateHz);
+		i32(framesOfAudioLatency * f32(soundOutput.samplesPerSec / (f32)gameUpdateHz));
 
 	InitWASAPI(soundOutput.samplesPerSec, soundOutput.secondaryBufSz);
 	g_audioClient->Start();
@@ -572,15 +726,16 @@ i32 Main(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLine, i32 nSh
 
 	GameMemory gameMemory					 = {};
 	gameMemory.permanentStorageSize			 = Megabytes(64);
-	gameMemory.transientStorageSize			 = Gigabytes((u64)4);
+	gameMemory.transientStorageSize			 = Gigabytes(1);
 	gameMemory.debug_platformFreeFileMem	 = debug_PlatformFreeFileMemory;
 	gameMemory.debug_platfromReadEntireFile	 = debug_PlatformReadEntireFile;
 	gameMemory.debug_platformWriteEntireFile = debug_PlatformWriteEntireFile;
 
-	u64 totalSize = gameMemory.permanentStorageSize + gameMemory.transientStorageSize;
-
-	gameMemory.permanentStorage =
-		VirtualAlloc(baseAddress, totalSize, MEM_RESERVE | MEM_COMMIT, PAGE_READWRITE);
+	state.totalSz = gameMemory.permanentStorageSize + gameMemory.transientStorageSize;
+	// TODO: use large pages
+	state.gameMemoryBlock =
+		VirtualAlloc(baseAddress, state.totalSz, MEM_RESERVE | MEM_COMMIT, PAGE_READWRITE);
+	gameMemory.permanentStorage = state.gameMemoryBlock;
 
 	gameMemory.transientStorage =
 		((u8*)gameMemory.permanentStorage + gameMemory.permanentStorageSize);
@@ -588,9 +743,10 @@ i32 Main(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLine, i32 nSh
 	GameInput input[2]	= {};
 	GameInput* newInput = &input[0];
 	GameInput* oldInput = &input[1];
+
 #ifdef TOM_INTERNAL
-	debug_MarkerArr debug_SoundTimeMarkers {};
-	auto debug_curTimeMarker = debug_SoundTimeMarkers.begin();
+	debug_SoundTimeMarker debug_markerArr[gameUpdateHz / 2] {};
+	szt debug_curTimeMarkerInd {};
 #endif
 
 	LARGE_INTEGER lastCounter = GetWallClock();
@@ -601,35 +757,18 @@ i32 Main(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLine, i32 nSh
 	DWORD lastPlayCursor {};
 	DWORD lastWriteCursor {};
 
-	// #Main Loop
+	// =============================================================================================
+	// #MAIN LOOP
+	// =============================================================================================
 	while (g_isRunning) {
-		MSG msg;
+		DoControllerInput(oldInput, newInput, hWnd);
+		ProcessPendingMSG(&state, newInput);
 
-		while (PeekMessageA(&msg, 0, 0, 0, PM_REMOVE)) {
-			if (msg.message == WM_QUIT) {
-				g_isRunning = false;
-			}
-
-			TranslateMessage(&msg);
-			DispatchMessageA(&msg);
-		}
-
-		DoControllerInput(oldInput, newInput);
-
-		local_persist f32 cdTimer = 0.f;
-		constexpr f32 cd		  = 0.01f;
-
-		auto cdCounter = GetWallClock();
-		cdTimer += GetSecondsElapsed(lastCounter, cdCounter);
-		if (kbd.u && cdTimer > cd) {
-			cdTimer = 0.f;
-			if (isGameCodeLoaded) {
-				UnloadGameCode(&gameCode);
-				isGameCodeLoaded = false;
-			} else {
-				gameCode		 = LoadGameCode(g_gameDLLName.data());
-				isGameCodeLoaded = true;
-			}
+		auto dllWriteTime = GetLastWritTime(g_gameDLLName);
+		if (CompareFileTime(&dllWriteTime, &gameCode.lastWriteTimeDLL)) {
+			UnloadGameCode(&gameCode);
+			gameCode = LoadGameCode(g_gameDLLName);
+			printf("New Game Code loaded!\n");
 		}
 
 		// NOTE: temp program exit from controller
@@ -642,7 +781,7 @@ i32 Main(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLine, i32 nSh
 		REFERENCE_TIME latency {};
 		if (SUCCEEDED(g_audioClient->GetStreamLatency(&latency))) {
 		} else {
-			printf("ERROR--> Failed to get audio latency1");
+			printf("ERROR--> Failed to get audio latency\n");
 		}
 
 		i32 samplesToWrite = 0;
@@ -661,14 +800,28 @@ i32 Main(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLine, i32 nSh
 
 		// video
 		GameOffscreenBuffer buffer = {};
-		buffer.memory			   = g_backBuffer.mem;
+		buffer.mem				   = g_backBuffer.mem;
 		buffer.width			   = g_backBuffer.width;
 		buffer.height			   = g_backBuffer.height;
+		buffer.bytesPerPix		   = 4;
 		buffer.pitch			   = g_backBuffer.pitch;
 
+		if (state.inputRecordingInd) {
+			RecordInput(&state, newInput);
+		}
+		if (state.inputPlayBackInd) {
+			PlayBackInput(&state, newInput);
+		}
+
+		// null check for stub sections
+		isGameCodeLoaded = gameCode.updateAndRender && gameCode.getSoundSamples;
+
+		// NOTE: dummy thread context, for now
+		ThreadContext thread {};
+
 		if (isGameCodeLoaded) {
-			gameCode.updateAndRender(&gameMemory, input, &kbd, &buffer, &soundBuf);
-			gameCode.getSoundSamples(&gameMemory, &soundBuf);
+			gameCode.updateAndRender(thread, &gameMemory, input, &buffer, &soundBuf);
+			gameCode.getSoundSamples(thread, &gameMemory, &soundBuf);
 		}
 
 		FillSoundBuffer(&soundOutput, samplesToWrite, &soundBuf);
@@ -690,7 +843,7 @@ i32 Main(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLine, i32 nSh
 				secondsElapsedForFrame = GetSecondsElapsed(lastCounter, GetWallClock());
 			}
 		} else {
-			printf("WARNING--> missed frame timing!!!");
+			printf("WARNING--> missed frame timing!!!\n");
 		}
 
 		auto endCounter = GetWallClock();
@@ -702,16 +855,18 @@ i32 Main(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLine, i32 nSh
 
 		++frmCnt;
 		if (!g_pause) x = i32((f32(frmCnt % 30) / 30.f) * f32(g_backBuffer.width));
-		debug_DrawVerticalLine(&g_backBuffer, x, 106, 156, 0x00FFFFFF);
+		debug_DrawVerticalLine(&g_backBuffer, x, 10, 50, 0xFFFFFFFF);
 #endif
 
 		lastCounter = endCounter;
 
+		// #if 0
 #ifdef TOM_INTERNAL
-		debug_SyncDisplay(&g_backBuffer, &soundOutput, debug_SoundTimeMarkers,
-						  targetSecondsPerFrame);
+		debug_SyncDisplay(&g_backBuffer, &soundOutput, debug_markerArr, ArrayCount(debug_markerArr),
+						  debug_curTimeMarkerInd, targetSecondsPerFrame);
 
 #endif
+		// #endif
 		// NOTE: this is debug code
 		DisplayBufferInWindow(deviceContext, &g_backBuffer, 0, 0, g_winDims.width,
 							  g_winDims.height);
@@ -737,12 +892,11 @@ i32 Main(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLine, i32 nSh
 #ifdef TOM_INTERNAL
 
 		if (!g_pause) {
-			debug_curTimeMarker->playCursor	 = playCursor;
-			debug_curTimeMarker->writeCursor = writeCursor;
+			debug_markerArr[debug_curTimeMarkerInd].playCursor	= playCursor;
+			debug_markerArr[debug_curTimeMarkerInd].writeCursor = writeCursor;
 
-			++debug_curTimeMarker;
-			if (debug_curTimeMarker == debug_SoundTimeMarkers.end())
-				debug_curTimeMarker = debug_SoundTimeMarkers.begin();
+			++debug_curTimeMarkerInd;
+			if (debug_curTimeMarkerInd > ArrayCount(debug_markerArr)) debug_curTimeMarkerInd = 0;
 		}
 #endif
 
@@ -776,8 +930,9 @@ extern "C"
 }
 
 // Entry point
-int WINAPI wWinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance,
-					_In_ LPWSTR lpCmdLine, _In_ int nCmdShow)
+int WINAPI
+wWinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _In_ LPWSTR lpCmdLine,
+		 _In_ int nCmdShow)
 {
 	UNREFERENCED_PARAMETER(hPrevInstance);
 	UNREFERENCED_PARAMETER(lpCmdLine);

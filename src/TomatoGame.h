@@ -1,10 +1,6 @@
 #pragma once
 #include "TomatoFramework.h"
 
-#ifdef _DEBUG
-	#define TOM_INTERNAL
-#endif
-
 #define TOM_WIN32
 #ifdef TOM_WIN32
 	#define TOM_DLL_EXPORT __declspec(dllexport)
@@ -40,13 +36,24 @@ typedef DEBUG_PLATFORM_READ_ENTIRE_FILE(debug_Platform_Read_Entire_File);
 typedef DEBUG_PLATFORM_WRITE_ENTIRE_FILE(debug_Platform_Write_Entire_File);
 #endif
 
+#define ArrayCount(Array) (sizeof((Array)) / sizeof((Array)[0]))
+
+#if TOM_INTERNAL
+	#define Assert(expression) \
+		if (!(expression)) {   \
+			*(int*)0 = 0;      \
+		}
+#elif
+	#define Assert(expression)
+#endif
+
 struct GameOffscreenBuffer
 {
-	void* memory;
+	void* mem;
 	i32 width;
 	i32 height;
 	i32 pitch;
-	i32 bytesPerPixel;
+	i32 bytesPerPix;
 };
 
 struct GameSoundOutputBuffer
@@ -65,10 +72,13 @@ struct GameButtonState
 
 struct GameControllerInput
 {
+	bool isConnnected;
 	bool isAnalog;
 
-	f32 startX;
-	f32 startY;
+	f32 startLX;
+	f32 startLY;
+	f32 startRX;
+	f32 startRY;
 
 	f32 minX;
 	f32 minY;
@@ -76,8 +86,10 @@ struct GameControllerInput
 	f32 maxX;
 	f32 maxY;
 
-	f32 endX;
-	f32 endY;
+	f32 endLX;
+	f32 endLY;
+	f32 endRX;
+	f32 endRY;
 
 	union
 	{
@@ -100,8 +112,33 @@ struct GameControllerInput
 	};
 };
 
+struct GameKeyboard
+{
+	union
+	{
+		GameButtonState keys[4];
+		struct
+		{
+			GameButtonState key_W;
+			GameButtonState key_S;
+			GameButtonState key_A;
+			GameButtonState key_D;
+			GameButtonState key_Space;
+			GameButtonState key_LShift;
+			GameButtonState key_P;
+			GameButtonState key_1;
+			GameButtonState key_2;
+			GameButtonState key_3;
+			GameButtonState key_4;
+		};
+	};
+};
+
 struct GameInput
 {
+	GameButtonState mouseButtons[3];
+	i32 mouseX, mouseY, mouseZ;
+
 	GameControllerInput controllers[4];
 };
 
@@ -121,22 +158,43 @@ struct GameMemory
 #endif
 };
 
-// TODO: temp
-struct Keyboard
+struct Color
 {
-	bool w;
-	bool s;
-	bool a;
-	bool d;
-	bool u;
-	bool shift;
+	Color() : bgra(0xFFFFFFFF) {}
+	union
+	{
+		u32 bgra;
+		struct
+		{
+			u8 b;
+			u8 g;
+			u8 r;
+			u8 a;
+		};
+	};
 };
 
-//! part of the main loop
-// static void GameUpdateAndRender(GameMemory* memory, GameInput* input, Keyboard* keyboard,
-//								GameOffscreenBuffer* videoBuffer, GameSoundOutputBuffer*
-// soundBuffer);
-// static void GameGetSoundSamples(GameMemory* mem, GameSoundOutputBuffer* soudBuf);
+struct iVector2
+{
+	iVector2() : x(0), y(0) {}
+	iVector2(i32 x, i32 y)
+	{
+		this->x = x;
+		this->y = y;
+	}
+
+	i32 x;
+	i32 y;
+};
+
+struct Player
+{
+	iVector2 pos;
+	Color color;
+	i32 size;
+	bool isJump;
+	f32 velocity;
+};
 
 struct GameState
 {
@@ -144,29 +202,36 @@ struct GameState
 	i32 xOffset;
 	i32 yOffset;
 
+	f32 fader;
 	f32 tSine;
+
+	Player player1;
+	Player playerLast;
+	i32 floorY;
+	f32 gravity;
+};
+
+// TODO: implement this
+struct ThreadContext
+{
+	i32 placeHolder;
 };
 
 // NOTE: helpers
-inline u32 SafeTruncateUint64(u64 value)
+inline u32
+SafeTruncateUint64(u64 value)
 {
 	// TODO: defines for max values
 	assert(value <= 0xFFFFFFFF);
 	return (u32)value;
 }
 
-#define GAME_UPDATE_AND_RENDER(name)                                                           \
-	void name(GameMemory* mem, GameInput* input, Keyboard* kbd, GameOffscreenBuffer* videoBuf, \
-			  GameSoundOutputBuffer* soundBuffer)
-
+#define GAME_UPDATE_AND_RENDER(name)                                   \
+	void name(ThreadContext thread, GameMemory* mem, GameInput* input, \
+			  GameOffscreenBuffer* videoBuf, GameSoundOutputBuffer* soundBuffer)
 typedef GAME_UPDATE_AND_RENDER(Game_Update_And_Render);
-GAME_UPDATE_AND_RENDER(GameUpdateAndRenderStub)
-{
-}
 
-#define GAME_GET_SOUND_SAMPLES(name) void name(GameMemory* mem, GameSoundOutputBuffer* soudBuf)
+#define GAME_GET_SOUND_SAMPLES(name) \
+	void name(ThreadContext thread, GameMemory* mem, GameSoundOutputBuffer* soudBuf)
 typedef GAME_GET_SOUND_SAMPLES(Game_Get_Sound_Samples);
-GAME_GET_SOUND_SAMPLES(GameGetSoundSamplesStub)
-{
-}
 }  // namespace tomato

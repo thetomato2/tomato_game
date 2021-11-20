@@ -27,7 +27,20 @@ struct SoundOutput
 	DWORD secondaryBufSz;
 	f32 tSine;
 	i32 latencySampleCnt;
-	// TODO: add bytes per second
+};
+
+struct Win32State
+{
+	szt totalSz;
+	void* gameMemoryBlock;
+
+	HANDLE recordingHandle;
+	i32 inputRecordingInd;
+
+	HANDLE playBackHandle;
+	i32 inputPlayBackInd;
+
+	char exePath[MAX_PATH];
 };
 
 #ifdef TOM_INTERNAL
@@ -39,7 +52,8 @@ struct debug_SoundTimeMarker
 #endif
 
 template<typename T>
-consteval T debug_nTimeMarkers(const T size)
+consteval T
+debug_nTimeMarkers(const T size)
 {
 	return size / 2;
 }

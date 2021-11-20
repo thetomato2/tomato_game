@@ -3,8 +3,64 @@
 
 namespace tomato::util
 {
+inline szt
+GetWStrLen(const wchar* wstr)
+{
+	szt len {};
+	while (*wstr++) {
+		++len;
+	}
+	return len;
+}
+
+inline szt
+GetStrLen(const char* str)
+{
+	szt len {};
+	while (*str++) {
+		++len;
+	}
+	return len;
+}
+
+// Takes strings lenght inputs
+inline void
+CatStrings(const char* left, szt leftLen, const char* right, szt rightLen, char* out)
+{
+	for (szt i {}; i < leftLen; ++i) {
+		*out++ = *left++;
+	}
+	for (szt i {}; i < rightLen; ++i) {
+		*out++ = *right++;
+	}
+	*out = '\0';
+}
+
+// calcs the string lenghts also
+inline void
+CatStrings(const char* left, const char* right, char* out)
+{
+	auto leftLen  = GetStrLen(left);
+	auto rightLen = GetStrLen(right);
+
+	if (!leftLen || !rightLen) {
+		printf("Empty strings passed in!");
+		return;
+	}
+
+	for (szt i {}; i < leftLen; ++i) {
+		*out++ = *left++;
+	}
+	for (szt i {}; i < rightLen; ++i) {
+		*out++ = *right++;
+	}
+	*out = '\0';
+}
+
 namespace win32
 {
+// TODO: pull out std::string
+#if 0
 static std::wstring TranslateHRESULT(HRESULT hr) noexcept
 {
 	wchar_t* msgBuf	   = nullptr;
@@ -19,31 +75,46 @@ static std::wstring TranslateHRESULT(HRESULT hr) noexcept
 	LocalFree(msgBuf);
 	return errorString;
 }
+#endif
 
 // Convert a wide Unicode string to an UTF8 string
-inline std::string ws2s(const std::wstring& wstr) noexcept
+inline szt
+GetWStrSz(const wchar* wstr)
 {
-	if (wstr.empty()) return std::string();
-	int size_needed =
-		WideCharToMultiByte(CP_UTF8, 0, &wstr[0], (int)wstr.size(), NULL, 0, NULL, NULL);
-	std::string strTo(size_needed, 0);
-	WideCharToMultiByte(CP_UTF8, 0, &wstr[0], (int)wstr.size(), &strTo[0], size_needed, NULL, NULL);
-	return strTo;
+	auto len  = GetWStrLen(wstr);
+	auto size = (szt)WideCharToMultiByte(CP_UTF8, 0, wstr, (i32)len, NULL, 0, NULL, NULL);
+	return size;
 }
 
-// Convert an UTF8 string to a wide Unicode String
-inline std::wstring s2ws(const std::string& str) noexcept
+inline szt
+GetStrSz(const char* str)
 {
-	if (str.empty()) return std::wstring();
-	int size_needed = MultiByteToWideChar(CP_UTF8, 0, &str[0], (int)str.size(), NULL, 0);
-	std::wstring wstrTo(size_needed, 0);
-	MultiByteToWideChar(CP_UTF8, 0, &str[0], (int)str.size(), &wstrTo[0], size_needed);
-	return wstrTo;
+	auto len  = GetStrLen(str);
+	auto size = (szt)MultiByteToWideChar(CP_UTF8, 0, str, (i32)len, NULL, 0);
+	return size;
 }
+
+// FIXME: idk if this is working
+inline void
+WStr2Str(const wchar* wstr, char* buf)
+{
+	auto len  = GetWStrLen(wstr);
+	auto size = (szt)WideCharToMultiByte(CP_UTF8, 0, wstr, (i32)len, buf, 0, NULL, NULL);
+}
+
+inline void
+Str2WStr(const char* str, wchar* buf)
+{
+	auto len  = GetStrLen(str);
+	auto size = (szt)MultiByteToWideChar(CP_UTF8, 0, str, (i32)len, NULL, 0);
+	MultiByteToWideChar(CP_UTF8, 0, str, (i32)len, buf, (i32)size);
+}
+
 }  // namespace win32
 // Returns min or max if input is not in between
 template<typename T>
-T bounds(T in, T min, T max) noexcept
+T
+bounds(T in, T min, T max) noexcept
 {
 	if (in < min)
 		in = min;
@@ -51,67 +122,6 @@ T bounds(T in, T min, T max) noexcept
 		in = max;
 
 	return in;
-}
-
-// Push fuctions to this class that will be ran in reverse order when flush() is called
-class DeletionQueue
-{
-public:
-	void pushFunction(std::function<void()>&& voidFunc);
-	void flush();
-
-private:
-	std::vector<std::function<void()>> deletors_;
-};
-
-// Helper class for COM exceptions
-
-// Helper utility converts D3D API failures into exceptions.
-inline void ThrowIfFailed(HRESULT hr)
-{
-	if (FAILED(hr)) {
-		throw std::runtime_error("Hr failed!");
-	}
-}
-
-// Helper for output debug tracing
-inline void DebugTrace(_In_z_ _Printf_format_string_ const char* format, ...) noexcept
-{
-#ifdef _DEBUG
-	va_list args;
-	va_start(args, format);
-
-	char buff[1024] = {};
-	vsprintf_s(buff, format, args);
-	OutputDebugStringA(buff);
-	va_end(args);
-#else
-	UNREFERENCED_PARAMETER(format);
-#endif
-}
-
-// Helper smart-pointers
-struct virtual_deleter
-{
-	void operator()(void* p) noexcept
-	{
-		if (p) VirtualFree(p, 0, MEM_RELEASE);
-	}
-};
-
-struct handle_closer
-{
-	void operator()(HANDLE h) noexcept
-	{
-		if (h) CloseHandle(h);
-	}
-};
-
-using ScopedHandle = std::unique_ptr<void, handle_closer>;
-
-inline HANDLE safe_handle(HANDLE h) noexcept
-{
-	return (h == INVALID_HANDLE_VALUE) ? nullptr : h;
 }
 
 }  // namespace tomato::util

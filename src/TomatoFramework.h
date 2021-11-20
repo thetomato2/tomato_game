@@ -4,28 +4,24 @@
 #include <stdint.h>
 #include <tchar.h>
 
-#include <array>
 #include <cassert>
 #include <cmath>
 #include <cstdint>
 #include <cstdio>
 #include <cwchar>
-#include <filesystem>
-#include <functional>
-#include <iostream>
-#include <string>
-#include <string_view>
-#include <vector>
 
-// WinHelp is deprecated
-//#define NOHELP
-
-//  TODO: this is temp, fix build stuff later, prob with cmake
-#ifndef _DEBUG
-	#define _DEBUG
+// NOTE: use C++ stuff?
+#define CXX 0
+#if CXX
+	#include <iostream>
 #endif
 
 #ifdef _WIN32
+	#ifdef _EMACS
+using wchar_t = uint16_t;
+	#endif
+	// WinHelp is deprecate
+	#define NOHELP
 	// DirectX apps don't need GDI
 	// NOTE: I am using GDI to slowly blit to the screen
 	//#define NODRAWTEXT
@@ -74,6 +70,16 @@ using f64 = double;
 
 using szt = size_t;
 using byt = unsigned char;
+
+#ifdef WIN32
+using wchar = wchar_t;
+#endif
+
+// NOTE: for visual studio because its retarded and doesn't read the defines passed from the
+// compiler for some reason
+#ifndef TOM_INTERNAL
+	#define TOM_INTERNAL
+#endif
 
 using bool32 = i32;
 

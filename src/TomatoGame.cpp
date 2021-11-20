@@ -4,36 +4,65 @@ namespace tomato
 {
 namespace
 {
-void RenderWeirdGradient(GameOffscreenBuffer* buffer, i32 xOffset, i32 yOffset)
+void
+RenderWeirdGradient(GameOffscreenBuffer* buf, i32 xOffset, i32 yOffset, f32 fader)
 {
-	i32 width  = buffer->width;
-	i32 height = buffer->height;
+	i32 width  = buf->width;
+	i32 height = buf->height;
 
-	u8* row = (u8*)buffer->memory;
-	for (i32 y = 0; y < height; y++) {
+	u8* row = (u8*)buf->mem;
+	for (i32 y = 0; y < height; ++y) {
 		u32* pixel = (u32*)row;
-		for (i32 x = 0; x < width; x++) {
+		for (i32 x = 0; x < width; ++x) {
 			/*					  1  2  3  4
-					pixel in memory: 00 00 00 00
-					 BB GG RR xx
+					pixel in mem: 00 00 00 00 BB GG RR xx
 					0x xxRRGGBB
 			*/
 
 			u8 blue	 = x + xOffset;
 			u8 green = y + yOffset;
 			u8 red	 = 0;
-			// u8 red	 = ((x + xOffset) / 2) + ((y + yOffset) / 2);
-#ifdef _DEBUG
-			*pixel++ = ((red << 16) | (green << 8) | blue);
-#else
-			*pixel++ = ((red << 16) | (green << 8) | blue);
-#endif
+
+			*pixel++ = (green << 8) | blue;
 		}
-		row += buffer->pitch;
+		row += buf->pitch;
 	}
 }
 
-void GameOuputSound(GameSoundOutputBuffer* soundBuffer, i32 toneHz, f32 tSine)
+void
+DrawFloor(GameOffscreenBuffer* buf, i32 floorY)
+{
+	u8* row = (u8*)buf->mem + (floorY * buf->pitch) + (buf->bytesPerPix * buf->width);
+	for (i32 y = floorY; y < buf->height - 1; ++y) {
+		u32* pixel = (u32*)row;
+		for (i32 x = 0; x < buf->width; ++x) {
+			*pixel++ = 0xFF000000;
+		}
+		row += buf->pitch;
+	}
+}
+
+void
+DrawSquare(GameOffscreenBuffer* buf, i32 posX, i32 posY, i32 size, Color color)
+{
+	u8* endOfBuf = (u8*)buf->mem + buf->bytesPerPix * buf->width + buf->pitch * buf->height;
+	for (i32 x = posX > 0 ? posX : 0; x < posX + size && x < buf->width; ++x) {
+		u8* pixel = ((u8*)buf->mem + x * buf->bytesPerPix + posY * buf->pitch);
+		for (i32 y = posY > 0 ? posY : size; y < posY + size && y < buf->height; ++y) {
+			*(u32*)pixel = color.bgra;
+			pixel += buf->pitch;
+		}
+	}
+}
+
+void
+RenderPlayer(GameOffscreenBuffer* buf, Player* player)
+{
+	DrawSquare(buf, player->pos.x, player->pos.y, player->size, player->color);
+}
+
+void
+GameOuputSound(GameSoundOutputBuffer* soundBuffer, i32 toneHz, f32 tSine)
 {
 	static f32 tempSine {};
 	i16 toneVolume = 3000;
@@ -41,12 +70,12 @@ void GameOuputSound(GameSoundOutputBuffer* soundBuffer, i32 toneHz, f32 tSine)
 
 	i16* sampleOut = soundBuffer->samples;
 	for (szt sampleIndex = 0; sampleIndex < soundBuffer->sampleCount; ++sampleIndex) {
-		f32 sineValue	= sinf(tempSine * 0.75);
+		f32 sineValue	= sinf(tempSine * 0.75f);
 		i16 sampleValue = (i16)(sineValue * toneVolume);
 		*sampleOut++	= sampleValue;
 		*sampleOut++	= sampleValue;
 
-		tempSine += 2.0f * 3.14 * 1.0f / (f32)wavePeriod;
+		tempSine += 2.0f * 3.14f * 1.0f / (f32)wavePeriod;
 		/*if (tSine > 2.f * util::pi32) {
 			tSine -= 2.f * util::pi32;
 		}*/
@@ -65,10 +94,15 @@ extern "C" TOM_DLL_EXPORT GAME_UPDATE_AND_RENDER(GameUpdateAndRender)
 	assert(sizeof(GameState) <= mem->permanentStorageSize);
 
 	auto* gameState = (GameState*)mem->permanentStorage;
+
+	constexpr i32 nMouseTrails = 15;
+	local_persist iVector2 mouseTrails[nMouseTrails];
+	local_persist szt mouseTrailsInd {};
+
 	if (!mem->isInitialized) {
 		const char* fileName = __FILE__;
 
-#ifdef _DEBUG
+#ifdef TOM_INTERNAL
 		debug_ReadFileResult file = mem->debug_platfromReadEntireFile(fileName);
 		if (file.contents) {
 			mem->debug_platformWriteEntireFile("test.txt", file.contentSize, file.contents);
@@ -79,37 +113,93 @@ extern "C" TOM_DLL_EXPORT GAME_UPDATE_AND_RENDER(GameUpdateAndRender)
 		gameState->tSine   = 0.f;
 		gameState->xOffset = 0;
 		gameState->yOffset = 0;
+		gameState->fader   = 0;
+
+		gameState->gravity			  = -1.f;
+		gameState->player1.pos.x	  = 100;
+		gameState->player1.size		  = 20;
+		gameState->player1.isJump	  = false;
+		gameState->player1.velocity	  = 0.f;
+		gameState->floorY			  = videoBuf->height - 150;
+		gameState->player1.pos.y	  = gameState->floorY - gameState->player1.size;
+		gameState->player1.color.bgra = 0xFFFFFFFF;
+
+		gameState->playerLast = gameState->player1;
 
 		// TODO: this might be more appropriate in the platform layer
 		mem->isInitialized = true;
 	}
-
-	f32 speed = 10.0f;
-	if (kbd->shift == true) speed = 20.0f;
+	f32 offsetYMul	= 0.2f;
+	f32 offsetXMul	= 1.f;
+	f32 playerSpeed = 8.f;
 
 	GameControllerInput* input0 = &input->controllers[0];
-	if (kbd->a) {
-		gameState->xOffset -= (i32)speed;
-	} else if (kbd->d) {
-		gameState->xOffset += (i32)speed;
-	}
-	if (kbd->w) {
-		gameState->yOffset -= (i32)speed;
-	} else if (kbd->s) {
-		gameState->yOffset += (i32)speed;
-	}
-	if (input0->button_A.endedDown) gameState->toneHz *= (3 / 4);
-
 	if (input0->isAnalog) {
-		gameState->xOffset += i32(speed * (input0->endX));
-		gameState->yOffset += i32(speed * (input0->endY));
-		gameState->toneHz = 256 + (i32)(64.0f * (input0->endY)) + (i32)(64.0f * (input0->endX));
+		// gameState->xOffset += i32(speed * (input0->endLX));
+		// gameState->yOffset += i32(speed * (input0->endLY));
+		gameState->toneHz = 256 + (i32)(64.0f * (input0->endLY)) + (i32)(64.0f * (input0->endLX));
+
+		gameState->player1.pos.x += (i32)(playerSpeed * input0->endLX);
 	} else {
 		// TODO: handle digital input
 	}
 
-	// TODO: Allow sample offsets here for more robust platform options
-	RenderWeirdGradient(videoBuf, gameState->xOffset, gameState->yOffset);
+	auto& player = gameState->player1;
+
+	if (player.pos.y > gameState->floorY - player.size) {
+		player.pos.y	   = gameState->floorY - player.size;
+		gameState->yOffset = 0;
+		player.isJump	   = false;
+	}
+
+	if (player.isJump) {
+		player.pos.y -= (i32)player.velocity;
+		gameState->yOffset -= i32(player.velocity * offsetYMul);
+		player.velocity += gameState->gravity;
+	}
+
+	if (input0->button_A.endedDown && !player.isJump) {
+		player.velocity = 20.f;
+		player.isJump	= true;
+	}
+
+	if (player.pos.x < i32((f32)videoBuf->width * 0.33f)) {
+		i32 xMove = i32((player.pos.x - gameState->playerLast.pos.x) * offsetXMul);
+		if (xMove < 0) {
+			gameState->xOffset += xMove;
+			player.pos.x = gameState->playerLast.pos.x;
+		}
+	}
+	if (player.pos.x > i32((f32)videoBuf->width * 0.66f)) {
+		i32 xMove = i32((player.pos.x - gameState->playerLast.pos.x) * offsetXMul);
+		if (xMove > 0) {
+			gameState->xOffset += xMove;
+			player.pos.x = gameState->playerLast.pos.x;
+		}
+	}
+
+	if (player.pos.y > gameState->floorY - player.size) {
+		player.pos.y	   = gameState->floorY - player.size;
+		gameState->yOffset = 0;
+		player.isJump	   = false;
+	}
+
+	RenderWeirdGradient(videoBuf, gameState->xOffset, gameState->yOffset, gameState->fader);
+	DrawFloor(videoBuf, gameState->floorY);
+	RenderPlayer(videoBuf, &gameState->player1);
+
+	gameState->playerLast = player;
+
+	Color mouseCol;
+	i32 mouseSz = 10;
+	DrawSquare(videoBuf, input->mouseX, input->mouseY, mouseSz, mouseCol);
+	mouseTrails[mouseTrailsInd].x	= input->mouseX;
+	mouseTrails[mouseTrailsInd++].y = input->mouseY;
+	if (mouseTrailsInd > ArrayCount(mouseTrails)) mouseTrailsInd = 0;
+
+	for (szt i {}; i < nMouseTrails; ++i) {
+		DrawSquare(videoBuf, mouseTrails[i].x, mouseTrails[i].y, mouseSz, mouseCol);
+	}
 }
 
 #if 0

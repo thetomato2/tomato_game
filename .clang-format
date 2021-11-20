@@ -12,7 +12,7 @@ AllowShortCaseLabelsOnASingleLine: 'true'
 AllowShortIfStatementsOnASingleLine: 'true'
 AllowShortLoopsOnASingleLine: 'false'
 AllowShortFunctionsOnASingleLine: 'InlineOnly'
-AlwaysBreakAfterReturnType: None
+AlwaysBreakAfterReturnType: All
 BreakBeforeBraces: Custom
 BraceWrapping:
 	AfterCaseLabel: 'false'
