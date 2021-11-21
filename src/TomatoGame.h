@@ -227,11 +227,11 @@ SafeTruncateUint64(u64 value)
 }
 
 #define GAME_UPDATE_AND_RENDER(name)                                   \
-	void name(ThreadContext thread, GameMemory* mem, GameInput* input, \
-			  GameOffscreenBuffer* videoBuf, GameSoundOutputBuffer* soundBuffer)
+	void name(ThreadContext thread, GameMemory& mem, GameInput& input, \
+			  GameOffscreenBuffer& videoBuf, GameSoundOutputBuffer& soundBuffer)
 typedef GAME_UPDATE_AND_RENDER(Game_Update_And_Render);
 
 #define GAME_GET_SOUND_SAMPLES(name) \
-	void name(ThreadContext thread, GameMemory* mem, GameSoundOutputBuffer* soudBuf)
+	void name(ThreadContext thread, GameMemory& mem, GameSoundOutputBuffer& soudBuf)
 typedef GAME_GET_SOUND_SAMPLES(Game_Get_Sound_Samples);
 }  // namespace tomato

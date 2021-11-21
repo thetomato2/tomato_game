@@ -171,12 +171,12 @@ LoadGameCode(const _TCHAR* dllName)
 }
 
 void
-UnloadGameCode(GameCode* gameCode)
+UnloadGameCode(GameCode& gameCode)
 {
-	if (gameCode->gameCodeDLL) {
-		FreeLibrary(gameCode->gameCodeDLL);
-		gameCode->updateAndRender = 0;
-		gameCode->getSoundSamples = 0;
+	if (gameCode.gameCodeDLL) {
+		FreeLibrary(gameCode.gameCodeDLL);
+		gameCode.updateAndRender = 0;
+		gameCode.getSoundSamples = 0;
 	}
 	printf("Game code unloaded.");
 }
@@ -259,17 +259,17 @@ InitWASAPI(i32 samplesPerSec, i32 bufSzInSamples)
 	assert(bufSzInSamples <= (i32)soundFrmCnt);
 }
 void
-FillSoundBuffer(SoundOutput* soundOutput, i32 samplesToWrite, GameSoundOutputBuffer* sourceBuffer)
+FillSoundBuffer(SoundOutput& soundOutput, i32 samplesToWrite, GameSoundOutputBuffer& sourceBuffer)
 {
 	{
 		BYTE* soundBufDat;
 		if (SUCCEEDED(g_audioRenderClient->GetBuffer((UINT32)samplesToWrite, &soundBufDat))) {
-			i16* sourceSample = sourceBuffer->samples;
+			i16* sourceSample = sourceBuffer.samples;
 			i16* destSample	  = (i16*)soundBufDat;
 			for (szt i = 0; i < samplesToWrite; ++i) {
 				*destSample++ = *sourceSample++;
 				*destSample++ = *sourceSample++;
-				++soundOutput->runningSampleInd;
+				++soundOutput.runningSampleInd;
 			}
 
 			g_audioRenderClient->ReleaseBuffer((UINT32)samplesToWrite, 0);
@@ -289,73 +289,72 @@ GetWindowDimension(HWND hWnd)
 }
 
 void
-ResizeDIBSection(OffScreenBuffer* buffer, i32 width, i32 height)
+ResizeDIBSection(OffScreenBuffer& buffer, i32 width, i32 height)
 {
 	// TODO: bulletproof this
 	// maybe don't free first, free after, then free first if that fails
 
-	if (buffer->mem) {
-		VirtualFree(buffer->mem, 0, MEM_RELEASE);
+	if (buffer.mem) {
+		VirtualFree(buffer.mem, 0, MEM_RELEASE);
 	}
-	buffer->width	  = width;
-	buffer->height	  = height;
-	buffer->bytPerPix = 4;
+	buffer.width	 = width;
+	buffer.height	 = height;
+	buffer.bytPerPix = 4;
 
-	buffer->info.bmiHeader.biSize		 = sizeof(buffer->info.bmiHeader);
-	buffer->info.bmiHeader.biWidth		 = width;
-	buffer->info.bmiHeader.biHeight		 = -height;
-	buffer->info.bmiHeader.biPlanes		 = 1;
-	buffer->info.bmiHeader.biBitCount	 = 32;
-	buffer->info.bmiHeader.biCompression = BI_RGB;
+	buffer.info.bmiHeader.biSize		= sizeof(buffer.info.bmiHeader);
+	buffer.info.bmiHeader.biWidth		= width;
+	buffer.info.bmiHeader.biHeight		= -height;
+	buffer.info.bmiHeader.biPlanes		= 1;
+	buffer.info.bmiHeader.biBitCount	= 32;
+	buffer.info.bmiHeader.biCompression = BI_RGB;
 
 	i32 bytesPerPixel	 = 4;
 	i32 bitmapMemorySize = (width * height) * bytesPerPixel;
-	buffer->mem = VirtualAlloc(0, bitmapMemorySize, MEM_RESERVE | MEM_COMMIT, PAGE_READWRITE);
+	buffer.mem = VirtualAlloc(0, bitmapMemorySize, MEM_RESERVE | MEM_COMMIT, PAGE_READWRITE);
 
-	buffer->pitch = width * buffer->bytPerPix;
+	buffer.pitch = width * buffer.bytPerPix;
 }
 
 void
-DisplayBufferInWindow(HDC hdc, OffScreenBuffer* buffer, i32 x, i32 y, i32 width, i32 height)
+DisplayBufferInWindow(HDC hdc, OffScreenBuffer& buffer, i32 x, i32 y, i32 width, i32 height)
 {
 	// NOTE: this is matches the windows dimensions
-	StretchDIBits(hdc, 0, 0, width, height, 0, 0, g_winDims.width, g_winDims.height, buffer->mem,
-				  &buffer->info, DIB_RGB_COLORS, SRCCOPY);
+	StretchDIBits(hdc, 0, 0, width, height, 0, 0, g_winDims.width, g_winDims.height, buffer.mem,
+				  &buffer.info, DIB_RGB_COLORS, SRCCOPY);
 }
+
 void
 ProcessKbdMsg(GameButtonState& newState, bool32 isDown)
 {
-	if (newState.endedDown != (isDown != 0) {
+	if (newState.endedDown != (isDown != 0)) {
 		newState.endedDown = isDown;
 		++newState.halfTransitionCount;
 	}
 }
 
 void
-ProcessXInputDigitalButton(DWORD XInputButtonState, GameButtonState* oldState, DWORD buttonBit,
-						   GameButtonState* newState)
+ProcessXInputDigitalButton(DWORD XInputButtonState, GameButtonState& oldState, DWORD buttonBit,
+						   GameButtonState& newState)
 {
-	newState->endedDown			  = ((XInputButtonState & buttonBit) == buttonBit);
-	newState->halfTransitionCount = (oldState->endedDown != newState->endedDown) ? 1 : 0;
+	newState.endedDown			 = ((XInputButtonState & buttonBit) == buttonBit);
+	newState.halfTransitionCount = (oldState.endedDown != newState.endedDown) ? 1 : 0;
 }
 
 void
-DoControllerInput(GameInput* oldInput, GameInput* newInput, HWND hWnd)
+DoControllerInput(GameInput& oldInput, GameInput& newInput, HWND hWnd)
 {
 	// mouse cursor
 	POINT mouseP;
 	GetCursorPos(&mouseP);
 	ScreenToClient(hWnd, &mouseP);
-	newInput->mouseX = mouseP.x;
-	newInput->mouseY = mouseP.y;
-	newInput->mouseZ = 0;
+	newInput.mouseX = mouseP.x;
+	newInput.mouseY = mouseP.y;
+	newInput.mouseZ = 0;
 
 	// mouse buttons
-	ProcessKbdMsg(newInput->mouseButtons[0], ::GetKeyState(VK_LBUTTON) & (1 << 15));
-	ProcessKbdMsg(newInput->mouseButtons[1], ::GetKeyState(VK_RBUTTON) & (1 << 15));
-	ProcessKbdMsg(newInput->mouseButtons[2], ::GetKeyState(VK_MBUTTON) & (1 << 15));
-
-	printf("x: %d, y: %d\n", newInput->mouseX, newInput->mouseY);
+	ProcessKbdMsg(newInput.mouseButtons[0], ::GetKeyState(VK_LBUTTON) & (1 << 15));
+	ProcessKbdMsg(newInput.mouseButtons[1], ::GetKeyState(VK_RBUTTON) & (1 << 15));
+	ProcessKbdMsg(newInput.mouseButtons[2], ::GetKeyState(VK_MBUTTON) & (1 << 15));
 
 	// Controller
 	// poll the input device
@@ -365,19 +364,19 @@ DoControllerInput(GameInput* oldInput, GameInput* newInput, HWND hWnd)
 	}
 
 	for (DWORD controllerIndex = 0; controllerIndex < XUSER_MAX_COUNT; controllerIndex++) {
-		GameControllerInput* oldController = &oldInput->controllers[controllerIndex];
-		GameControllerInput* newController = &newInput->controllers[controllerIndex];
+		GameControllerInput& oldController = oldInput.controllers[controllerIndex];
+		GameControllerInput& newController = newInput.controllers[controllerIndex];
 
 		XINPUT_STATE controllerState;
 		if (XInputGetState(controllerIndex, &controllerState) == ERROR_SUCCESS) {
 			//! the controller is plugged in
-			XINPUT_GAMEPAD* pad = &controllerState.Gamepad;
+			XINPUT_GAMEPAD& pad = controllerState.Gamepad;
 
-			newController->isConnnected = true;
+			newController.isConnnected = true;
 
 			// NOTE: this is hardcoded for convenience
-			// newController->isAnalog		= oldController->isAnalog;
-			newController->isAnalog = true;
+			// newController.isAnalog		= oldController->isAnalog;
+			newController.isAnalog = true;
 
 			//  no rmal stick input
 			auto normalize = [](SHORT val) {
@@ -387,41 +386,41 @@ DoControllerInput(GameInput* oldInput, GameInput* newInput, HWND hWnd)
 					return (f32)val / 32767.0f;
 			};
 
-			f32 sLX				= normalize(pad->sThumbLX);
-			f32 sLY				= normalize(pad->sThumbLY) * -1.0f;
-			f32 sRX				= normalize(pad->sThumbRX);
-			f32 sRY				= normalize(pad->sThumbRY) * -1.0f;
-			newController->minX = newController->maxX = newController->endLX = sLX;
-			newController->minY = newController->maxY = newController->endLY = sLY;
+			f32 sLX			   = normalize(pad.sThumbLX);
+			f32 sLY			   = normalize(pad.sThumbLY) * -1.0f;
+			f32 sRX			   = normalize(pad.sThumbRX);
+			f32 sRY			   = normalize(pad.sThumbRY) * -1.0f;
+			newController.minX = newController.maxX = newController.endLX = sLX;
+			newController.minY = newController.maxY = newController.endLY = sLY;
 
-			ProcessXInputDigitalButton(pad->wButtons, &oldController->dpad_up,
-									   XINPUT_GAMEPAD_DPAD_UP, &newController->dpad_up);
-			ProcessXInputDigitalButton(pad->wButtons, &oldController->dpad_right,
-									   XINPUT_GAMEPAD_DPAD_RIGHT, &newController->dpad_right);
-			ProcessXInputDigitalButton(pad->wButtons, &oldController->dpad_down,
-									   XINPUT_GAMEPAD_DPAD_DOWN, &newController->dpad_down);
-			ProcessXInputDigitalButton(pad->wButtons, &oldController->dpad_left,
-									   XINPUT_GAMEPAD_DPAD_LEFT, &newController->dpad_left);
-			ProcessXInputDigitalButton(pad->wButtons, &oldController->button_A, XINPUT_GAMEPAD_A,
-									   &newController->button_A);
-			ProcessXInputDigitalButton(pad->wButtons, &oldController->button_B, XINPUT_GAMEPAD_B,
-									   &newController->button_B);
-			ProcessXInputDigitalButton(pad->wButtons, &oldController->button_X, XINPUT_GAMEPAD_X,
-									   &newController->button_X);
-			ProcessXInputDigitalButton(pad->wButtons, &oldController->button_Y, XINPUT_GAMEPAD_Y,
-									   &newController->button_Y);
-			ProcessXInputDigitalButton(pad->wButtons, &oldController->button_RB,
-									   XINPUT_GAMEPAD_RIGHT_SHOULDER, &newController->button_RB);
-			ProcessXInputDigitalButton(pad->wButtons, &oldController->button_LB,
-									   XINPUT_GAMEPAD_LEFT_SHOULDER, &newController->button_LB);
-			ProcessXInputDigitalButton(pad->wButtons, &oldController->button_back,
-									   XINPUT_GAMEPAD_BACK, &newController->button_back);
-			ProcessXInputDigitalButton(pad->wButtons, &oldController->button_start,
-									   XINPUT_GAMEPAD_START, &newController->button_start);
+			ProcessXInputDigitalButton(pad.wButtons, oldController.dpad_up, XINPUT_GAMEPAD_DPAD_UP,
+									   newController.dpad_up);
+			ProcessXInputDigitalButton(pad.wButtons, oldController.dpad_right,
+									   XINPUT_GAMEPAD_DPAD_RIGHT, newController.dpad_right);
+			ProcessXInputDigitalButton(pad.wButtons, oldController.dpad_down,
+									   XINPUT_GAMEPAD_DPAD_DOWN, newController.dpad_down);
+			ProcessXInputDigitalButton(pad.wButtons, oldController.dpad_left,
+									   XINPUT_GAMEPAD_DPAD_LEFT, newController.dpad_left);
+			ProcessXInputDigitalButton(pad.wButtons, oldController.button_A, XINPUT_GAMEPAD_A,
+									   newController.button_A);
+			ProcessXInputDigitalButton(pad.wButtons, oldController.button_B, XINPUT_GAMEPAD_B,
+									   newController.button_B);
+			ProcessXInputDigitalButton(pad.wButtons, oldController.button_X, XINPUT_GAMEPAD_X,
+									   newController.button_X);
+			ProcessXInputDigitalButton(pad.wButtons, oldController.button_Y, XINPUT_GAMEPAD_Y,
+									   newController.button_Y);
+			ProcessXInputDigitalButton(pad.wButtons, oldController.button_RB,
+									   XINPUT_GAMEPAD_RIGHT_SHOULDER, newController.button_RB);
+			ProcessXInputDigitalButton(pad.wButtons, oldController.button_LB,
+									   XINPUT_GAMEPAD_LEFT_SHOULDER, newController.button_LB);
+			ProcessXInputDigitalButton(pad.wButtons, oldController.button_back, XINPUT_GAMEPAD_BACK,
+									   newController.button_back);
+			ProcessXInputDigitalButton(pad.wButtons, oldController.button_start,
+									   XINPUT_GAMEPAD_START, newController.button_start);
 
 			// NOTE: Not currently used
-			// float dpadStickRX = pad->sThumbRX;
-			// float dpadStickRY = pad->sThumbRY;
+			// float dpadStickRX = pad.sThumbRX;
+			// float dpadStickRY = pad.sThumbRY;
 			// bool dPadStart = (pad->wButtons & XINPUT_GAMEPAD_START);
 			// bool dPadBack = (pad->wButtons & XINPUT_GAMEPAD_BACK);
 			// bool dPadRB = (pad->wButtons & XINPUT_GAMEPAD_RIGHT_SHOULDER);
@@ -450,18 +449,18 @@ GetSecondsElapsed(LARGE_INTEGER start, LARGE_INTEGER end)
 }
 
 void
-debug_DrawVerticalLine(OffScreenBuffer* backBuffer, i32 x, i32 top, i32 bot, u32 color)
+debug_DrawVerticalLine(OffScreenBuffer& backBuffer, i32 x, i32 top, i32 bot, u32 color)
 {
-	u8* pixel = (u8*)backBuffer->mem + x * backBuffer->bytPerPix + top * backBuffer->pitch;
+	u8* pixel = (u8*)backBuffer.mem + x * backBuffer.bytPerPix + top * backBuffer.pitch;
 	for (i32 y = top; y < bot; ++y) {
 		*(u32*)pixel = color;
-		pixel += backBuffer->pitch;
+		pixel += backBuffer.pitch;
 	}
 }
 
 #ifdef TOM_INTERNAL
 void
-debug_SyncDisplay(OffScreenBuffer* backBuffer, SoundOutput* soundOutput,
+debug_SyncDisplay(OffScreenBuffer& backBuffer, SoundOutput& soundOutput,
 				  debug_SoundTimeMarker* debug_markerArr, szt debug_markerArrSz,
 				  szt debug_markerInd, f32 targetSecondsPerFrame)
 
@@ -470,13 +469,13 @@ debug_SyncDisplay(OffScreenBuffer* backBuffer, SoundOutput* soundOutput,
 	i32 padY = 16;
 
 	i32 topPlay	 = padY;
-	i32 botPlay	 = backBuffer->height - (backBuffer->height - 50 - topPlay);
+	i32 botPlay	 = backBuffer.height - (backBuffer.height - 50 - topPlay);
 	i32 topWrite = botPlay;
-	i32 botWrite = backBuffer->height - (backBuffer->height - 50 - botPlay);
-	f32 c		 = f32(backBuffer->width) / f32(soundOutput->secondaryBufSz);
+	i32 botWrite = backBuffer.height - (backBuffer.height - 50 - botPlay);
+	f32 c		 = f32(backBuffer.width) / f32(soundOutput.secondaryBufSz);
 
-	auto drawSoundBufferMarker = [=](DWORD cursor, i32 top, i32 bot, u32 color) {
-		// assert(cursor < soundOutput->secondaryBufSz);
+	auto drawSoundBufferMarker = [&](DWORD cursor, i32 top, i32 bot, u32 color) {
+		// assert(cursor < soundOutput.secondaryBufSz);
 		i32 x = padX + i32(c * (f32)cursor);
 		debug_DrawVerticalLine(backBuffer, x, top, bot, color);
 	};
@@ -494,76 +493,76 @@ debug_SyncDisplay(OffScreenBuffer* backBuffer, SoundOutput* soundOutput,
 // ===============================================================================================
 
 void
-BeginRecordingInput(Win32State* state, i32 inputRecordingInd)
+BeginRecordingInput(Win32State& state, i32 inputRecordingInd)
 {
 	printf("Recording...\n");
-	state->inputRecordingInd = inputRecordingInd;
-	const _TCHAR* fileName	 = _T("replay.ti");
-	state->recordingHandle =
+	state.inputRecordingInd = inputRecordingInd;
+	const _TCHAR* fileName	= _T("replay.ti");
+	state.recordingHandle =
 		CreateFile(fileName, GENERIC_WRITE, 0, 0, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, 0);
 	// dump the whole game state to a file
-	DWORD bytesToWrite = (DWORD)state->totalSz;
-	assert(state->totalSz == bytesToWrite);
+	DWORD bytesToWrite = (DWORD)state.totalSz;
+	assert(state.totalSz == bytesToWrite);
 	DWORD bytesWritten;
-	WriteFile(state->recordingHandle, state->gameMemoryBlock, bytesToWrite, &bytesWritten, 0);
+	WriteFile(state.recordingHandle, state.gameMemoryBlock, bytesToWrite, &bytesWritten, 0);
 }
 
 void
-EndRecordingInput(Win32State* state)
+EndRecordingInput(Win32State& state)
 {
 	printf("Recording ended.\n");
-	CloseHandle(state->recordingHandle);
-	state->inputRecordingInd = 0;
+	CloseHandle(state.recordingHandle);
+	state.inputRecordingInd = 0;
 }
 
 void
-BeginInputPlayBack(Win32State* state, i32 inputPlaBackIndex)
+BeginInputPlayBack(Win32State& state, i32 inputPlaBackIndex)
 {
 	printf("Input Playback started...\n");
-	state->inputPlayBackInd = inputPlaBackIndex;
-	const _TCHAR* fileName	= _T("replay.ti");
-	state->playBackHandle =
+	state.inputPlayBackInd = inputPlaBackIndex;
+	const _TCHAR* fileName = _T("replay.ti");
+	state.playBackHandle =
 		CreateFile(fileName, GENERIC_READ, 0, 0, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, 0);
 
 	// get the whole game state from file
-	DWORD bytesToRead = (DWORD)state->totalSz;
-	assert(state->totalSz == bytesToRead);
+	DWORD bytesToRead = (DWORD)state.totalSz;
+	assert(state.totalSz == bytesToRead);
 	DWORD bytesRead;
-	ReadFile(state->recordingHandle, state->gameMemoryBlock, bytesToRead, &bytesRead, 0);
+	ReadFile(state.recordingHandle, state.gameMemoryBlock, bytesToRead, &bytesRead, 0);
 }
 
 void
-EndInputPlayback(Win32State* state)
+EndInputPlayback(Win32State& state)
 {
 	printf("Input playback ended.\n");
-	CloseHandle(state->playBackHandle);
-	state->inputPlayBackInd = 0;
+	CloseHandle(state.playBackHandle);
+	state.inputPlayBackInd = 0;
 }
 
 void
-RecordInput(Win32State* state, GameInput* newInput)
+RecordInput(Win32State& state, GameInput& newInput)
 {
 	DWORD bytesWritten;
-	WriteFile(state->recordingHandle, newInput, sizeof(*newInput), &bytesWritten, 0);
+	WriteFile(state.recordingHandle, &newInput, sizeof(newInput), &bytesWritten, 0);
 }
 
 void
-PlayBackInput(Win32State* state, GameInput* newInput)
+PlayBackInput(Win32State& state, GameInput& newInput)
 {
 	DWORD bytesRead;
-	if (ReadFile(state->playBackHandle, newInput, sizeof(*newInput), &bytesRead, 0)) {
+	if (ReadFile(state.playBackHandle, &newInput, sizeof(newInput), &bytesRead, 0)) {
 		if (bytesRead == 0) {
 			// NOTE: hit end of stream, go back to begining;
-			i32 playInd = state->inputPlayBackInd;
+			i32 playInd = state.inputPlayBackInd;
 			EndInputPlayback(state);
 			BeginInputPlayBack(state, playInd);
-			ReadFile(state->playBackHandle, newInput, sizeof(*newInput), &bytesRead, 0);
+			ReadFile(state.playBackHandle, &newInput, sizeof(newInput), &bytesRead, 0);
 		}
 	}
 }
 
 void
-ProcessPendingMSG(Win32State* state, GameInput* input)
+ProcessPendingMSG(Win32State& state, GameInput& input)
 {
 	MSG msg;
 	while (PeekMessage(&msg, 0, 0, 0, PM_REMOVE)) {
@@ -587,7 +586,7 @@ ProcessPendingMSG(Win32State* state, GameInput* input)
 						} break;
 						case 'L': {
 							if (isDown) {
-								if (state->inputRecordingInd == 0) {
+								if (state.inputRecordingInd == 0) {
 									BeginRecordingInput(state, 1);
 								} else {
 									EndRecordingInput(state);
@@ -618,7 +617,7 @@ WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
 	switch (msg) {
 		case WM_SIZE: {
 			g_winDims = GetWindowDimension(hWnd);
-			ResizeDIBSection(&g_backBuffer, g_winDims.width, g_winDims.height);
+			ResizeDIBSection(g_backBuffer, g_winDims.width, g_winDims.height);
 		} break;
 		case WM_DESTROY: {
 			g_isRunning = false;
@@ -635,7 +634,7 @@ WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
 			i32 y			  = paint.rcPaint.right;
 			i32 height		  = paint.rcPaint.bottom - paint.rcPaint.top;
 			i32 width		  = paint.rcPaint.right - paint.rcPaint.left;
-			DisplayBufferInWindow(deviceContext, &g_backBuffer, x, y, width, height);
+			DisplayBufferInWindow(deviceContext, g_backBuffer, x, y, width, height);
 			PatBlt(deviceContext, x, y, width, height, WHITENESS);
 			EndPaint(hWnd, &paint);
 		} break;
@@ -673,7 +672,7 @@ Main(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLine, i32 nShowCm
 
 	WNDCLASS wndCls = {};  // should init to 0n
 
-	ResizeDIBSection(&g_backBuffer, 1280, 720);
+	ResizeDIBSection(g_backBuffer, 1280, 720);
 
 	// TODO: install assets eventuallly
 	const _TCHAR* iconPath = _T("C:\\dev\\TomatoGame\\assets\\icon\\tomato.ico");
@@ -754,8 +753,8 @@ Main(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLine, i32 nShowCm
 		((u8*)gameMemory.permanentStorage + gameMemory.permanentStorageSize);
 
 	GameInput input[2]	= {};
-	GameInput* newInput = &input[0];
-	GameInput* oldInput = &input[1];
+	GameInput& newInput = input[0];
+	GameInput& oldInput = input[1];
 
 #ifdef TOM_INTERNAL
 	debug_SoundTimeMarker debug_markerArr[gameUpdateHz / 2] {};
@@ -775,17 +774,17 @@ Main(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLine, i32 nShowCm
 	// =============================================================================================
 	while (g_isRunning) {
 		DoControllerInput(oldInput, newInput, hWnd);
-		ProcessPendingMSG(&state, newInput);
+		ProcessPendingMSG(state, newInput);
 
 		auto dllWriteTime = GetLastWritTime(g_gameDLLName);
 		if (CompareFileTime(&dllWriteTime, &gameCode.lastWriteTimeDLL)) {
-			UnloadGameCode(&gameCode);
+			UnloadGameCode(gameCode);
 			gameCode = LoadGameCode(g_gameDLLName);
 			printf("New Game Code loaded!\n");
 		}
 
 		// NOTE: temp program exit from controller
-		if (newInput->controllers->button_back.endedDown) {
+		if (newInput.controllers->button_back.endedDown) {
 			g_isRunning = false;
 		}
 
@@ -820,24 +819,25 @@ Main(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLine, i32 nShowCm
 		buffer.pitch			   = g_backBuffer.pitch;
 
 		if (state.inputRecordingInd) {
-			RecordInput(&state, newInput);
+			RecordInput(state, newInput);
 		}
 		if (state.inputPlayBackInd) {
-			PlayBackInput(&state, newInput);
+			PlayBackInput(state, newInput);
 		}
 
 		// null check for stub sections
 		isGameCodeLoaded = gameCode.updateAndRender && gameCode.getSoundSamples;
+		// isGameCodeLoaded = false;
 
 		// NOTE: dummy thread context, for now
 		ThreadContext thread {};
 
 		if (isGameCodeLoaded) {
-			gameCode.updateAndRender(thread, &gameMemory, input, &buffer, &soundBuf);
-			gameCode.getSoundSamples(thread, &gameMemory, &soundBuf);
+			gameCode.updateAndRender(thread, gameMemory, *input, buffer, soundBuf);
+			gameCode.getSoundSamples(thread, gameMemory, soundBuf);
 		}
 
-		FillSoundBuffer(&soundOutput, samplesToWrite, &soundBuf);
+		FillSoundBuffer(soundOutput, samplesToWrite, soundBuf);
 
 		// clock stuffs
 		auto workCounter	   = GetWallClock();
@@ -868,21 +868,20 @@ Main(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLine, i32 nShowCm
 
 		++frmCnt;
 		if (!g_pause) x = i32((f32(frmCnt % 30) / 30.f) * f32(g_backBuffer.width));
-		debug_DrawVerticalLine(&g_backBuffer, x, 10, 50, 0xFFFFFFFF);
+		debug_DrawVerticalLine(g_backBuffer, x, 10, 50, 0xFFFFFFFF);
 #endif
 
 		lastCounter = endCounter;
 
 		// #if 0
 #ifdef TOM_INTERNAL
-		debug_SyncDisplay(&g_backBuffer, &soundOutput, debug_markerArr, ArrayCount(debug_markerArr),
+		debug_SyncDisplay(g_backBuffer, soundOutput, debug_markerArr, ArrayCount(debug_markerArr),
 						  debug_curTimeMarkerInd, targetSecondsPerFrame);
 
 #endif
 		// #endif
 		// NOTE: this is debug code
-		DisplayBufferInWindow(deviceContext, &g_backBuffer, 0, 0, g_winDims.width,
-							  g_winDims.height);
+		DisplayBufferInWindow(deviceContext, g_backBuffer, 0, 0, g_winDims.width, g_winDims.height);
 
 		DWORD playCursor;
 		DWORD writeCursor;
@@ -916,7 +915,7 @@ Main(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLine, i32 nShowCm
 		// f64 FPS	 = (f64)gs_perfCountFrequency / (f64)counterElapsed;
 		// f64 MCPF = (f64)(cyclesElapsed / (1000.f * 1000.f));
 
-		GameInput* temp = newInput;
+		GameInput& temp = newInput;
 		newInput		= oldInput;
 		oldInput		= temp;
 
