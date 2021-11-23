@@ -33,10 +33,10 @@ DEBUG_PLATFORM_READ_ENTIRE_FILE(debug_PlatformReadEntireFile)
 					file.contents = 0;
 				}
 			} else {
-				// TODO: logging
+				printf("ERROR-> Failed to read file contents!\n");
 			}
 		} else {
-			// TDOD: logging
+			printf("ERROR-> Failed to open file handle!\n");
 		}
 		CloseHandle(fileHandle);
 	}
@@ -54,11 +54,11 @@ DEBUG_PLATFORM_WRITE_ENTIRE_FILE(debug_PlatformWriteEntireFile)
 			// NOTE: file wrote successfully
 			success = (bytesWritten == memorySize);
 		} else {
-			// TODO: logging
+			printf("ERROR-> Failed to write file contents!\n");
 		}
 		CloseHandle(fileHandle);
 	} else {
-		// TODO: logging
+		printf("ERROR-> Failed to oepn file handle!\n");
 	}
 	return success;
 }
@@ -193,7 +193,7 @@ LoadXinput()
 		XInputGetState = (x_input_get_state*)GetProcAddress(XInputLibrary, "XInputGetState");
 		XInputSetState = (x_input_set_state*)GetProcAddress(XInputLibrary, "XInputSetState");
 	} else {
-		// TODO: Log error, diagnostic
+		printf("ERROR->failed to load XInput!\n");
 	}
 }
 
@@ -492,19 +492,29 @@ debug_SyncDisplay(OffScreenBuffer& backBuffer, SoundOutput& soundOutput,
 // #PLAYBACK
 // ===============================================================================================
 
+ReplayBuffer&
+GetReplayBuffer(Win32State& state, szt index)
+{
+	assert(index < ArrayCount(state.replayBuffers));
+	return state.replayBuffers[index];
+}
+
 void
 BeginRecordingInput(Win32State& state, i32 inputRecordingInd)
 {
-	printf("Recording...\n");
-	state.inputRecordingInd = inputRecordingInd;
-	const _TCHAR* fileName	= _T("replay.ti");
-	state.recordingHandle =
-		CreateFile(fileName, GENERIC_WRITE, 0, 0, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, 0);
-	// dump the whole game state to a file
-	DWORD bytesToWrite = (DWORD)state.totalSz;
-	assert(state.totalSz == bytesToWrite);
-	DWORD bytesWritten;
-	WriteFile(state.recordingHandle, state.gameMemoryBlock, bytesToWrite, &bytesWritten, 0);
+	auto& replayBuf = GetReplayBuffer(state, inputRecordingInd);
+	if (replayBuf.memBlock) {
+		printf("Recording...\n");
+		state.inputRecordingInd = inputRecordingInd;
+		state.recordingHandle	= replayBuf.fileHandle;
+
+		// dump the whole game state to a file
+		LARGE_INTEGER filePos;
+		filePos.QuadPart = state.totalSz;
+		SetFilePointerEx(state.recordingHandle, filePos, 0, FILE_BEGIN);
+
+		CopyMemory(replayBuf.memBlock, state.gameMemoryBlock, state.totalSz);
+	}
 }
 
 void
@@ -516,19 +526,20 @@ EndRecordingInput(Win32State& state)
 }
 
 void
-BeginInputPlayBack(Win32State& state, i32 inputPlaBackIndex)
+BeginInputPlayBack(Win32State& state, i32 inputPlaybackIndex)
 {
-	printf("Input Playback started...\n");
-	state.inputPlayBackInd = inputPlaBackIndex;
-	const _TCHAR* fileName = _T("replay.ti");
-	state.playBackHandle =
-		CreateFile(fileName, GENERIC_READ, 0, 0, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, 0);
+	auto& replayBuf = GetReplayBuffer(state, inputPlaybackIndex);
+	if (replayBuf.memBlock) {
+		printf("Input Playback started...\n");
+		state.inputPlayBackInd = inputPlaybackIndex;
+		state.playBackHandle   = replayBuf.fileHandle;
 
-	// get the whole game state from file
-	DWORD bytesToRead = (DWORD)state.totalSz;
-	assert(state.totalSz == bytesToRead);
-	DWORD bytesRead;
-	ReadFile(state.recordingHandle, state.gameMemoryBlock, bytesToRead, &bytesRead, 0);
+		// get the whole game state from file
+		LARGE_INTEGER filePos;
+		filePos.QuadPart = state.totalSz;
+		SetFilePointerEx(state.playBackHandle, filePos, 0, FILE_BEGIN);
+		CopyMemory(state.gameMemoryBlock, replayBuf.memBlock, state.totalSz);
+	}
 }
 
 void
@@ -751,6 +762,22 @@ Main(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLine, i32 nShowCm
 
 	gameMemory.transientStorage =
 		((u8*)gameMemory.permanentStorage + gameMemory.permanentStorageSize);
+
+	// mapping memory to file
+	for (i32 replayInd {}; replayInd < ArrayCount(state.replayBuffers); ++replayInd) {
+		ReplayBuffer& replayBuf = state.replayBuffers[replayInd];
+		_stprintf_s(replayBuf.fileName, sizeof(_TCHAR) * 512, _T("replay_%d.ti"), replayInd);
+
+		replayBuf.fileHandle = CreateFile(replayBuf.fileName, GENERIC_WRITE, NULL, NULL,
+										  CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, 0);
+
+		replayBuf.memMap =
+			CreateFileMapping(replayBuf.fileHandle, NULL, PAGE_EXECUTE_READWRITE,
+							  (state.totalSz >> 32), (state.totalSz & 0xffffffff), NULL);
+		replayBuf.memBlock =
+			MapViewOfFile(replayBuf.memMap, FILE_MAP_ALL_ACCESS, 0, 0, state.totalSz),
+		assert(replayBuf.memBlock);
+	}
 
 	GameInput input[2]	= {};
 	GameInput& newInput = input[0];

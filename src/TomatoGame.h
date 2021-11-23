@@ -136,6 +136,7 @@ struct GameKeyboard
 
 struct GameInput
 {
+	static constexpr szt nMouseButtons = 3;
 	GameButtonState mouseButtons[3];
 	i32 mouseX, mouseY, mouseZ;
 
@@ -196,8 +197,18 @@ struct Player
 	f32 velocity;
 };
 
+struct MouseTrails
+{
+	static constexpr szt nTrails = 50;
+	iVector2 trails[nTrails];
+	szt curInd;
+	Color color;
+};
+
 struct GameState
 {
+	static constexpr i32 nMouseTrails = 3;
+
 	i32 toneHz;
 	i32 xOffset;
 	i32 yOffset;
@@ -209,6 +220,8 @@ struct GameState
 	Player playerLast;
 	i32 floorY;
 	f32 gravity;
+
+	MouseTrails mouseTrails[nMouseTrails];
 };
 
 // TODO: implement this

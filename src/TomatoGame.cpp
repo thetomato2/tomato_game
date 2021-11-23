@@ -96,10 +96,6 @@ extern "C" TOM_DLL_EXPORT GAME_UPDATE_AND_RENDER(GameUpdateAndRender)
 	// NOTE: cast to GameState ptr, dereference and cast to GameState reference
 	auto& gameState = (GameState&)(*(GameState*)mem.permanentStorage);
 
-	constexpr i32 nMouseTrails = 15;
-	local_persist iVector2 mouseTrails[nMouseTrails];
-	local_persist szt mouseTrailsInd {};
-
 	if (!mem.isInitialized) {
 		const char* fileName = __FILE__;
 
@@ -123,9 +119,13 @@ extern "C" TOM_DLL_EXPORT GAME_UPDATE_AND_RENDER(GameUpdateAndRender)
 		gameState.player1.velocity	 = 0.f;
 		gameState.floorY			 = videoBuf.height - 150;
 		gameState.player1.pos.y		 = gameState.floorY - gameState.player1.size;
-		gameState.player1.color.bgra = 0xFFFFFFFF;
+		gameState.player1.color.bgra = 0xffffffff;
 
 		gameState.playerLast = gameState.player1;
+
+		gameState.mouseTrails[0].color.bgra = 0xffff0000;
+		gameState.mouseTrails[1].color.bgra = 0xff00ff00;
+		gameState.mouseTrails[2].color.bgra = 0xff0000ff;
 
 		// TODO: this might be more appropriate in the platform layer
 		mem.isInitialized = true;
@@ -193,16 +193,21 @@ extern "C" TOM_DLL_EXPORT GAME_UPDATE_AND_RENDER(GameUpdateAndRender)
 
 	gameState.playerLast = player;
 
-	if (input.mouseButtons[0].endedDown) {
-		Color mouseCol;
-		i32 mouseSz = 10;
-		DrawSquare(videoBuf, input.mouseX, input.mouseY, mouseSz, mouseCol);
-		mouseTrails[mouseTrailsInd].x	= input.mouseX;
-		mouseTrails[mouseTrailsInd++].y = input.mouseY;
-		if (mouseTrailsInd > ArrayCount(mouseTrails)) mouseTrailsInd = 0;
+	for (szt curMsBut {}; curMsBut < GameInput::nMouseButtons; ++curMsBut) {
+		if (input.mouseButtons[curMsBut].endedDown) {
+			i32 mouseSz	   = 10;
+			i32 x		   = input.mouseX + (curMsBut * 20);
+			auto& curTrail = gameState.mouseTrails[curMsBut];
+			DrawSquare(videoBuf, x, input.mouseY, mouseSz, curTrail.color);
+			curTrail.trails[curTrail.curInd].x = x;
+			curTrail.trails[curTrail.curInd].y = input.mouseY;
+			++curTrail.curInd;
 
-		for (szt i {}; i < nMouseTrails; ++i) {
-			DrawSquare(videoBuf, mouseTrails[i].x, mouseTrails[i].y, mouseSz, mouseCol);
+			if (curTrail.curInd == MouseTrails::nTrails) curTrail.curInd = 0;
+			for (szt i {}; i < MouseTrails::nTrails; ++i) {
+				DrawSquare(videoBuf, curTrail.trails[i].x, curTrail.trails[i].y, mouseSz,
+						   curTrail.color);
+			}
 		}
 	}
 }

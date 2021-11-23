@@ -29,10 +29,19 @@ struct SoundOutput
 	i32 latencySampleCnt;
 };
 
+struct ReplayBuffer
+{
+	_TCHAR fileName[MAX_PATH];
+	HANDLE fileHandle;
+	HANDLE memMap;
+	void* memBlock;
+};
+
 struct Win32State
 {
 	szt totalSz;
 	void* gameMemoryBlock;
+	ReplayBuffer replayBuffers[4];
 
 	HANDLE recordingHandle;
 	i32 inputRecordingInd;
