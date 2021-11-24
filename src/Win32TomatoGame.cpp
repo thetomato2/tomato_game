@@ -1,4 +1,4 @@
-﻿#include "Win32TomatoGame.h"
+#include "Win32TomatoGame.h"
 
 namespace tomato
 {
@@ -448,6 +448,7 @@ GetSecondsElapsed(LARGE_INTEGER start, LARGE_INTEGER end)
 	return seconds;
 }
 
+#if 0
 void
 debug_DrawVerticalLine(OffScreenBuffer& backBuffer, i32 x, i32 top, i32 bot, u32 color)
 {
@@ -458,7 +459,6 @@ debug_DrawVerticalLine(OffScreenBuffer& backBuffer, i32 x, i32 top, i32 bot, u32
 	}
 }
 
-#ifdef TOM_INTERNAL
 void
 debug_SyncDisplay(OffScreenBuffer& backBuffer, SoundOutput& soundOutput,
 				  debug_SoundTimeMarker* debug_markerArr, szt debug_markerArrSz,
@@ -492,6 +492,12 @@ debug_SyncDisplay(OffScreenBuffer& backBuffer, SoundOutput& soundOutput,
 // #PLAYBACK
 // ===============================================================================================
 
+void
+GetInputFilePath(Win32State& state, bool32 isInputStream)
+{
+	int x = 0;
+}
+
 ReplayBuffer&
 GetReplayBuffer(Win32State& state, szt index)
 {
@@ -506,12 +512,18 @@ BeginRecordingInput(Win32State& state, i32 inputRecordingInd)
 	if (replayBuf.memBlock) {
 		printf("Recording...\n");
 		state.inputRecordingInd = inputRecordingInd;
-		state.recordingHandle	= replayBuf.fileHandle;
 
+		_TCHAR fileName[512];
+		_stprintf_s(fileName, 512, _T("replay_%d_input.ti"), inputRecordingInd);
+		// const _TCHAR* fileName = _T("replay_1_input.ti");
+		state.recordingHandle = CreateFile(fileName, GENERIC_WRITE | GENERIC_READ, NULL, NULL,
+										   CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, 0);
+#if 0
 		// dump the whole game state to a file
 		LARGE_INTEGER filePos;
 		filePos.QuadPart = state.totalSz;
 		SetFilePointerEx(state.recordingHandle, filePos, 0, FILE_BEGIN);
+#endif
 
 		CopyMemory(replayBuf.memBlock, state.gameMemoryBlock, state.totalSz);
 	}
@@ -532,12 +544,18 @@ BeginInputPlayBack(Win32State& state, i32 inputPlaybackIndex)
 	if (replayBuf.memBlock) {
 		printf("Input Playback started...\n");
 		state.inputPlayBackInd = inputPlaybackIndex;
-		state.playBackHandle   = replayBuf.fileHandle;
 
+		_TCHAR fileName[512];
+		_stprintf_s(fileName, 512, _T("replay_%d_input.ti"), inputPlaybackIndex);
+		state.playBackHandle =
+			CreateFile(fileName, GENERIC_READ, NULL, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, 0);
+#if 0
 		// get the whole game state from file
 		LARGE_INTEGER filePos;
 		filePos.QuadPart = state.totalSz;
 		SetFilePointerEx(state.playBackHandle, filePos, 0, FILE_BEGIN);
+#endif
+
 		CopyMemory(state.gameMemoryBlock, replayBuf.memBlock, state.totalSz);
 	}
 }
@@ -597,11 +615,15 @@ ProcessPendingMSG(Win32State& state, GameInput& input)
 						} break;
 						case 'L': {
 							if (isDown) {
-								if (state.inputRecordingInd == 0) {
-									BeginRecordingInput(state, 1);
+								if (state.inputPlayBackInd == 0) {
+									if (state.inputRecordingInd == 0) {
+										BeginRecordingInput(state, 1);
+									} else {
+										EndRecordingInput(state);
+										BeginInputPlayBack(state, 1);
+									}
 								} else {
-									EndRecordingInput(state);
-									BeginInputPlayBack(state, 1);
+									EndInputPlayback(state);
 								}
 							}
 						} break;
@@ -688,7 +710,7 @@ Main(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLine, i32 nShowCm
 	// TODO: install assets eventuallly
 	const _TCHAR* iconPath = _T("C:\\dev\\TomatoGame\\assets\\icon\\tomato.ico");
 	auto iconBg			   = (HICON)(LoadImage(NULL, iconPath, IMAGE_ICON, 0, 0,
-									   LR_LOADFROMFILE | LR_DEFAULTSIZE | LR_SHARED));
+											   LR_LOADFROMFILE | LR_DEFAULTSIZE | LR_SHARED));
 
 	// console->setIcon(iconBg);
 
@@ -766,14 +788,16 @@ Main(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLine, i32 nShowCm
 	// mapping memory to file
 	for (i32 replayInd {}; replayInd < ArrayCount(state.replayBuffers); ++replayInd) {
 		ReplayBuffer& replayBuf = state.replayBuffers[replayInd];
-		_stprintf_s(replayBuf.fileName, sizeof(_TCHAR) * 512, _T("replay_%d.ti"), replayInd);
+		_stprintf_s(replayBuf.fileName, sizeof(_TCHAR) * 512, _T("replay_%d_state.ti"), replayInd);
 
-		replayBuf.fileHandle = CreateFile(replayBuf.fileName, GENERIC_WRITE, NULL, NULL,
-										  CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, 0);
+		replayBuf.fileHandle = CreateFile(replayBuf.fileName, GENERIC_WRITE | GENERIC_READ, NULL,
+										  NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, 0);
 
-		replayBuf.memMap =
-			CreateFileMapping(replayBuf.fileHandle, NULL, PAGE_EXECUTE_READWRITE,
-							  (state.totalSz >> 32), (state.totalSz & 0xffffffff), NULL);
+		LARGE_INTEGER maxSz;
+		maxSz.QuadPart	 = state.totalSz;
+		replayBuf.memMap = CreateFileMapping(replayBuf.fileHandle, NULL, PAGE_READWRITE,
+											 maxSz.HighPart, maxSz.LowPart, NULL);
+		DWORD error		 = GetLastError();
 		replayBuf.memBlock =
 			MapViewOfFile(replayBuf.memMap, FILE_MAP_ALL_ACCESS, 0, 0, state.totalSz),
 		assert(replayBuf.memBlock);
@@ -888,8 +912,9 @@ Main(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLine, i32 nShowCm
 
 		auto endCounter = GetWallClock();
 		f32 msPerFrame	= 1000.f * GetSecondsElapsed(lastCounter, endCounter);
-#ifdef TOM_INTERNAL
+#if 0
 
+		// this draws a a line based on the curretn fps
 		static i32 frmCnt {};
 		static i32 x;
 
@@ -900,13 +925,6 @@ Main(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLine, i32 nShowCm
 
 		lastCounter = endCounter;
 
-		// #if 0
-#ifdef TOM_INTERNAL
-		debug_SyncDisplay(g_backBuffer, soundOutput, debug_markerArr, ArrayCount(debug_markerArr),
-						  debug_curTimeMarkerInd, targetSecondsPerFrame);
-
-#endif
-		// #endif
 		// NOTE: this is debug code
 		DisplayBufferInWindow(deviceContext, g_backBuffer, 0, 0, g_winDims.width, g_winDims.height);
 

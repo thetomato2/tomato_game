@@ -31,7 +31,7 @@ struct SoundOutput
 
 struct ReplayBuffer
 {
-	_TCHAR fileName[MAX_PATH];
+	_TCHAR fileName[512];
 	HANDLE fileHandle;
 	HANDLE memMap;
 	void* memBlock;
@@ -40,8 +40,6 @@ struct ReplayBuffer
 struct Win32State
 {
 	szt totalSz;
-	void* gameMemoryBlock;
-	ReplayBuffer replayBuffers[4];
 
 	HANDLE recordingHandle;
 	i32 inputRecordingInd;
@@ -50,6 +48,9 @@ struct Win32State
 	i32 inputPlayBackInd;
 
 	char exePath[MAX_PATH];
+
+	void* gameMemoryBlock;
+	ReplayBuffer replayBuffers[4];
 };
 
 #ifdef TOM_INTERNAL

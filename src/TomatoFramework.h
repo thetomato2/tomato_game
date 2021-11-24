@@ -90,4 +90,3 @@ using bool32 = i32;
 #include "Macros.h"
 #include "Utils.h"
 #include "Console.h"
-#include "../resource.h"

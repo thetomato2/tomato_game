@@ -23,7 +23,7 @@ RenderWeirdGradient(GameOffscreenBuffer& buf, i32 xOffset, i32 yOffset, f32 fade
 			u8 green = y + yOffset;
 			u8 red	 = 0;
 
-			*pixel++ = (green << 8) | blue;
+			*pixel++ = (red << 16) | (green << 8) | blue;
 		}
 		row += buf.pitch;
 	}
@@ -134,6 +134,23 @@ extern "C" TOM_DLL_EXPORT GAME_UPDATE_AND_RENDER(GameUpdateAndRender)
 	f32 offsetYMul	= 0.2f;
 	f32 offsetXMul	= 1.f;
 	f32 playerSpeed = 8.f;
+	f32 faderMult	= 0.1f;
+
+	local_persist bool faderDir = false;
+
+	if (faderDir) {
+		gameState.fader += faderMult;
+		if (gameState.fader > 1.f) {
+			gameState.fader = 1.f;
+			faderDir		= false;
+		}
+	} else {
+		gameState.fader -= faderMult;
+		if (gameState.fader < 0.f) {
+			gameState.fader = 0.;
+			faderDir		= true;
+		}
+	}
 
 	GameControllerInput& controller0 = input.controllers[0];
 	if (controller0.isAnalog) {
@@ -196,7 +213,7 @@ extern "C" TOM_DLL_EXPORT GAME_UPDATE_AND_RENDER(GameUpdateAndRender)
 	for (szt curMsBut {}; curMsBut < GameInput::nMouseButtons; ++curMsBut) {
 		if (input.mouseButtons[curMsBut].endedDown) {
 			i32 mouseSz	   = 10;
-			i32 x		   = input.mouseX + (curMsBut * 20);
+			i32 x		   = input.mouseX + ((i32)curMsBut * 20);
 			auto& curTrail = gameState.mouseTrails[curMsBut];
 			DrawSquare(videoBuf, x, input.mouseY, mouseSz, curTrail.color);
 			curTrail.trails[curTrail.curInd].x = x;
