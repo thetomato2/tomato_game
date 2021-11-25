@@ -5,7 +5,7 @@ namespace tomato
 namespace
 {
 void
-RenderWeirdGradient(GameOffscreenBuffer& buf, i32 xOffset, i32 yOffset, f32 fader)
+RenderWeirdGradient(GameOffscreenBuffer& buf, i32 xOffset, i32 yOffset)
 {
 	i32 width  = buf.width;
 	i32 height = buf.height;
@@ -83,13 +83,15 @@ GameOuputSound(GameSoundOutputBuffer& soundBuffer, i32 toneHz, f32 tSine)
 }
 }  // namespace
 
-extern "C" TOM_DLL_EXPORT GAME_GET_SOUND_SAMPLES(GameGetSoundSamples)
+extern "C" TOM_DLL_EXPORT
+GAME_GET_SOUND_SAMPLES(GameGetSoundSamples)
 {
 	auto* gameState = (GameState*)mem.permanentStorage;
 	GameOuputSound(soudBuf, gameState->toneHz, gameState->tSine);
 }
 
-extern "C" TOM_DLL_EXPORT GAME_UPDATE_AND_RENDER(GameUpdateAndRender)
+extern "C" TOM_DLL_EXPORT
+GAME_UPDATE_AND_RENDER(GameUpdateAndRender)
 {
 	assert(sizeof(GameState) <= mem.permanentStorageSize);
 
@@ -134,23 +136,8 @@ extern "C" TOM_DLL_EXPORT GAME_UPDATE_AND_RENDER(GameUpdateAndRender)
 	f32 offsetYMul	= 0.2f;
 	f32 offsetXMul	= 1.f;
 	f32 playerSpeed = 8.f;
-	f32 faderMult	= 0.1f;
 
-	local_persist bool faderDir = false;
-
-	if (faderDir) {
-		gameState.fader += faderMult;
-		if (gameState.fader > 1.f) {
-			gameState.fader = 1.f;
-			faderDir		= false;
-		}
-	} else {
-		gameState.fader -= faderMult;
-		if (gameState.fader < 0.f) {
-			gameState.fader = 0.;
-			faderDir		= true;
-		}
-	}
+	auto& player = gameState.player1;
 
 	GameControllerInput& controller0 = input.controllers[0];
 	if (controller0.isAnalog) {
@@ -159,12 +146,18 @@ extern "C" TOM_DLL_EXPORT GAME_UPDATE_AND_RENDER(GameUpdateAndRender)
 		gameState.toneHz =
 			256 + (i32)(64.0f * (controller0.endLY)) + (i32)(64.0f * (controller0.endLX));
 
-		gameState.player1.pos.x += (i32)(playerSpeed * controller0.endLX);
+		player.pos.x += (i32)(playerSpeed * controller0.endLX);
 	} else {
 		// TODO: handle digital input
 	}
 
-	auto& player = gameState.player1;
+	f32 keyboardSpeedMult = 1.f;
+	if (input.keyboard.A.endedDown)
+		gameState.player1.pos.x -= i32(playerSpeed * keyboardSpeedMult);
+	else if (input.keyboard.D.endedDown)
+		gameState.player1.pos.x += i32(playerSpeed * keyboardSpeedMult);
+
+	bool jumpPressed = controller0.button_A.endedDown || input.keyboard.Space.endedDown;
 
 	if (player.pos.y > gameState.floorY - player.size) {
 		player.pos.y	  = gameState.floorY - player.size;
@@ -178,7 +171,7 @@ extern "C" TOM_DLL_EXPORT GAME_UPDATE_AND_RENDER(GameUpdateAndRender)
 		player.velocity += gameState.gravity;
 	}
 
-	if (controller0.button_A.endedDown && !player.isJump) {
+	if (jumpPressed && !player.isJump) {
 		player.velocity = 20.f;
 		player.isJump	= true;
 	}
@@ -204,7 +197,7 @@ extern "C" TOM_DLL_EXPORT GAME_UPDATE_AND_RENDER(GameUpdateAndRender)
 		player.isJump	  = false;
 	}
 
-	RenderWeirdGradient(videoBuf, gameState.xOffset, gameState.yOffset, gameState.fader);
+	RenderWeirdGradient(videoBuf, gameState.xOffset, gameState.yOffset);
 	DrawFloor(videoBuf, gameState.floorY);
 	RenderPlayer(videoBuf, player);
 

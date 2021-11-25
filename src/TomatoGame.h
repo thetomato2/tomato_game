@@ -116,20 +116,20 @@ struct GameKeyboard
 {
 	union
 	{
-		GameButtonState keys[4];
+		GameButtonState keys[11];
 		struct
 		{
-			GameButtonState key_W;
-			GameButtonState key_S;
-			GameButtonState key_A;
-			GameButtonState key_D;
-			GameButtonState key_Space;
-			GameButtonState key_LShift;
-			GameButtonState key_P;
-			GameButtonState key_1;
-			GameButtonState key_2;
-			GameButtonState key_3;
-			GameButtonState key_4;
+			GameButtonState W;
+			GameButtonState S;
+			GameButtonState A;
+			GameButtonState D;
+			GameButtonState Space;
+			GameButtonState LShift;
+			GameButtonState P;
+			GameButtonState D1;
+			GameButtonState D2;
+			GameButtonState D3;
+			GameButtonState D4;
 		};
 	};
 };
@@ -139,6 +139,8 @@ struct GameInput
 	static constexpr szt nMouseButtons = 3;
 	GameButtonState mouseButtons[3];
 	i32 mouseX, mouseY, mouseZ;
+
+	GameKeyboard keyboard;
 
 	GameControllerInput controllers[4];
 };
