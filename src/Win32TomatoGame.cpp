@@ -16,7 +16,7 @@ DEBUG_PLATFORM_READ_ENTIRE_FILE(debug_PlatformReadEntireFile)
 	debug_ReadFileResult file = {};
 
 	HANDLE fileHandle =
-		CreateFileA(fileName, GENERIC_READ, 0, 0, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, 0);
+		CreateFile(fileName, GENERIC_READ, 0, 0, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, 0);
 	if (fileHandle != INVALID_HANDLE_VALUE) {
 		LARGE_INTEGER fileSize;
 		if (GetFileSizeEx(fileHandle, &fileSize)) {
@@ -166,7 +166,7 @@ enum Keys : byt
 	RightWindows = 0x5c,
 	Apps		 = 0x5d,
 
-	kSleep	  = 0x5f,
+	Sleep	  = 0x5f,
 	NumPad0	  = 0x60,
 	NumPad1	  = 0x61,
 	NumPad2	  = 0x62,
@@ -276,7 +276,7 @@ constexpr f32 targetSecondsPerFrame = 1.0f / (f32)gameUpdateHz;
 
 bool g_isRunning;
 bool g_pause;
-const _TCHAR* g_gameDLLName = _T("TomatoGame.dll");
+const TCHAR* g_gameDLLName = _T("TomatoGame.dll");
 
 OffScreenBuffer g_backBuffer;
 WindowDimensions g_winDims;
@@ -298,7 +298,7 @@ struct GameCode
 };
 
 inline FILETIME
-GetLastWritTime(const _TCHAR* fileName)
+GetLastWritTime(const TCHAR* fileName)
 {
 	FILETIME lastWriteTime {};
 
@@ -322,10 +322,10 @@ GetLastWritTime(const _TCHAR* fileName)
 }
 
 GameCode
-LoadGameCode(const _TCHAR* dllName)
+LoadGameCode(const TCHAR* dllName)
 {
 	GameCode gameCode {};
-	const _TCHAR* dll_copy = _T("loaded_gamecode_copy.dll");
+	const TCHAR* dll_copy = _T("loaded_gamecode_copy.dll");
 
 	gameCode.lastWriteTimeDLL = GetLastWritTime(dllName);
 
@@ -622,8 +622,8 @@ DoControllerInput(GameInput& oldInput, GameInput& newInput, HWND hWnd)
 			// bool dPadLB = (pad->wButtons & XINPUT_GAMEPAD_LEFT_SHOULDER);
 			// bool dPadR3 = (pad->wButtons & XINPUT_GAMEPAD_RIGHT_THUMB);
 			// bool dPadL3 = (pad->wButtons & XINPUT_GAMEPAD_LEFT_THUMB);
-			// unsigned _TCHAR dPadRT = pad->bRightTrigger;
-			// unsigned _TCHAR dPadLT = pad->bLeftTrigger;
+			// unsigned TCHAR dPadRT = pad->bRightTrigger;
+			// unsigned TCHAR dPadLT = pad->bLeftTrigger;
 		}
 	}
 }
@@ -708,9 +708,9 @@ BeginRecordingInput(Win32State& state, i32 inputRecordingInd)
 		printf("Recording...\n");
 		state.inputRecordingInd = inputRecordingInd;
 
-		_TCHAR fileName[512];
+		TCHAR fileName[512];
 		_stprintf_s(fileName, 512, _T("replay_%d_input.ti"), inputRecordingInd);
-		// const _TCHAR* fileName = _T("replay_1_input.ti");
+		// const TCHAR* fileName = _T("replay_1_input.ti");
 		state.recordingHandle = CreateFile(fileName, GENERIC_WRITE | GENERIC_READ, NULL, NULL,
 										   CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, 0);
 #if 0
@@ -740,7 +740,7 @@ BeginInputPlayBack(Win32State& state, i32 inputPlaybackIndex)
 		printf("Input Playback started...\n");
 		state.inputPlayBackInd = inputPlaybackIndex;
 
-		_TCHAR fileName[512];
+		TCHAR fileName[512];
 		_stprintf_s(fileName, 512, _T("replay_%d_input.ti"), inputPlaybackIndex);
 		state.playBackHandle =
 			CreateFile(fileName, GENERIC_READ, NULL, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, 0);
@@ -903,9 +903,9 @@ Main(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLine, i32 nShowCm
 	ResizeDIBSection(g_backBuffer, 1280, 720);
 
 	// TODO: install assets eventuallly
-	const _TCHAR* iconPath = _T("C:\\dev\\TomatoGame\\assets\\icon\\tomato.ico");
-	auto iconBg			   = (HICON)(LoadImage(NULL, iconPath, IMAGE_ICON, 0, 0,
-											   LR_LOADFROMFILE | LR_DEFAULTSIZE | LR_SHARED));
+	const TCHAR* iconPath = _T("C:\\dev\\TomatoGame\\assets\\icon\\tomato.ico");
+	auto iconBg			  = (HICON)(LoadImage(NULL, iconPath, IMAGE_ICON, 0, 0,
+											  LR_LOADFROMFILE | LR_DEFAULTSIZE | LR_SHARED));
 
 	// console->setIcon(iconBg);
 
@@ -983,7 +983,7 @@ Main(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLine, i32 nShowCm
 	// mapping memory to file
 	for (i32 replayInd {}; replayInd < ArrayCount(state.replayBuffers); ++replayInd) {
 		ReplayBuffer& replayBuf = state.replayBuffers[replayInd];
-		_stprintf_s(replayBuf.fileName, sizeof(_TCHAR) * 512, _T("replay_%d_state.ti"), replayInd);
+		_stprintf_s(replayBuf.fileName, sizeof(TCHAR) * 512, _T("replay_%d_state.ti"), replayInd);
 
 		replayBuf.fileHandle = CreateFile(replayBuf.fileName, GENERIC_WRITE | GENERIC_READ, NULL,
 										  NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, 0);
@@ -1094,7 +1094,7 @@ Main(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLine, i32 nShowCm
 			if (sleepIsGranular) {
 				auto sleepMs = DWORD(1000.f * (targetSecondsPerFrame - secondsElapsedForFrame));
 				if (sleepMs > 0) {
-					Sleep(sleepMs);
+					::Sleep(sleepMs);
 				}
 			}
 			f32 testSecondsElapsedForFrame = GetSecondsElapsed(lastCounter, GetWallClock());
