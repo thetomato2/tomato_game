@@ -195,11 +195,6 @@ struct iVector2
 struct GameState
 {
 	i32 toneHz;
-	i32 xOffset;
-	i32 yOffset;
-
-	f32 fader;
-	f32 tSine;
 };
 
 // TODO: implement this

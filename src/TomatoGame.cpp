@@ -91,24 +91,14 @@ DrawRect(GameOffscreenBuffer& buf, f32 fMinX, f32 fMinY, f32 fMaxX, f32 fMaxY,
 }
 
 void
-GameOuputSound(GameSoundOutputBuffer& soundBuffer, i32 toneHz, f32 tSine)
+GameOuputSound(GameSoundOutputBuffer& soundBuffer)
 {
-	static f32 tempSine {};
-	i16 toneVolume = 3000;
-	i32 wavePeriod = soundBuffer.samplesPerSecond / toneHz;
-
-	i16* sampleOut = soundBuffer.samples;
+	// NOTE: outputs nothing atm
+	i16 sampleValue = 0;
+	i16* sampleOut	= soundBuffer.samples;
 	for (szt sampleIndex = 0; sampleIndex < soundBuffer.sampleCount; ++sampleIndex) {
-		f32 sineValue = sinf(tempSine * 0.75f);
-		// i16 sampleValue = (i16)(sineValue * toneVolume);
-		i16 sampleValue = 0;
-		*sampleOut++	= sampleValue;
-		*sampleOut++	= sampleValue;
-
-		tempSine += 2.0f * 3.14f * 1.0f / (f32)wavePeriod;
-		/*if (tSine > 2.f * util::pi32) {
-			tSine -= 2.f * util::pi32;
-		}*/
+		*sampleOut++ = sampleValue;
+		*sampleOut++ = sampleValue;
 	}
 }
 }  // namespace
@@ -117,7 +107,7 @@ extern "C" TOM_DLL_EXPORT
 GAME_GET_SOUND_SAMPLES(GameGetSoundSamples)
 {
 	auto* gameState = (GameState*)mem.permanentStorage;
-	GameOuputSound(soudBuf, gameState->toneHz, gameState->tSine);
+	GameOuputSound(soudBuf);
 }
 
 extern "C" TOM_DLL_EXPORT
@@ -138,11 +128,7 @@ GAME_UPDATE_AND_RENDER(GameUpdateAndRender)
 			mem.debug_platformFreeFileMem(file.contents);
 		}
 #endif
-		gameState.toneHz  = 256;
-		gameState.tSine	  = 0.f;
-		gameState.xOffset = 0;
-		gameState.yOffset = 0;
-		gameState.fader	  = 0;
+		gameState.toneHz = 256;
 
 		// TODO: this might be more appropriate in the platform layer
 		mem.isInitialized = true;
