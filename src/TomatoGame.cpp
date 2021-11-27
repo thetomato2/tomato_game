@@ -4,6 +4,11 @@ namespace tomato
 {
 namespace
 {
+inline i32
+Rndf32toi23(f32 value)
+{
+	return i32(value + 0.5f);
+}
 
 void
 Rainbow(Color& color, f32 frequency, f32 time)
@@ -61,35 +66,28 @@ ClearBuffer(GameOffscreenBuffer& buf, Color color)
 }
 
 void
-DrawFloor(GameOffscreenBuffer& buf, i32 floorY)
+DrawRect(GameOffscreenBuffer& buf, f32 fMinX, f32 fMinY, f32 fMaxX, f32 fMaxY,
+		 Color color = { 0xFFFF00FF })
 {
-	u8* row = (u8*)buf.mem + (floorY * buf.pitch) + (buf.bytesPerPix * buf.width);
-	for (i32 y = floorY; y < buf.height - 1; ++y) {
+	i32 minX = Rndf32toi23(fMinX);
+	i32 minY = Rndf32toi23(fMinY);
+	i32 maxX = Rndf32toi23(fMaxX);
+	i32 maxY = Rndf32toi23(fMaxY);
+
+	if (minX < 0) minX = 0;
+	if (minY < 0) minY = 0;
+	if (maxX > buf.width) maxX = buf.width;
+	if (maxY > buf.height) maxX = buf.height;
+
+	u8* row = ((u8*)buf.mem + minX * buf.bytesPerPix + minY * buf.pitch);
+
+	for (i32 y = minY; y < maxY; ++y) {
 		u32* pixel = (u32*)row;
-		for (i32 x = 0; x < buf.width; ++x) {
-			*pixel++ = 0xFF000000;
+		for (i32 x = minX; x < maxX; ++x) {
+			*pixel++ = color.argb;
 		}
 		row += buf.pitch;
 	}
-}
-
-void
-DrawSquare(GameOffscreenBuffer& buf, i32 posX, i32 posY, i32 size, Color color)
-{
-	u8* endOfBuf = (u8*)buf.mem + buf.bytesPerPix * buf.width + buf.pitch * buf.height;
-	for (i32 x = posX > 0 ? posX : 0; x < posX + size && x < buf.width; ++x) {
-		u8* pixel = ((u8*)buf.mem + x * buf.bytesPerPix + posY * buf.pitch);
-		for (i32 y = posY > 0 ? posY : size; y < posY + size && y < buf.height; ++y) {
-			*(u32*)pixel = color.argb;
-			pixel += buf.pitch;
-		}
-	}
-}
-
-void
-RenderPlayer(GameOffscreenBuffer& buf, Player& player)
-{
-	DrawSquare(buf, player.pos.x, player.pos.y, player.size, player.color);
 }
 
 void
@@ -146,17 +144,6 @@ GAME_UPDATE_AND_RENDER(GameUpdateAndRender)
 		gameState.yOffset = 0;
 		gameState.fader	  = 0;
 
-		gameState.gravity			 = -1.f;
-		gameState.player1.pos.x		 = 100;
-		gameState.player1.size		 = 20;
-		gameState.player1.isJump	 = false;
-		gameState.player1.velocity	 = 0.f;
-		gameState.floorY			 = videoBuf.height - 150;
-		gameState.player1.pos.y		 = gameState.floorY - gameState.player1.size;
-		gameState.player1.color.argb = 0xffffffff;
-
-		gameState.playerLast = gameState.player1;
-
 		// TODO: this might be more appropriate in the platform layer
 		mem.isInitialized = true;
 	}
@@ -165,8 +152,6 @@ GAME_UPDATE_AND_RENDER(GameUpdateAndRender)
 	f32 offsetXMul	= 1.f;
 	f32 playerSpeed = 8.f;
 
-	auto& player = gameState.player1;
-
 	GameControllerInput& controller0 = input.controllers[0];
 	if (controller0.isAnalog) {
 		// gameState.xOffset += i32(speed * (controller0.endLX));
@@ -174,55 +159,8 @@ GAME_UPDATE_AND_RENDER(GameUpdateAndRender)
 		gameState.toneHz =
 			256 + (i32)(64.0f * (controller0.endLY)) + (i32)(64.0f * (controller0.endLX));
 
-		player.pos.x += (i32)(playerSpeed * controller0.endLX);
 	} else {
 		// TODO: handle digital input
-	}
-
-	f32 keyboardSpeedMult = 1.f;
-	if (input.keyboard.A.endedDown)
-		gameState.player1.pos.x -= i32(playerSpeed * keyboardSpeedMult);
-	else if (input.keyboard.D.endedDown)
-		gameState.player1.pos.x += i32(playerSpeed * keyboardSpeedMult);
-
-	bool jumpPressed = controller0.button_A.endedDown || input.keyboard.Space.endedDown;
-
-	if (player.pos.y > gameState.floorY - player.size) {
-		player.pos.y	  = gameState.floorY - player.size;
-		gameState.yOffset = 0;
-		player.isJump	  = false;
-	}
-
-	if (player.isJump) {
-		player.pos.y -= (i32)player.velocity;
-		gameState.yOffset -= i32(player.velocity * offsetYMul);
-		player.velocity += gameState.gravity;
-	}
-
-	if (jumpPressed && !player.isJump) {
-		player.velocity = 20.f;
-		player.isJump	= true;
-	}
-
-	if (player.pos.x < i32((f32)videoBuf.width * 0.33f)) {
-		i32 xMove = i32((player.pos.x - gameState.playerLast.pos.x) * offsetXMul);
-		if (xMove < 0) {
-			gameState.xOffset += xMove;
-			player.pos.x = gameState.playerLast.pos.x;
-		}
-	}
-	if (player.pos.x > i32((f32)videoBuf.width * 0.66f)) {
-		i32 xMove = i32((player.pos.x - gameState.playerLast.pos.x) * offsetXMul);
-		if (xMove > 0) {
-			gameState.xOffset += xMove;
-			player.pos.x = gameState.playerLast.pos.x;
-		}
-	}
-
-	if (player.pos.y > gameState.floorY - player.size) {
-		player.pos.y	  = gameState.floorY - player.size;
-		gameState.yOffset = 0;
-		player.isJump	  = false;
 	}
 
 	local_persist f32 time {};
@@ -232,10 +170,8 @@ GAME_UPDATE_AND_RENDER(GameUpdateAndRender)
 	Rainbow(clearColor, 1.f, time);
 
 	ClearBuffer(videoBuf, clearColor);
-	DrawFloor(videoBuf, gameState.floorY);
-	RenderPlayer(videoBuf, player);
 
-	gameState.playerLast = player;
+	DrawRect(videoBuf, 10.0f, 10.0f, 30.0f, 30.0f);
 }
 
 #if 0

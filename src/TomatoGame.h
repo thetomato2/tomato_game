@@ -192,30 +192,14 @@ struct iVector2
 	i32 y;
 };
 
-struct Player
-{
-	iVector2 pos;
-	Color color;
-	i32 size;
-	bool isJump;
-	f32 velocity;
-};
-
 struct GameState
 {
-	static constexpr i32 nMouseTrails = 3;
-
 	i32 toneHz;
 	i32 xOffset;
 	i32 yOffset;
 
 	f32 fader;
 	f32 tSine;
-
-	Player player1;
-	Player playerLast;
-	i32 floorY;
-	f32 gravity;
 };
 
 // TODO: implement this
