@@ -5,28 +5,28 @@ namespace tomato::win32
 {
 struct WindowDimensions
 {
-	i32 width;
-	i32 height;
+	s32 width;
+	s32 height;
 };
 
 struct OffScreenBuffer
 {
 	BITMAPINFO info;
 	void* mem;
-	i32 width;
-	i32 height;
-	i32 pitch;
-	i32 bytPerPix;
+	s32 width;
+	s32 height;
+	s32 pitch;
+	s32 bytPerPix;
 };
 
 struct SoundOutput
 {
-	i32 samplesPerSec;
+	s32 samplesPerSec;
 	u32 runningSampleInd;
-	i32 bytPerSample;
+	s32 bytPerSample;
 	DWORD secondaryBufSz;
 	f32 tSine;
-	i32 latencySampleCnt;
+	s32 latencySampleCnt;
 };
 
 struct ReplayBuffer
@@ -42,10 +42,10 @@ struct Win32State
 	szt totalSz;
 
 	HANDLE recordingHandle;
-	i32 inputRecordingInd;
+	s32 inputRecordingInd;
 
 	HANDLE playBackHandle;
-	i32 inputPlayBackInd;
+	s32 inputPlayBackInd;
 
 	char exePath[MAX_PATH];
 

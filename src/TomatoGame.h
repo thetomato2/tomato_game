@@ -50,23 +50,23 @@ typedef DEBUG_PLATFORM_WRITE_ENTIRE_FILE(debug_Platform_Write_Entire_File);
 struct GameOffscreenBuffer
 {
 	void* mem;
-	i32 width;
-	i32 height;
-	i32 pitch;
-	i32 bytesPerPix;
+	s32 width;
+	s32 height;
+	s32 pitch;
+	s32 bytesPerPix;
 };
 
 struct GameSoundOutputBuffer
 {
-	i32 samplesPerSecond;
-	i32 sampleCount;
-	i16* samples;
-	i32 toneHz;
+	s32 samplesPerSecond;
+	s32 sampleCount;
+	s16* samples;
+	s32 toneHz;
 };
 
 struct GameButtonState
 {
-	i32 halfTransitionCount;
+	s32 halfTransitionCount;
 	bool endedDown;
 };
 
@@ -140,7 +140,7 @@ struct GameInput
 
 	static constexpr szt nMouseButtons = 3;
 	GameButtonState mouseButtons[3];
-	i32 mouseX, mouseY, mouseZ;
+	s32 mouseX, mouseY, mouseZ;
 	GameKeyboard keyboard;
 	GameControllerInput controllers[4];
 };
@@ -182,25 +182,25 @@ struct Color
 struct iVector2
 {
 	iVector2() : x(0), y(0) {}
-	iVector2(i32 x, i32 y)
+	iVector2(s32 x, s32 y)
 	{
 		this->x = x;
 		this->y = y;
 	}
 
-	i32 x;
-	i32 y;
+	s32 x;
+	s32 y;
 };
 
 struct GameState
 {
-	i32 toneHz;
+	s32 toneHz;
 };
 
 // TODO: implement this
 struct ThreadContext
 {
-	i32 placeHolder;
+	s32 placeHolder;
 };
 
 // NOTE: helpers

@@ -280,7 +280,7 @@ const TCHAR* g_gameDLLName = _T("TomatoGame.dll");
 
 OffScreenBuffer g_backBuffer;
 WindowDimensions g_winDims;
-i64 g_perfCountFrequency;
+s64 g_perfCountFrequency;
 
 // TODO: the sleep precision issue is keeping this above 1 frame... I think
 constexpr f32 framesOfAudioLatency = (1.1f / 30) * gameUpdateHz;
@@ -379,7 +379,7 @@ LoadXinput()
 }
 
 void
-InitWASAPI(i32 samplesPerSec, i32 bufSzInSamples)
+InitWASAPI(s32 samplesPerSec, s32 bufSzInSamples)
 {
 	if (FAILED(CoInitializeEx(0, COINIT_SPEED_OVER_MEMORY))) {
 		assert(false);
@@ -437,16 +437,16 @@ InitWASAPI(i32 samplesPerSec, i32 bufSzInSamples)
 
 	// Check if we got what we requested (better would to pass this value back
 	// as real buffer size)
-	assert(bufSzInSamples <= (i32)soundFrmCnt);
+	assert(bufSzInSamples <= (s32)soundFrmCnt);
 }
 void
-FillSoundBuffer(SoundOutput& soundOutput, i32 samplesToWrite, GameSoundOutputBuffer& sourceBuffer)
+FillSoundBuffer(SoundOutput& soundOutput, s32 samplesToWrite, GameSoundOutputBuffer& sourceBuffer)
 {
 	{
 		BYTE* soundBufDat;
 		if (SUCCEEDED(g_audioRenderClient->GetBuffer((UINT32)samplesToWrite, &soundBufDat))) {
-			i16* sourceSample = sourceBuffer.samples;
-			i16* destSample	  = (i16*)soundBufDat;
+			s16* sourceSample = sourceBuffer.samples;
+			s16* destSample	  = (s16*)soundBufDat;
 			for (szt i = 0; i < samplesToWrite; ++i) {
 				*destSample++ = *sourceSample++;
 				*destSample++ = *sourceSample++;
@@ -470,7 +470,7 @@ GetWindowDimension(HWND hWnd)
 }
 
 void
-ResizeDIBSection(OffScreenBuffer& buffer, i32 width, i32 height)
+ResizeDIBSection(OffScreenBuffer& buffer, s32 width, s32 height)
 {
 	// TODO: bulletproof this
 	// maybe don't free first, free after, then free first if that fails
@@ -489,15 +489,15 @@ ResizeDIBSection(OffScreenBuffer& buffer, i32 width, i32 height)
 	buffer.info.bmiHeader.biBitCount	= 32;
 	buffer.info.bmiHeader.biCompression = BI_RGB;
 
-	i32 bytesPerPixel	 = 4;
-	i32 bitmapMemorySize = (width * height) * bytesPerPixel;
+	s32 bytesPerPixel	 = 4;
+	s32 bitmapMemorySize = (width * height) * bytesPerPixel;
 	buffer.mem = VirtualAlloc(0, bitmapMemorySize, MEM_RESERVE | MEM_COMMIT, PAGE_READWRITE);
 
 	buffer.pitch = width * buffer.bytPerPix;
 }
 
 void
-DisplayBufferInWindow(HDC hdc, OffScreenBuffer& buffer, i32 x, i32 y, i32 width, i32 height)
+DisplayBufferInWindow(HDC hdc, OffScreenBuffer& buffer, s32 x, s32 y, s32 width, s32 height)
 {
 	// NOTE: this is matches the windows dimensions
 	StretchDIBits(hdc, 0, 0, width, height, 0, 0, g_winDims.width, g_winDims.height, buffer.mem,
@@ -553,7 +553,7 @@ DoControllerInput(GameInput& oldInput, GameInput& newInput, HWND hWnd)
 
 	// Controller
 	// poll the input device
-	i32 maxControllerCount = XUSER_MAX_COUNT;
+	s32 maxControllerCount = XUSER_MAX_COUNT;
 	if (maxControllerCount > 4) {
 		maxControllerCount = 4;
 	}
@@ -645,10 +645,10 @@ GetSecondsElapsed(LARGE_INTEGER start, LARGE_INTEGER end)
 
 #if 0
 void
-debug_DrawVerticalLine(OffScreenBuffer& backBuffer, i32 x, i32 top, i32 bot, u32 color)
+debug_DrawVerticalLine(OffScreenBuffer& backBuffer, s32 x, s32 top, s32 bot, u32 color)
 {
 	u8* pixel = (u8*)backBuffer.mem + x * backBuffer.bytPerPix + top * backBuffer.pitch;
-	for (i32 y = top; y < bot; ++y) {
+	for (s32 y = top; y < bot; ++y) {
 		*(u32*)pixel = color;
 		pixel += backBuffer.pitch;
 	}
@@ -660,18 +660,18 @@ debug_SyncDisplay(OffScreenBuffer& backBuffer, SoundOutput& soundOutput,
 				  szt debug_markerInd, f32 targetSecondsPerFrame)
 
 {
-	i32 padX = 16;
-	i32 padY = 16;
+	s32 padX = 16;
+	s32 padY = 16;
 
-	i32 topPlay	 = padY;
-	i32 botPlay	 = backBuffer.height - (backBuffer.height - 50 - topPlay);
-	i32 topWrite = botPlay;
-	i32 botWrite = backBuffer.height - (backBuffer.height - 50 - botPlay);
+	s32 topPlay	 = padY;
+	s32 botPlay	 = backBuffer.height - (backBuffer.height - 50 - topPlay);
+	s32 topWrite = botPlay;
+	s32 botWrite = backBuffer.height - (backBuffer.height - 50 - botPlay);
 	f32 c		 = f32(backBuffer.width) / f32(soundOutput.secondaryBufSz);
 
-	auto drawSoundBufferMarker = [&](DWORD cursor, i32 top, i32 bot, u32 color) {
+	auto drawSoundBufferMarker = [&](DWORD cursor, s32 top, s32 bot, u32 color) {
 		// assert(cursor < soundOutput.secondaryBufSz);
-		i32 x = padX + i32(c * (f32)cursor);
+		s32 x = padX + s32(c * (f32)cursor);
 		debug_DrawVerticalLine(backBuffer, x, top, bot, color);
 	};
 
@@ -701,7 +701,7 @@ GetReplayBuffer(Win32State& state, szt index)
 }
 
 void
-BeginRecordingInput(Win32State& state, i32 inputRecordingInd)
+BeginRecordingInput(Win32State& state, s32 inputRecordingInd)
 {
 	auto& replayBuf = GetReplayBuffer(state, inputRecordingInd);
 	if (replayBuf.memBlock) {
@@ -733,7 +733,7 @@ EndRecordingInput(Win32State& state)
 }
 
 void
-BeginInputPlayBack(Win32State& state, i32 inputPlaybackIndex)
+BeginInputPlayBack(Win32State& state, s32 inputPlaybackIndex)
 {
 	auto& replayBuf = GetReplayBuffer(state, inputPlaybackIndex);
 	if (replayBuf.memBlock) {
@@ -777,7 +777,7 @@ PlayBackInput(Win32State& state, GameInput& newInput)
 	if (ReadFile(state.playBackHandle, &newInput, sizeof(newInput), &bytesRead, 0)) {
 		if (bytesRead == 0) {
 			// NOTE: hit end of stream, go back to begining;
-			i32 playInd = state.inputPlayBackInd;
+			s32 playInd = state.inputPlayBackInd;
 			EndInputPlayback(state);
 			BeginInputPlayBack(state, playInd);
 			ReadFile(state.playBackHandle, &newInput, sizeof(newInput), &bytesRead, 0);
@@ -858,10 +858,10 @@ WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
 		case WM_PAINT: {
 			PAINTSTRUCT paint;
 			HDC deviceContext = BeginPaint(hWnd, &paint);
-			i32 x			  = paint.rcPaint.left;
-			i32 y			  = paint.rcPaint.right;
-			i32 height		  = paint.rcPaint.bottom - paint.rcPaint.top;
-			i32 width		  = paint.rcPaint.right - paint.rcPaint.left;
+			s32 x			  = paint.rcPaint.left;
+			s32 y			  = paint.rcPaint.right;
+			s32 height		  = paint.rcPaint.bottom - paint.rcPaint.top;
+			s32 width		  = paint.rcPaint.right - paint.rcPaint.left;
 			DisplayBufferInWindow(deviceContext, g_backBuffer, x, y, width, height);
 			PatBlt(deviceContext, x, y, width, height, WHITENESS);
 			EndPaint(hWnd, &paint);
@@ -878,8 +878,8 @@ WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
 // #START
 // ===============================================================================================
 
-i32
-Main(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLine, i32 nShowCmd)
+s32
+Main(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLine, s32 nShowCmd)
 {
 	// Init
 	auto console = new Console();
@@ -900,8 +900,8 @@ Main(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLine, i32 nShowCm
 
 	WNDCLASS wndCls = {};  // should init to 0n
 
-	constexpr i32 win_width	 = 960;
-	constexpr i32 win_height = 540;
+	constexpr s32 win_width	 = 960;
+	constexpr s32 win_height = 540;
 
 	ResizeDIBSection(g_backBuffer, win_width, win_height);
 
@@ -973,22 +973,22 @@ Main(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLine, i32 nShowCm
 	g_pause				   = false;
 	g_backBuffer.bytPerPix = 4;
 
-	i32 monitorRefreshRate = GetDeviceCaps(deviceContext, VREFRESH);
+	s32 monitorRefreshRate = GetDeviceCaps(deviceContext, VREFRESH);
 	printf("Monitor Refresh Rate: %d\n", monitorRefreshRate);
 
 	SoundOutput soundOutput	   = {};
 	soundOutput.samplesPerSec  = 48000;
-	soundOutput.bytPerSample   = sizeof(i16) * 2;
+	soundOutput.bytPerSample   = sizeof(s16) * 2;
 	soundOutput.secondaryBufSz = soundOutput.samplesPerSec;
 	soundOutput.latencySampleCnt =
-		i32(framesOfAudioLatency * f32(soundOutput.samplesPerSec / (f32)gameUpdateHz));
+		s32(framesOfAudioLatency * f32(soundOutput.samplesPerSec / (f32)gameUpdateHz));
 
 	InitWASAPI(soundOutput.samplesPerSec, soundOutput.secondaryBufSz);
 	g_audioClient->Start();
 
 	// TODO: Pool with bitmap VirtualAlloc
-	i16* samples =
-		(i16*)VirtualAlloc(0, soundOutput.secondaryBufSz, MEM_RESERVE | MEM_COMMIT, PAGE_READWRITE);
+	s16* samples =
+		(s16*)VirtualAlloc(0, soundOutput.secondaryBufSz, MEM_RESERVE | MEM_COMMIT, PAGE_READWRITE);
 
 #ifdef TOM_INTERNAL
 	LPVOID baseAddress = (LPVOID)Terabytes((u64)2);
@@ -1013,7 +1013,7 @@ Main(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLine, i32 nShowCm
 		((u8*)gameMemory.permanentStorage + gameMemory.permanentStorageSize);
 
 	// mapping memory to file
-	for (i32 replayInd {}; replayInd < ArrayCount(state.replayBuffers); ++replayInd) {
+	for (s32 replayInd {}; replayInd < ArrayCount(state.replayBuffers); ++replayInd) {
 		ReplayBuffer& replayBuf = state.replayBuffers[replayInd];
 		_stprintf_s(replayBuf.fileName, sizeof(TCHAR) * 512, _T("replay_%d_state.ti"), replayInd);
 
@@ -1076,11 +1076,11 @@ Main(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLine, i32 nShowCm
 			printf("ERROR--> Failed to get audio latency\n");
 		}
 
-		i32 samplesToWrite = 0;
+		s32 samplesToWrite = 0;
 		UINT32 soundPadSz;
 		if (SUCCEEDED(g_audioClient->GetCurrentPadding(&soundPadSz))) {
-			i32 maxSampleCnt = i32(soundOutput.secondaryBufSz - soundPadSz);
-			samplesToWrite	 = i32(soundOutput.latencySampleCnt - soundPadSz);
+			s32 maxSampleCnt = s32(soundOutput.secondaryBufSz - soundPadSz);
+			samplesToWrite	 = s32(soundOutput.latencySampleCnt - soundPadSz);
 			if (samplesToWrite < 0) samplesToWrite = 0;
 			// assert(samplesToWrite < maxSampleCnt);
 		}
@@ -1144,11 +1144,11 @@ Main(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLine, i32 nShowCm
 #if 0
 
 		// this draws a a line based on the curretn fps
-		static i32 frmCnt {};
-		static i32 x;
+		static s32 frmCnt {};
+		static s32 x;
 
 		++frmCnt;
-		if (!g_pause) x = i32((f32(frmCnt % 30) / 30.f) * f32(g_backBuffer.width));
+		if (!g_pause) x = s32((f32(frmCnt % 30) / 30.f) * f32(g_backBuffer.width));
 		debug_DrawVerticalLine(g_backBuffer, x, 10, 50, 0xFFFFFFFF);
 #endif
 
@@ -1226,7 +1226,7 @@ wWinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _In_ LPWSTR
 	HRESULT hr = CoInitializeEx(nullptr, COINITBASE_MULTITHREADED);
 	if (FAILED(hr)) return 1;
 
-	i32 ecode = tomato::win32::Main(hInstance, hPrevInstance, lpCmdLine, nCmdShow);
+	s32 ecode = tomato::win32::Main(hInstance, hPrevInstance, lpCmdLine, nCmdShow);
 
 	CoUninitialize();
 

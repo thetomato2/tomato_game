@@ -4,10 +4,10 @@ namespace tomato
 {
 namespace
 {
-inline i32
+[[nodiscard]] s32
 Rndf32toi23(f32 value)
 {
-	return i32(value + 0.5f);
+	return s32(value + 0.5f);
 }
 
 void
@@ -52,13 +52,13 @@ Rainbow(Color& color, f32 frequency, f32 time)
 void
 ClearBuffer(GameOffscreenBuffer& buf, Color color)
 {
-	i32 width  = buf.width;
-	i32 height = buf.height;
+	s32 width  = buf.width;
+	s32 height = buf.height;
 
 	u8* row = (u8*)buf.mem;
-	for (i32 y = 0; y < height; ++y) {
+	for (s32 y = 0; y < height; ++y) {
 		u32* pixel = (u32*)row;
-		for (i32 x = 0; x < width; ++x) {
+		for (s32 x = 0; x < width; ++x) {
 			*pixel++ = color.argb;
 		}
 		row += buf.pitch;
@@ -69,10 +69,10 @@ void
 DrawRect(GameOffscreenBuffer& buf, f32 fMinX, f32 fMinY, f32 fMaxX, f32 fMaxY,
 		 Color color = { 0xFFFF00FF })
 {
-	i32 minX = Rndf32toi23(fMinX);
-	i32 minY = Rndf32toi23(fMinY);
-	i32 maxX = Rndf32toi23(fMaxX);
-	i32 maxY = Rndf32toi23(fMaxY);
+	s32 minX = Rndf32toi23(fMinX);
+	s32 minY = Rndf32toi23(fMinY);
+	s32 maxX = Rndf32toi23(fMaxX);
+	s32 maxY = Rndf32toi23(fMaxY);
 
 	if (minX < 0) minX = 0;
 	if (minY < 0) minY = 0;
@@ -81,9 +81,9 @@ DrawRect(GameOffscreenBuffer& buf, f32 fMinX, f32 fMinY, f32 fMaxX, f32 fMaxY,
 
 	u8* row = ((u8*)buf.mem + minX * buf.bytesPerPix + minY * buf.pitch);
 
-	for (i32 y = minY; y < maxY; ++y) {
+	for (s32 y = minY; y < maxY; ++y) {
 		u32* pixel = (u32*)row;
-		for (i32 x = minX; x < maxX; ++x) {
+		for (s32 x = minX; x < maxX; ++x) {
 			*pixel++ = color.argb;
 		}
 		row += buf.pitch;
@@ -94,8 +94,8 @@ void
 GameOuputSound(GameSoundOutputBuffer& soundBuffer)
 {
 	// NOTE: outputs nothing atm
-	i16 sampleValue = 0;
-	i16* sampleOut	= soundBuffer.samples;
+	s16 sampleValue = 0;
+	s16* sampleOut	= soundBuffer.samples;
 	for (szt sampleIndex = 0; sampleIndex < soundBuffer.sampleCount; ++sampleIndex) {
 		*sampleOut++ = sampleValue;
 		*sampleOut++ = sampleValue;
@@ -140,10 +140,10 @@ GAME_UPDATE_AND_RENDER(GameUpdateAndRender)
 
 	GameControllerInput& controller0 = input.controllers[0];
 	if (controller0.isAnalog) {
-		// gameState.xOffset += i32(speed * (controller0.endLX));
-		// gameState.yOffset += i32(speed * (controller0.endLY));
+		// gameState.xOffset += s32(speed * (controller0.endLX));
+		// gameState.yOffset += s32(speed * (controller0.endLY));
 		gameState.toneHz =
-			256 + (i32)(64.0f * (controller0.endLY)) + (i32)(64.0f * (controller0.endLX));
+			256 + (s32)(64.0f * (controller0.endLY)) + (s32)(64.0f * (controller0.endLX));
 
 	} else {
 		// TODO: handle digital input
