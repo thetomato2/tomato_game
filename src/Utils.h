@@ -59,23 +59,6 @@ CatStrings(const char* left, const char* right, char* out)
 
 namespace win32
 {
-// TODO: pull out std::string
-#if 0
-static std::wstring TranslateHRESULT(HRESULT hr) noexcept
-{
-	wchar_t* msgBuf	   = nullptr;
-	const DWORD msgLen = FormatMessageW(
-		FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
-		nullptr, hr, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), reinterpret_cast<LPWSTR>(&msgBuf),
-		0, nullptr);
-	if (msgLen == 0) {
-		return L"Unidentified error code";
-	}
-	std::wstring errorString = msgBuf;
-	LocalFree(msgBuf);
-	return errorString;
-}
-#endif
 
 // Convert a wide Unicode string to an UTF8 string
 inline szt

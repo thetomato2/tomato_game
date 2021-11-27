@@ -16,7 +16,7 @@ DEBUG_PLATFORM_READ_ENTIRE_FILE(debug_PlatformReadEntireFile)
 	debug_ReadFileResult file = {};
 
 	HANDLE fileHandle =
-		CreateFile(fileName, GENERIC_READ, 0, 0, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, 0);
+		CreateFileA(fileName, GENERIC_READ, 0, 0, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, 0);
 	if (fileHandle != INVALID_HANDLE_VALUE) {
 		LARGE_INTEGER fileSize;
 		if (GetFileSizeEx(fileHandle, &fileSize)) {
@@ -845,7 +845,7 @@ WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
 	switch (msg) {
 		case WM_SIZE: {
 			g_winDims = GetWindowDimension(hWnd);
-			ResizeDIBSection(g_backBuffer, g_winDims.width, g_winDims.height);
+			// ResizeDIBSection(g_backBuffer, g_winDims.width, g_winDims.height);
 		} break;
 		case WM_DESTROY: {
 			g_isRunning = false;
@@ -900,7 +900,10 @@ Main(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLine, i32 nShowCm
 
 	WNDCLASS wndCls = {};  // should init to 0n
 
-	ResizeDIBSection(g_backBuffer, 1280, 720);
+	constexpr i32 win_width	 = 960;
+	constexpr i32 win_height = 540;
+
+	ResizeDIBSection(g_backBuffer, win_width, win_height);
 
 	// TODO: install assets eventuallly
 	const TCHAR* iconPath = _T("C:\\dev\\TomatoGame\\assets\\icon\\tomato.ico");
@@ -921,15 +924,44 @@ Main(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLine, i32 nShowCm
 		return 0;
 	}
 
-	HWND hWnd = CreateWindowEx(0, wndCls.lpszClassName, _T("TomatoGame"),
-							   WS_OVERLAPPEDWINDOW | WS_VISIBLE, CW_USEDEFAULT, CW_USEDEFAULT,
-							   CW_USEDEFAULT, CW_USEDEFAULT, nullptr, nullptr, hInstance, nullptr);
+	// DWORD dwStyle = WS_OVERLAPPEDWINDOW | WS_VISIBLE;
+	DWORD dwStyle = WS_OVERLAPPED | WS_MINIMIZEBOX | WS_SYSMENU;
+
+	RECT wr;
+	wr.left	  = 100;
+	wr.top	  = 100;
+	wr.right  = win_width + wr.left;
+	wr.bottom = win_height + wr.top;
+
+	if (AdjustWindowRect(&wr, dwStyle, false) == 0) {
+		printf("ERROR--> Failed to adjust window rect");
+		assert(false);
+	}
+
+	HWND hWnd = CreateWindowEx(0, wndCls.lpszClassName, _T("TomatoGame"), dwStyle, CW_USEDEFAULT,
+							   CW_USEDEFAULT, wr.right - wr.left, wr.bottom - wr.top, NULL, NULL,
+							   hInstance, NULL);
 
 	if (!hWnd) {
 		printf("Failed to create window!\n");
 		assert(hWnd);
 		return 0;
 	}
+
+	::ShowWindow(hWnd, SW_SHOWNORMAL);
+
+	HRESULT hr;
+
+	hr = GetLastError();
+
+	// BOOL fOK;
+	// TCHAR msgBuf[128];
+	// fOK = FormatMessage(
+	// 	FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
+	// 	NULL, hr, 0, (PTSTR)&msgBuf, 0, NULL);
+	// // if (!fOK) msgBuf = _T("Failed to format Message!");
+	// _tprintf(TEXT("%d\t%s\n"), hr, msgBuf);
+	// LocalFree(msgBuf);
 
 	// NOTE: Set the windows schedule granularity to 1ms
 	// so sleep will be more granular
@@ -998,9 +1030,10 @@ Main(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLine, i32 nShowCm
 		assert(replayBuf.memBlock);
 	}
 
-	GameInput input[2]	= {};
-	GameInput& newInput = input[0];
-	GameInput& oldInput = input[1];
+	GameInput input[2]		 = {};
+	GameInput& newInput		 = input[0];
+	GameInput& oldInput		 = input[1];
+	newInput.secondsPerFrame = targetSecondsPerFrame;
 
 #ifdef TOM_INTERNAL
 	debug_SoundTimeMarker debug_markerArr[gameUpdateHz / 2] {};
@@ -1021,6 +1054,7 @@ Main(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLine, i32 nShowCm
 	while (g_isRunning) {
 		DoControllerInput(oldInput, newInput, hWnd);
 		ProcessPendingMSG(state, newInput);
+		newInput.secondsPerFrame = targetSecondsPerFrame;
 
 		auto dllWriteTime = GetLastWritTime(g_gameDLLName);
 		if (CompareFileTime(&dllWriteTime, &gameCode.lastWriteTimeDLL)) {

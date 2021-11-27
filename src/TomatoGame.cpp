@@ -4,8 +4,48 @@ namespace tomato
 {
 namespace
 {
+
 void
-RenderWeirdGradient(GameOffscreenBuffer& buf, i32 xOffset, i32 yOffset)
+Rainbow(Color& color, f32 frequency, f32 time)
+{
+	float f = (float)sin(time * frequency) / 2.0f + 0.5f;
+
+	float a = (1.0f - f) / 0.2f;
+	float x = floorf(a);
+	float y = floorf(255.0f * (a - x));
+	f32 red, green, blue;
+
+	if (x == 0.0f) {
+		red	  = 255.0f;
+		green = y;
+		blue  = 0;
+	} else if (x == 1.0f) {
+		red	  = 255.0f - y;
+		green = 255.0f;
+		blue  = 0;
+	} else if (x == 2.0f) {
+		red	  = 0.0f;
+		green = 255.0f;
+		blue  = y;
+	} else if (x == 3.0f) {
+		red	  = 0.0f;
+		green = 255.0f - y;
+		blue  = 255.0f;
+	} else if (x == 4.0f) {
+		red	  = y;
+		green = 0.0f;
+		blue  = 255.0f;
+	} else if (x == 5.0f) {
+		red	  = 255.0f;
+		green = 0.0f;
+		blue  = 255.0f;
+	}
+
+	color.argb = (0xFF << 24) | ((u8)red << 16) | ((u8)green << 8) | ((u8)blue);
+}
+
+void
+ClearBuffer(GameOffscreenBuffer& buf, Color color)
 {
 	i32 width  = buf.width;
 	i32 height = buf.height;
@@ -14,16 +54,7 @@ RenderWeirdGradient(GameOffscreenBuffer& buf, i32 xOffset, i32 yOffset)
 	for (i32 y = 0; y < height; ++y) {
 		u32* pixel = (u32*)row;
 		for (i32 x = 0; x < width; ++x) {
-			/*					  1  2  3  4
-					pixel in mem: 00 00 00 00 BB GG RR xx
-					0x xxRRGGBB
-			*/
-
-			u8 blue	 = x + xOffset;
-			u8 green = y + yOffset;
-			u8 red	 = 0;
-
-			*pixel++ = (red << 16) | (green << 8) | blue;
+			*pixel++ = color.argb;
 		}
 		row += buf.pitch;
 	}
@@ -49,7 +80,7 @@ DrawSquare(GameOffscreenBuffer& buf, i32 posX, i32 posY, i32 size, Color color)
 	for (i32 x = posX > 0 ? posX : 0; x < posX + size && x < buf.width; ++x) {
 		u8* pixel = ((u8*)buf.mem + x * buf.bytesPerPix + posY * buf.pitch);
 		for (i32 y = posY > 0 ? posY : size; y < posY + size && y < buf.height; ++y) {
-			*(u32*)pixel = color.bgra;
+			*(u32*)pixel = color.argb;
 			pixel += buf.pitch;
 		}
 	}
@@ -70,8 +101,9 @@ GameOuputSound(GameSoundOutputBuffer& soundBuffer, i32 toneHz, f32 tSine)
 
 	i16* sampleOut = soundBuffer.samples;
 	for (szt sampleIndex = 0; sampleIndex < soundBuffer.sampleCount; ++sampleIndex) {
-		f32 sineValue	= sinf(tempSine * 0.75f);
-		i16 sampleValue = (i16)(sineValue * toneVolume);
+		f32 sineValue = sinf(tempSine * 0.75f);
+		// i16 sampleValue = (i16)(sineValue * toneVolume);
+		i16 sampleValue = 0;
 		*sampleOut++	= sampleValue;
 		*sampleOut++	= sampleValue;
 
@@ -121,13 +153,9 @@ GAME_UPDATE_AND_RENDER(GameUpdateAndRender)
 		gameState.player1.velocity	 = 0.f;
 		gameState.floorY			 = videoBuf.height - 150;
 		gameState.player1.pos.y		 = gameState.floorY - gameState.player1.size;
-		gameState.player1.color.bgra = 0xffffffff;
+		gameState.player1.color.argb = 0xffffffff;
 
 		gameState.playerLast = gameState.player1;
-
-		gameState.mouseTrails[0].color.bgra = 0xffff0000;
-		gameState.mouseTrails[1].color.bgra = 0xff00ff00;
-		gameState.mouseTrails[2].color.bgra = 0xff0000ff;
 
 		// TODO: this might be more appropriate in the platform layer
 		mem.isInitialized = true;
@@ -197,29 +225,17 @@ GAME_UPDATE_AND_RENDER(GameUpdateAndRender)
 		player.isJump	  = false;
 	}
 
-	RenderWeirdGradient(videoBuf, gameState.xOffset, gameState.yOffset);
+	local_persist f32 time {};
+	time += input.secondsPerFrame * 0.2f;
+
+	Color clearColor;
+	Rainbow(clearColor, 1.f, time);
+
+	ClearBuffer(videoBuf, clearColor);
 	DrawFloor(videoBuf, gameState.floorY);
 	RenderPlayer(videoBuf, player);
 
 	gameState.playerLast = player;
-
-	for (szt curMsBut {}; curMsBut < GameInput::nMouseButtons; ++curMsBut) {
-		if (input.mouseButtons[curMsBut].endedDown) {
-			i32 mouseSz	   = 10;
-			i32 x		   = input.mouseX + ((i32)curMsBut * 20);
-			auto& curTrail = gameState.mouseTrails[curMsBut];
-			DrawSquare(videoBuf, x, input.mouseY, mouseSz, curTrail.color);
-			curTrail.trails[curTrail.curInd].x = x;
-			curTrail.trails[curTrail.curInd].y = input.mouseY;
-			++curTrail.curInd;
-
-			if (curTrail.curInd == MouseTrails::nTrails) curTrail.curInd = 0;
-			for (szt i {}; i < MouseTrails::nTrails; ++i) {
-				DrawSquare(videoBuf, curTrail.trails[i].x, curTrail.trails[i].y, mouseSz,
-						   curTrail.color);
-			}
-		}
-	}
 }
 
 #if 0

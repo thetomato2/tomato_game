@@ -136,12 +136,12 @@ struct GameKeyboard
 
 struct GameInput
 {
+	f32 secondsPerFrame;
+
 	static constexpr szt nMouseButtons = 3;
 	GameButtonState mouseButtons[3];
 	i32 mouseX, mouseY, mouseZ;
-
 	GameKeyboard keyboard;
-
 	GameControllerInput controllers[4];
 };
 
@@ -163,16 +163,18 @@ struct GameMemory
 
 struct Color
 {
-	Color() : bgra(0xFFFFFFFF) {}
+	Color() : argb(0xFFFFFFFF) {}
+	Color(u32 color) : argb(color) {}
+
 	union
 	{
-		u32 bgra;
+		u32 argb;
 		struct
 		{
-			u8 b;
-			u8 g;
-			u8 r;
 			u8 a;
+			u8 r;
+			u8 g;
+			u8 b;
 		};
 	};
 };
@@ -199,14 +201,6 @@ struct Player
 	f32 velocity;
 };
 
-struct MouseTrails
-{
-	static constexpr szt nTrails = 50;
-	iVector2 trails[nTrails];
-	szt curInd;
-	Color color;
-};
-
 struct GameState
 {
 	static constexpr i32 nMouseTrails = 3;
@@ -222,8 +216,6 @@ struct GameState
 	Player playerLast;
 	i32 floorY;
 	f32 gravity;
-
-	MouseTrails mouseTrails[nMouseTrails];
 };
 
 // TODO: implement this
