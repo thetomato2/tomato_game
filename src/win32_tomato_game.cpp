@@ -229,7 +229,7 @@ constexpr f32 target_frames_per_second = 1.0f / (f32)game_update_hertz;
 
 bool g_is_running;
 bool g_pause;
-const TCHAR* g_game_DLL_name = _T("TomatoGame.dll");
+const TCHAR* g_game_DLL_name = _T("tomato_game.dll");
 
 Off_screen_buffer g_back_buffer;
 Window_dimensions g_window_dimensions;
@@ -496,18 +496,18 @@ do_controller_input(Game_input& old_input, Game_input& new_input, HWND hWnd)
 
 	// keyboard
 	//
-	process_keyboard_message(new_input.keyboard.A, ::GetKeyState(Keys::a) & (1 << 15));
-	process_keyboard_message(new_input.keyboard.D, ::GetKeyState(Keys::d) & (1 << 15));
-	process_keyboard_message(new_input.keyboard.S, ::GetKeyState(Keys::d) & (1 << 15));
-	process_keyboard_message(new_input.keyboard.W, ::GetKeyState(Keys::w) & (1 << 15));
-	process_keyboard_message(new_input.keyboard.Space, ::GetKeyState(Keys::space) & (1 << 15));
-	process_keyboard_message(new_input.keyboard.LShift,
+	process_keyboard_message(new_input.keyboard.w, ::GetKeyState(Keys::w) & (1 << 15));
+	process_keyboard_message(new_input.keyboard.a, ::GetKeyState(Keys::a) & (1 << 15));
+	process_keyboard_message(new_input.keyboard.s, ::GetKeyState(Keys::s) & (1 << 15));
+	process_keyboard_message(new_input.keyboard.d, ::GetKeyState(Keys::d) & (1 << 15));
+	process_keyboard_message(new_input.keyboard.p, ::GetKeyState(Keys::p) & (1 << 15));
+	process_keyboard_message(new_input.keyboard.d1, ::GetKeyState(Keys::d1) & (1 << 15));
+	process_keyboard_message(new_input.keyboard.d2, ::GetKeyState(Keys::d2) & (1 << 15));
+	process_keyboard_message(new_input.keyboard.d3, ::GetKeyState(Keys::d3) & (1 << 15));
+	process_keyboard_message(new_input.keyboard.d4, ::GetKeyState(Keys::d4) & (1 << 15));
+	process_keyboard_message(new_input.keyboard.space, ::GetKeyState(Keys::space) & (1 << 15));
+	process_keyboard_message(new_input.keyboard.left_shift,
 							 ::GetKeyState(Keys::left_shift) & (1 << 15));
-	process_keyboard_message(new_input.keyboard.P, ::GetKeyState(Keys::p) & (1 << 15));
-	process_keyboard_message(new_input.keyboard.D1, ::GetKeyState(Keys::d1) & (1 << 15));
-	process_keyboard_message(new_input.keyboard.D2, ::GetKeyState(Keys::d2) & (1 << 15));
-	process_keyboard_message(new_input.keyboard.D3, ::GetKeyState(Keys::d3) & (1 << 15));
-	process_keyboard_message(new_input.keyboard.D4, ::GetKeyState(Keys::d4) & (1 << 15));
 
 	// Controller
 	// poll the input device
@@ -855,7 +855,7 @@ Main(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLine, s32 nShowCm
 	resize_DIB_section(g_back_buffer, win_width, win_height);
 
 	// TODO: install assets eventuallly
-	const TCHAR* icon_path = _T("C:\\dev\\TomatoGame\\assets\\icon\\tomato.ico");
+	const TCHAR* icon_path = _T("C:\\dev\\tomato_game\\assets\\icon\\tomato.ico");
 	auto icon_big		   = (HICON)(LoadImage(NULL, icon_path, IMAGE_ICON, 0, 0,
 											   LR_LOADFROMFILE | LR_DEFAULTSIZE | LR_SHARED));
 
@@ -982,10 +982,9 @@ Main(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLine, s32 nShowCm
 		assert(replay_buffer.memory_block);
 	}
 
-	Game_input input[2]			= {};
-	Game_input& new_input		= input[0];
-	Game_input& old_input		= input[1];
-	new_input.seconds_per_frame = target_frames_per_second;
+	Game_input input[2]	  = {};
+	Game_input& new_input = input[0];
+	Game_input& old_input = input[1];
 
 #ifdef TOM_INTERNAL
 	Debug_sound_time_marker debug_marker_array[game_update_hertz / 2] {};
@@ -1006,7 +1005,8 @@ Main(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLine, s32 nShowCm
 	while (g_is_running) {
 		do_controller_input(old_input, new_input, hWnd);
 		process_pending_messages(state, new_input);
-		new_input.seconds_per_frame = target_frames_per_second;
+		// NOTE: this isn't calculated and needs to be for a varaible framerate
+		new_input.deltaTime = target_frames_per_second;
 
 		auto dllWriteTime = get_last_write_time(g_game_DLL_name);
 		if (CompareFileTime(&dllWriteTime, &game_code.last_write_time_DLL)) {

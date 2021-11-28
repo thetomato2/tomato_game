@@ -113,36 +113,36 @@ struct Game_controller_input
 	};
 };
 
-struct GameKeyboard
+struct Game_keyboard
 {
 	union
 	{
 		Game_button_state keys[11];
 		struct
 		{
-			Game_button_state W;
-			Game_button_state S;
-			Game_button_state A;
-			Game_button_state D;
-			Game_button_state Space;
-			Game_button_state LShift;
-			Game_button_state P;
-			Game_button_state D1;
-			Game_button_state D2;
-			Game_button_state D3;
-			Game_button_state D4;
+			Game_button_state w;
+			Game_button_state s;
+			Game_button_state a;
+			Game_button_state d;
+			Game_button_state space;
+			Game_button_state left_shift;
+			Game_button_state p;
+			Game_button_state d1;
+			Game_button_state d2;
+			Game_button_state d3;
+			Game_button_state d4;
 		};
 	};
 };
 
 struct Game_input
 {
-	f32 seconds_per_frame;
+	f32 deltaTime;
 
 	static constexpr szt mouse_button_count = 3;
 	Game_button_state mouse_buttons[3];
 	s32 mouse_x, mouse_y, mouse_z;
-	GameKeyboard keyboard;
+	Game_keyboard keyboard;
 	Game_controller_input controllers[4];
 };
 
@@ -193,9 +193,30 @@ struct Vector2_s32
 	s32 y;
 };
 
+struct Vector2_f32
+{
+	Vector2_f32() : x(0.f), y(0.f) {}
+	Vector2_f32(f32 x, f32 y)
+	{
+		this->x = x;
+		this->y = y;
+	}
+
+	f32 x;
+	f32 y;
+};
+
+struct Player
+{
+	Vector2_f32 pos;
+	Color_u32 color;
+	f32 height;
+	f32 width;
+};
+
 struct Game_state
 {
-	s32 tone_hertz;
+	Player player;
 };
 
 // TODO: implement this

@@ -134,7 +134,10 @@ GAME_UPDATE_AND_RENDER(game_update_and_render)
 			memory.debug_platform_free_file_memory(file.contents);
 		}
 #endif
-		game_state.tone_hertz = 256;
+		game_state.player.pos	 = { 100.f, 100.f };
+		game_state.player.width	 = 20.f;
+		game_state.player.height = 30.f;
+		game_state.player.color	 = { 0xFF'FF'FF'00 };
 
 		// TODO: this might be more appropriate in the platform layer
 		memory.is_initialized = true;
@@ -144,27 +147,32 @@ GAME_UPDATE_AND_RENDER(game_update_and_render)
 	if (controller_0.is_analog) {
 		// gameState.xOffset += s32(speed * (controller0.endLX));
 		// gameState.yOffset += s32(speed * (controller0.endLY));
-		game_state.tone_hertz = 256 + (s32)(64.0f * (controller_0.end_left_stick_y)) +
-								(s32)(64.0f * (controller_0.end_left_stick_x));
 
 	} else {
 		// TODO: handle digital input
 	}
 
-	u32 tile_map[9][16] = { { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0 },
-							{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 },
-							{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 },
-							{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0 },
-							{ 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0 },
-							{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 },
-							{ 0, 0, 0, 1, 1, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0 },
-							{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 },
-							{ 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 } };
+	local_persist f32 time {};
+	time += input.deltaTime * 0.2f;
+
+	Color_u32 clear_color { 0xFF000000 };
+
+	clear_buffer(video_buffer, clear_color);
+
+	u32 tile_map[9][16] = { { 1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1 },
+							{ 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1 },
+							{ 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1 },
+							{ 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 1 },
+							{ 1, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 1 },
+							{ 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1 },
+							{ 1, 0, 0, 1, 1, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 1 },
+							{ 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1 },
+							{ 1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1 } };
 
 	constexpr f32 upper_left_x = 10;
 	constexpr f32 upper_left_y = 10;
-	constexpr f32 tile_width   = 100;
-	constexpr f32 tile_height  = 100;
+	constexpr f32 tile_width   = 50;
+	constexpr f32 tile_height  = 50;
 
 	for (s32 row {}; row < 9; ++row) {
 		for (s32 col {}; col < 16; ++col) {
@@ -172,23 +180,37 @@ GAME_UPDATE_AND_RENDER(game_update_and_render)
 			Color_u32 tile_color;
 			if (tile) {
 				tile_color.argb = 0xFFDDDDDD;
+			} else {
+				tile_color.argb = 0xFF888888;
 			}
 
-			// FIXME: in progress
-			// f32 min_x = (f32)col * tile_color;
+			f32 min_x = upper_left_x + ((f32)col) * tile_width;
+			f32 min_y = upper_left_y + ((f32)row) * tile_height;
+			f32 max_x = min_x + tile_width;
+			f32 max_y = min_y + tile_height;
 
-			// draw_rect(video_buffer, f32 fMinX, f32 fMinY, f32 fMaxX, f32 fMaxY)
+			draw_rect(video_buffer, min_x, min_y, max_x, max_y, tile_color);
 		}
 	}
 
-	local_persist f32 time {};
-	time += input.seconds_per_frame * 0.2f;
+	static constexpr f32 player_speed = 128.f;
 
-	Color_u32 clear_color { 0xFFFF00FF };
+	auto& player = game_state.player;
 
-	clear_buffer(video_buffer, clear_color);
+	if (input.keyboard.w.ended_down) {
+		player.pos.y -= player_speed * input.deltaTime;
+	} else if (input.keyboard.s.ended_down) {
+		player.pos.y += player_speed * input.deltaTime;
+	}
 
-	draw_rect(video_buffer, 10.0f, 10.0f, 30.0f, 30.0f);
+	if (input.keyboard.d.ended_down) {
+		player.pos.x += player_speed * input.deltaTime;
+	} else if (input.keyboard.a.ended_down) {
+		player.pos.x -= player_speed * input.deltaTime;
+	}
+
+	draw_rect(video_buffer, player.pos.x, player.pos.y, player.pos.x + player.width,
+			  player.pos.y + player.height, player.color);
 }
 
 #if 0
