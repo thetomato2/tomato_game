@@ -13,10 +13,10 @@
 	#define TOM_ASSERT(x, ...)
 #endif
 
-#define Kilobytes(val) ((val)*1024)
-#define Megabytes(val) (Kilobytes(val) * 1024)
-#define Gigabytes(val) (Megabytes(val) * 1024)
-#define Terabytes(val) (Gigabytes(val) * 1024)
+#define KILOBYTES(val) ((val)*1024)
+#define MEGABYTES(val) (KILOBYTES(val) * 1024)
+#define GIGABYTES(val) (MEGABYTES(val) * 1024)
+#define TERABYTES(val) (GIGABYTES(val) * 1024)
 
 #define ArrayCount(Array) (sizeof((Array)) / sizeof((Array)[0]))
 

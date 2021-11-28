@@ -19,9 +19,25 @@ set(CMAKE_CXX_COMPILER clang++)
 set(CMAKE_CXX_COMPILER_TARGET ${triple})
 
 set (CMAKE_CXX_FLAGS "-fdeclspec -target x86_64-pc-windows-gnu")
-add_executable(Win32TomatoGame WIN32 "./src/Win32TomatoGame.cpp")
+add_executable(Win32TomatoGame WIN32
+    # "./src/tomato_framework.h"
+    # "./src/base_types.h"
+    # "./src/macros.h"
+    # "./src/console.h"
+    # "./src/utils.h"
+    # "./src/utils.cpp"
+    # "./src/tomato_game.h"
+    # "./src/tomato_game.cpp"
+    # "./src/win32_tomato_game.h"
+    "./src/win32_tomato_game.cpp"
+    )
 
+    # where win32 headers in Arch are located:
+    # ./x86_64-w64-mingw32/include/tchar.h
+    # ./i686-w64-mingw32/include/tchar.h
+    #
 set(WIN32_INCLUDE_DIRS
+    # "/usr/x86_w64-mingw32/include/"
     "/usr/i686-w64-mingw32/include/"
     "/mnt/c/dev/include/for_emacs/c++/"
     )

@@ -1,14 +1,15 @@
-#include "tompch.h"
-#include "Utils.h"
+#include "utils.h"
 
 namespace tomato::util
 {
-void DeletionQueue::pushFunction(std::function<void()>&& voidFunc)
+void
+DeletionQueue::pushFunction(std::function<void()>&& voidFunc)
 {
 	deletors_.push_back(voidFunc);
 }
 
-void DeletionQueue::flush()
+void
+DeletionQueue::flush()
 {
 	std::cout << "Flushing deletion queue...\n";
 
