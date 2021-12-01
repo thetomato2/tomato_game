@@ -2,15 +2,29 @@
 
 namespace tomato
 {
+namespace global
+{
+constexpr s32 tile_map_count_x = 16;
+constexpr s32 tile_map_count_y = 9;
+constexpr f32 upper_left_x	   = 10;
+constexpr f32 upper_left_y	   = 10;
+constexpr f32 tile_width	   = 50;
+constexpr f32 tile_height	   = 50;
+
+s32 current_corner {};
+Col_debug corners[4];
+
+}  // namespace global
+
 namespace
 {
-[[nodiscard]] s32
+[[nodiscard]] inline s32
 round_f32_to_s32(f32 value)
 {
 	return s32(value + 0.5f);
 }
 
-[[nodiscard]] u32
+[[nodiscard]] inline u32
 rnd_f32_to_u32(f32 value)
 {
 	return u32(value + 0.5f);
@@ -83,7 +97,7 @@ draw_rect(Game_offscreen_buffer& buffer, f32 f32_min_x, f32 f_min_y, f32 f32_max
 	if (min_x < 0) min_x = 0;
 	if (min_y < 0) min_y = 0;
 	if (max_x > buffer.width) max_x = buffer.width;
-	if (max_y > buffer.height) max_x = buffer.height;
+	if (max_y > buffer.height) max_y = buffer.height;
 
 	u8* row = ((u8*)buffer.memory + min_x * buffer.bytes_per_pixel + min_y * buffer.pitch);
 
@@ -94,6 +108,55 @@ draw_rect(Game_offscreen_buffer& buffer, f32 f32_min_x, f32 f_min_y, f32 f32_max
 		}
 		row += buffer.pitch;
 	}
+}
+
+struct Tile_map
+{
+	s32 count_x;
+	s32 count_y;
+
+	f32 upper_left_x;
+	f32 upper_left_y;
+	f32 tile_width;
+	f32 tile_height;
+
+	u32* tiles;
+};
+
+bool
+is_tile_empty(Tile_map& tile_map, f32 test_x, f32 test_y)
+{
+	bool is_empty { false };
+
+	s32 player_tile_x = s32((test_x - tile_map.upper_left_x) / tile_map.tile_width);
+	s32 player_tile_y = s32((test_y - tile_map.upper_left_y) / tile_map.tile_height);
+
+	if (player_tile_x >= 0 && player_tile_x < tile_map.count_x && player_tile_y >= 0 &&
+		player_tile_y < tile_map.count_y) {
+		auto tile_map_value = tile_map.tiles[player_tile_x * tile_map.count_x + player_tile_y];
+		is_empty			= (tile_map_value == 0);
+	}
+
+	global::corners[global::current_corner].pos.x	 = test_x;
+	global::corners[global::current_corner].pos.y	 = test_y;
+	global::corners[global::current_corner].is_valid = !is_empty;
+	++global::current_corner;
+	if (global::current_corner == 4) global::current_corner = 0;
+
+	return is_empty;
+}
+
+inline bool
+check_player_collsion(Tile_map& tile_map, Vector2_f32 player_pos, f32 player_width,
+					  f32 player_height)
+{
+	if (is_tile_empty(tile_map, player_pos.x, player_pos.y) &&
+		is_tile_empty(tile_map, player_pos.x + player_width, player_pos.y) &&
+		is_tile_empty(tile_map, player_pos.x, player_pos.y + player_height) &&
+		is_tile_empty(tile_map, player_pos.x + player_width, player_pos.y + player_height))
+		return true;
+
+	return false;
 }
 
 void
@@ -124,16 +187,12 @@ GAME_UPDATE_AND_RENDER(game_update_and_render)
 	// NOTE: cast to GameState ptr, dereference and cast to GameState reference
 	auto& game_state = (Game_state&)(*(Game_state*)memory.permanent_storage);
 
+	// ===============================================================================================
+	// #Initialization
+	// ===============================================================================================
 	if (!memory.is_initialized) {
 		const char* file_name = __FILE__;
 
-#ifdef TOM_INTERNAL
-		Debug_read_file_result file = memory.debug_platfrom_read_entire_file(file_name);
-		if (file.contents) {
-			memory.debug_platform_write_entire_file("test.txt", file.content_size, file.contents);
-			memory.debug_platform_free_file_memory(file.contents);
-		}
-#endif
 		game_state.player.pos	 = { 100.f, 100.f };
 		game_state.player.width	 = 20.f;
 		game_state.player.height = 30.f;
@@ -142,6 +201,32 @@ GAME_UPDATE_AND_RENDER(game_update_and_render)
 		// TODO: this might be more appropriate in the platform layer
 		memory.is_initialized = true;
 	}
+
+	// ===============================================================================================
+	// #Start
+	// ===============================================================================================
+
+	u32 tiles[global::tile_map_count_y][global::tile_map_count_x] = {
+		{ 1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1 },
+		{ 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1 },
+		{ 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1 },
+		{ 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 1 },
+		{ 1, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 1 },
+		{ 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1 },
+		{ 1, 0, 0, 1, 1, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 1 },
+		{ 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1 },
+		{ 1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1 }
+	};
+
+	Tile_map tile_map {};
+
+	tile_map.count_x	  = global::tile_map_count_x;
+	tile_map.count_y	  = global::tile_map_count_y;
+	tile_map.upper_left_x = global::upper_left_x;
+	tile_map.upper_left_y = global::upper_left_y;
+	tile_map.tile_width	  = global::tile_width;
+	tile_map.tile_height  = global::tile_height;
+	tile_map.tiles		  = (u32*)tiles;
 
 	Game_controller_input& controller_0 = input.controllers[0];
 	if (controller_0.is_analog) {
@@ -155,28 +240,37 @@ GAME_UPDATE_AND_RENDER(game_update_and_render)
 	local_persist f32 time {};
 	time += input.deltaTime * 0.2f;
 
-	Color_u32 clear_color { 0xFF000000 };
+	static constexpr f32 player_speed = 128.f;
 
+	auto& player		= game_state.player;
+	auto new_player_pos = player.pos;
+
+	if (input.keyboard.w.ended_down) {
+		new_player_pos.y -= player_speed * input.deltaTime;
+	} else if (input.keyboard.s.ended_down) {
+		new_player_pos.y += player_speed * input.deltaTime;
+	}
+
+	if (input.keyboard.d.ended_down) {
+		new_player_pos.x += player_speed * input.deltaTime;
+	} else if (input.keyboard.a.ended_down) {
+		new_player_pos.x -= player_speed * input.deltaTime;
+	}
+
+	if (check_player_collsion(tile_map, new_player_pos, player.width, player.height))
+		player.pos = new_player_pos;
+
+	// ===============================================================================================
+	// #Draw
+	// ===============================================================================================
+
+	// NOTE: *not* using PatBlt in the win32 layer
+	Color_u32 clear_color { 0xFF000000 };
 	clear_buffer(video_buffer, clear_color);
 
-	u32 tile_map[9][16] = { { 1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1 },
-							{ 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1 },
-							{ 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1 },
-							{ 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 1 },
-							{ 1, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 1 },
-							{ 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1 },
-							{ 1, 0, 0, 1, 1, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 1 },
-							{ 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1 },
-							{ 1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1 } };
-
-	constexpr f32 upper_left_x = 10;
-	constexpr f32 upper_left_y = 10;
-	constexpr f32 tile_width   = 50;
-	constexpr f32 tile_height  = 50;
-
-	for (s32 row {}; row < 9; ++row) {
-		for (s32 col {}; col < 16; ++col) {
-			u32 tile = tile_map[row][col];
+	for (s32 y {}; y < tile_map.count_y; ++y) {
+		for (s32 x {}; x < tile_map.count_x; ++x) {
+			u32 tile = tiles[y][x];
 			Color_u32 tile_color;
 			if (tile) {
 				tile_color.argb = 0xFFDDDDDD;
@@ -184,33 +278,30 @@ GAME_UPDATE_AND_RENDER(game_update_and_render)
 				tile_color.argb = 0xFF888888;
 			}
 
-			f32 min_x = upper_left_x + ((f32)col) * tile_width;
-			f32 min_y = upper_left_y + ((f32)row) * tile_height;
-			f32 max_x = min_x + tile_width;
-			f32 max_y = min_y + tile_height;
+			f32 min_x = tile_map.upper_left_x + ((f32)x) * tile_map.tile_width;
+			f32 min_y = tile_map.upper_left_y + ((f32)y) * tile_map.tile_height;
+			f32 max_x = min_x + tile_map.tile_width;
+			f32 max_y = min_y + tile_map.tile_height;
 
 			draw_rect(video_buffer, min_x, min_y, max_x, max_y, tile_color);
 		}
 	}
 
-	static constexpr f32 player_speed = 128.f;
-
-	auto& player = game_state.player;
-
-	if (input.keyboard.w.ended_down) {
-		player.pos.y -= player_speed * input.deltaTime;
-	} else if (input.keyboard.s.ended_down) {
-		player.pos.y += player_speed * input.deltaTime;
-	}
-
-	if (input.keyboard.d.ended_down) {
-		player.pos.x += player_speed * input.deltaTime;
-	} else if (input.keyboard.a.ended_down) {
-		player.pos.x -= player_speed * input.deltaTime;
-	}
-
 	draw_rect(video_buffer, player.pos.x, player.pos.y, player.pos.x + player.width,
 			  player.pos.y + player.height, player.color);
+
+	for (s32 i {}; i < 4; ++i) {
+		Color_u32 tile_color;
+		auto& corner = global::corners[i];
+
+		if (corner.is_valid)
+			tile_color = { 0xFF'FF'00'00 };	 // red
+		else
+			tile_color = { 0xFF'00'FF'00 };	 // green
+
+		draw_rect(video_buffer, corner.pos.x, corner.pos.y, corner.pos.x + 2, corner.pos.y + 2,
+				  tile_color);
+	}
 }
 
 #if 0

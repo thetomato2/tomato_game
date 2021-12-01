@@ -20,7 +20,7 @@ DEBUG_PLATFORM_READ_ENTIRE_FILE(Debug_platform_read_entire_file)
 	if (file_handle != INVALID_HANDLE_VALUE) {
 		LARGE_INTEGER fileSize;
 		if (GetFileSizeEx(file_handle, &fileSize)) {
-			u32 fileSize32 = safe_truncate_to_u64(fileSize.QuadPart);
+			u32 fileSize32 = safe_truncate_u32_to_u64(fileSize.QuadPart);
 			file.contents  = VirtualAlloc(0, fileSize32, MEM_RESERVE | MEM_COMMIT, PAGE_READWRITE);
 			if (file.contents) {
 				DWORD bytesRead;
@@ -455,8 +455,22 @@ resize_DIB_section(Off_screen_buffer& buffer, s32 width, s32 height)
 void
 display_buffer_in_window(HDC hdc, Off_screen_buffer& buffer, s32 x, s32 y, s32 width, s32 height)
 {
+	s32 offset_x = 10;
+	s32 offset_y = 10;
+
+#if 0
+	// NOTE: this causes screen flickering - out of sync with screen refersh rate?
+	::PatBlt(hdc, 0, 0, width, offset_y, BLACKNESS);
+	::PatBlt(hdc, 0, offset_y + buffer.height, width, height, BLACKNESS);
+	::PatBlt(hdc, 0, 0, offset_x, height, BLACKNESS);
+	::PatBlt(hdc, offset_x + buffer.width, 0, width, height, BLACKNESS);
+
+#endif
+	// s32 x_offset = 0;
+	// s32 y_offset = 0;
+
 	// NOTE: this is matches the windows dimensions
-	::StretchDIBits(hdc, 0, 0, width, height, 0, 0, g_window_dimensions.width,
+	::StretchDIBits(hdc, offset_x, offset_y, width, height, 0, 0, g_window_dimensions.width,
 					g_window_dimensions.height, buffer.memory, &buffer.info, DIB_RGB_COLORS,
 					SRCCOPY);
 }
@@ -812,7 +826,6 @@ WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
 			s32 height		   = paint.rcPaint.bottom - paint.rcPaint.top;
 			s32 width		   = paint.rcPaint.right - paint.rcPaint.left;
 			display_buffer_in_window(device_context, g_back_buffer, x, y, width, height);
-			PatBlt(device_context, x, y, width, height, WHITENESS);
 			EndPaint(hWnd, &paint);
 		} break;
 		default:

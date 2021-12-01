@@ -206,6 +206,12 @@ struct Vector2_f32
 	f32 y;
 };
 
+struct Col_debug
+{
+	Vector2_f32 pos;
+	bool is_valid;
+};
+
 struct Player
 {
 	Vector2_f32 pos;
@@ -227,7 +233,7 @@ struct Thread_context
 
 // NOTE: helpers
 inline u32
-safe_truncate_to_u64(u64 value)
+safe_truncate_u32_to_u64(u64 value)
 {
 	// TODO: defines for max values
 	assert(value <= 0xFFFFFFFF);

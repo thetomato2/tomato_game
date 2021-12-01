@@ -1,4 +1,4 @@
 
 pushd .\cl_build
-Win32TomatoGame.exe
+win32_tomato_game.exe
 popd
