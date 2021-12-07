@@ -1,4 +1,5 @@
-#pragma once
+#ifndef BASE_TYPES_H_
+#define BASE_TYPES_H_
 #include <stdint.h>
 
 using s8  = int8_t;
@@ -22,3 +23,5 @@ using wchar = wchar_t;
 #endif
 
 using bool32 = s32;
+
+#endif

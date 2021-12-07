@@ -1,4 +1,6 @@
-#pragma once
+#ifndef CONSOLE_H_
+#define CONSOLE_H_
+
 #include "tomato_framework.h"
 
 namespace tomato
@@ -26,7 +28,7 @@ public:
 		SetStdHandle(STD_INPUT_HANDLE, hConIn);
 	}
 
-	// NOTE: you shouldn't try to make more than one console window
+// NOTE: you shouldn't try to make more than one console window
 #ifndef MULTI_CONSOLE
 	Console(const Console&) = delete;
 	Console(Console&&)		= delete;
@@ -59,3 +61,4 @@ private:
 };
 
 }  // namespace tomato
+#endif

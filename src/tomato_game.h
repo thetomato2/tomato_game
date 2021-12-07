@@ -1,4 +1,6 @@
-#pragma once
+#ifndef TOMATO_GAME_H_
+#define TOMATO_GAME_H_
+
 #include "tomato_framework.h"
 
 #define TOM_WIN32
@@ -10,10 +12,6 @@
 
 namespace tomato
 {
-#define KILOBYTES(val) ((val)*1024)
-#define MEGABYTES(val) (KILOBYTES(val) * 1024)
-#define GIGABYTES(val) (MEGABYTES(val) * 1024)
-#define TERABYTES(val) (GIGABYTES(val) * 1024)
 
 // NOTE: services that the platform provides for the game
 #ifdef TOM_INTERNAL
@@ -248,4 +246,24 @@ typedef GAME_UPDATE_AND_RENDER(game_update_and_render_stub);
 #define GAME_GET_SOUND_SAMPLES(name) \
 	void name(Thread_context thread, Game_memory& memory, Game_sound_output_buffer& sound_buffer)
 typedef GAME_GET_SOUND_SAMPLES(game_get_sound_samples_stub);
+
+struct Tile_map
+{
+	s32 count_x;
+	s32 count_y;
+
+	f32 upper_left_x;
+	f32 upper_left_y;
+	f32 tile_width;
+	f32 tile_height;
+
+	u32* tiles;
+};
+
+struct World
+{
+	Tile_map* tile_maps;
+};
+
 }  // namespace tomato
+#endif

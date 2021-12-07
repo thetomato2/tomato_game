@@ -1,4 +1,5 @@
-#pragma once
+#ifndef MACROS_H_
+#define MACROS_H_
 
 #ifdef TOM_INTERNAL
 	#define TOM_ASSERT(x, ...)                                                            \
@@ -27,4 +28,6 @@
 		}
 #elif
 	#define Assert(expression)
+#endif
+
 #endif

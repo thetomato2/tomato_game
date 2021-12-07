@@ -1,4 +1,6 @@
-#pragma once
+#ifndef WIN32_TOMATO_GAME_H_
+#define WIN32_TOMATO_GAME_H_
+
 #include "tomato_game.h"
 
 namespace tomato::win32
@@ -68,3 +70,5 @@ debug_calculate_time_marker_count(const T size)
 	return size / 2;
 }
 }  // namespace tomato::win32
+
+#endif

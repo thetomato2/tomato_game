@@ -1,4 +1,6 @@
-#pragma once
+#ifndef UTILS_H_
+#define UTILS_H_
+
 #include "tomato_framework.h"
 
 namespace tomato::util
@@ -106,5 +108,6 @@ bounds(T in, T min, T max) noexcept
 
 	return in;
 }
-
 }  // namespace tomato::util
+
+#endif

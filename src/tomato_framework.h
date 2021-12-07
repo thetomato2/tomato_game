@@ -1,5 +1,5 @@
-#pragma once
-
+#ifndef TOMATO_FRAMEWORK_H_
+#define TOMATO_FRAMEWORK_H_
 // C
 #include <tchar.h>
 
@@ -62,3 +62,5 @@ using wchar_t = uint16_t;
 #include "macros.h"
 #include "utils.h"
 #include "console.h"
+
+#endif
