@@ -7,28 +7,28 @@ namespace tomato::win32
 {
 struct Window_dimensions
 {
-	s32 width;
-	s32 height;
+	i32 width;
+	i32 height;
 };
 
 struct Off_screen_buffer
 {
 	BITMAPINFO info;
 	void* memory;
-	s32 width;
-	s32 height;
-	s32 pitch;
-	s32 bytes_per_pixel;
+	i32 width;
+	i32 height;
+	i32 pitch;
+	i32 bytes_per_pixel;
 };
 
 struct Sound_output
 {
-	s32 samples_per_sec;
+	i32 samples_per_sec;
 	u32 running_sample_index;
-	s32 bytes_per_sample;
+	i32 bytes_per_sample;
 	DWORD secondary_buf_size;
 	f32 tSine;
-	s32 latency_sample_count;
+	i32 latency_sample_count;
 };
 
 struct Replay_buffer
@@ -44,10 +44,10 @@ struct Win32_state
 	szt total_size;
 
 	HANDLE recording_handle;
-	s32 input_recording_index;
+	i32 input_recording_index;
 
 	HANDLE playback_handle;
-	s32 input_playback_index;
+	i32 input_playback_index;
 
 	char exe_path[MAX_PATH];
 

@@ -4,25 +4,26 @@ namespace tomato
 {
 namespace global
 {
-constexpr s32 tile_map_count_x = 16;
-constexpr s32 tile_map_count_y = 9;
+constexpr i32 tile_map_count_x = 16;
+constexpr i32 tile_map_count_y = 9;
 constexpr f32 upper_left_x	   = 10;
 constexpr f32 upper_left_y	   = 10;
 constexpr f32 tile_width	   = 50;
 constexpr f32 tile_height	   = 50;
 constexpr bool grid_on		   = false;
+constexpr i32 world_tile_maps  = 2;
 
-s32 current_corner {};
+i32 current_corner {};
 Col_debug corners[4];
 
 }  // namespace global
 
 namespace
 {
-inline s32
-round_f32_to_s32(f32 value)
+inline i32
+round_f32_to_i32(f32 value)
 {
-	return s32(value + 0.5f);
+	return i32(value + 0.5f);
 }
 
 inline u32
@@ -73,13 +74,13 @@ generate_rainbow(Color_u32& color, f32 frequency, f32 time)
 void
 clear_buffer(Game_offscreen_buffer& buffer, Color_u32 color = { 0xFF'FF'00'FF })
 {
-	s32 width  = buffer.width;
-	s32 height = buffer.height;
+	i32 width  = buffer.width;
+	i32 height = buffer.height;
 
 	u8* row = (u8*)buffer.memory;
-	for (s32 y = 0; y < height; ++y) {
+	for (i32 y = 0; y < height; ++y) {
 		u32* pixel = (u32*)row;
-		for (s32 x = 0; x < width; ++x) {
+		for (i32 x = 0; x < width; ++x) {
 			*pixel++ = color.argb;
 		}
 		row += buffer.pitch;
@@ -90,10 +91,10 @@ void
 draw_rect(Game_offscreen_buffer& buffer, f32 f32_min_x, f32 f_min_y, f32 f32_max_x, f32 f32_max_y,
 		  Color_u32 color = { 0xFFFFFFFF })
 {
-	s32 min_x = round_f32_to_s32(f32_min_x);
-	s32 min_y = round_f32_to_s32(f_min_y);
-	s32 max_x = round_f32_to_s32(f32_max_x);
-	s32 max_y = round_f32_to_s32(f32_max_y);
+	i32 min_x = round_f32_to_i32(f32_min_x);
+	i32 min_y = round_f32_to_i32(f_min_y);
+	i32 max_x = round_f32_to_i32(f32_max_x);
+	i32 max_y = round_f32_to_i32(f32_max_y);
 
 	if (min_x < 0) min_x = 0;
 	if (min_y < 0) min_y = 0;
@@ -102,23 +103,29 @@ draw_rect(Game_offscreen_buffer& buffer, f32 f32_min_x, f32 f_min_y, f32 f32_max
 
 	u8* row = ((u8*)buffer.memory + min_x * buffer.bytes_per_pixel + min_y * buffer.pitch);
 
-	for (s32 y = min_y; y < max_y; ++y) {
+	for (i32 y = min_y; y < max_y; ++y) {
 		u32* pixel = (u32*)row;
-		for (s32 x = min_x; x < max_x; ++x) {
+		for (i32 x = min_x; x < max_x; ++x) {
 			*pixel++ = color.argb;
 		}
 		row += buffer.pitch;
 	}
 }
 
-u32
-GetTileMap(World& world, s32 tile_map_x, s32 tile_map_y)
+inline Tile_map*
+get_tile_map(World& world, i32 tile_map_x, i32 tile_map_y)
 {
-	return 0;
+	Tile_map* tile_map = nullptr;
+
+	if (tile_map_x >= 0 && tile_map_x < world.tile_map_count_x && tile_map_y >= 0 &&
+		tile_map_y < world.tile_map_count_y) {
+		tile_map = &world.tile_maps[tile_map_y * world.tile_map_count_x + tile_map_x];
+	}
+	return tile_map;
 }
 
 inline u32
-get_tile_value_unchecked(Tile_map& tile_map, s32 tile_x, s32 tile_y)
+get_tile_value_unchecked(Tile_map& tile_map, i32 tile_x, i32 tile_y)
 {
 	return tile_map.tiles[tile_y * tile_map.count_x + tile_x];
 }
@@ -128,8 +135,8 @@ is_tile_empty(Tile_map& tile_map, f32 test_x, f32 test_y)
 {
 	bool is_empty { false };
 
-	s32 player_tile_x = s32((test_x - tile_map.upper_left_x) / tile_map.tile_width);
-	s32 player_tile_y = s32((test_y - tile_map.upper_left_y) / tile_map.tile_height);
+	i32 player_tile_x = i32((test_x - tile_map.upper_left_x) / tile_map.tile_width);
+	i32 player_tile_y = i32((test_y - tile_map.upper_left_y) / tile_map.tile_height);
 
 	// printf("x: %d, y: %d", player_tile_x, player_tile_y);
 
@@ -169,8 +176,8 @@ void
 game_ouput_sound(Game_sound_output_buffer& sound_buffer)
 {
 	// NOTE: outputs nothing atm
-	s16 sample_value = 0;
-	s16* sampleOut	 = sound_buffer.samples;
+	i16 sample_value = 0;
+	i16* sampleOut	 = sound_buffer.samples;
 	for (szt sampleIndex = 0; sampleIndex < sound_buffer.sample_count; ++sampleIndex) {
 		*sampleOut++ = sample_value;
 		*sampleOut++ = sample_value;
@@ -261,34 +268,40 @@ GAME_UPDATE_AND_RENDER(game_update_and_render)
 		{ 1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1 }
 	};
 
-	Tile_map tile_maps[4] {};
+	World world {};
+	world.tile_map_count_x = global::world_tile_maps;
+	world.tile_map_count_y = global::world_tile_maps;
+	Tile_map tile_maps[global::world_tile_maps][global::world_tile_maps] {};
 
-	tile_maps[0].count_x	  = global::tile_map_count_x;
-	tile_maps[0].count_y	  = global::tile_map_count_y;
-	tile_maps[0].upper_left_x = global::upper_left_x;
-	tile_maps[0].upper_left_y = global::upper_left_y;
-	tile_maps[0].tile_width	  = global::tile_width;
-	tile_maps[0].tile_height  = global::tile_height;
-	tile_maps[0].tiles		  = (u32*)tiles_0;
+	tile_maps[0][0].count_x		 = global::tile_map_count_x;
+	tile_maps[0][0].count_y		 = global::tile_map_count_y;
+	tile_maps[0][0].upper_left_x = global::upper_left_x;
+	tile_maps[0][0].upper_left_y = global::upper_left_y;
+	tile_maps[0][0].tile_width	 = global::tile_width;
+	tile_maps[0][0].tile_height	 = global::tile_height;
+	tile_maps[0][0].tiles		 = (u32*)tiles_0;
 
-	tile_maps[1]	   = tile_maps[0];
-	tile_maps[1].tiles = (u32*)tiles_1;
+	tile_maps[0][1]		  = tile_maps[0][0];
+	tile_maps[0][1].tiles = (u32*)tiles_1;
 
-	tile_maps[2]	   = tile_maps[0];
-	tile_maps[2].tiles = (u32*)tiles_2;
+	tile_maps[1][0]		  = tile_maps[0][0];
+	tile_maps[1][0].tiles = (u32*)tiles_2;
 
-	tile_maps[3]	   = tile_maps[0];
-	tile_maps[3].tiles = (u32*)tiles_3;
+	tile_maps[1][1]		  = tile_maps[0][0];
+	tile_maps[1][1].tiles = (u32*)tiles_3;
 
-	Tile_map& cur_tile_map = tile_maps[0];
-
-	World world;
-	world.tile_maps = tile_maps;
+	world.tile_maps = tile_maps[0];
+	;
+	Tile_map* cur_tile_map =
+		get_tile_map(world, game_state.player_tile_map_x, game_state.player_tile_map_y);
+	if (!cur_tile_map) {
+		printf("Error-> Tile map is null!\n");
+	}
 
 	Game_controller_input& controller_0 = input.controllers[0];
 	if (controller_0.is_analog) {
-		// gameState.xOffset += s32(speed * (controller0.endLX));
-		// gameState.yOffset += s32(speed * (controller0.endLY));
+		// gameState.xOffset += i32(speed * (controller0.endLX));
+		// gameState.yOffset += i32(speed * (controller0.endLY));
 
 	} else {
 		// TODO: handle digital input
@@ -314,7 +327,7 @@ GAME_UPDATE_AND_RENDER(game_update_and_render)
 		new_player_pos.x -= player_speed * input.deltaTime;
 	}
 
-	if (check_player_collsion(cur_tile_map, new_player_pos, player.width, player.height))
+	if (check_player_collsion(*cur_tile_map, new_player_pos, player.width, player.height))
 		player.pos = new_player_pos;
 
 	// ===============================================================================================
@@ -325,9 +338,9 @@ GAME_UPDATE_AND_RENDER(game_update_and_render)
 	Color_u32 clear_color { 0xFF000000 };
 	clear_buffer(video_buffer, clear_color);
 
-	for (s32 y {}; y < cur_tile_map.count_y; ++y) {
-		for (s32 x {}; x < cur_tile_map.count_x; ++x) {
-			u32 tile = get_tile_value_unchecked(cur_tile_map, x, y);
+	for (i32 y {}; y < cur_tile_map->count_y; ++y) {
+		for (i32 x {}; x < cur_tile_map->count_x; ++x) {
+			u32 tile = get_tile_value_unchecked(*cur_tile_map, x, y);
 			Color_u32 tile_color;
 			if (tile) {
 				tile_color.argb = 0xFFDDDDDD;
@@ -335,10 +348,10 @@ GAME_UPDATE_AND_RENDER(game_update_and_render)
 				tile_color.argb = 0xFF888888;
 			}
 
-			f32 min_x = cur_tile_map.upper_left_x + ((f32)x) * cur_tile_map.tile_width;
-			f32 min_y = cur_tile_map.upper_left_y + ((f32)y) * cur_tile_map.tile_height;
-			f32 max_x = min_x + cur_tile_map.tile_width;
-			f32 max_y = min_y + cur_tile_map.tile_height;
+			f32 min_x = cur_tile_map->upper_left_x + ((f32)x) * cur_tile_map->tile_width;
+			f32 min_y = cur_tile_map->upper_left_y + ((f32)y) * cur_tile_map->tile_height;
+			f32 max_x = min_x + cur_tile_map->tile_width;
+			f32 max_y = min_y + cur_tile_map->tile_height;
 
 			draw_rect(video_buffer, min_x, min_y, max_x, max_y, tile_color);
 			if (global::grid_on) {
@@ -351,7 +364,7 @@ GAME_UPDATE_AND_RENDER(game_update_and_render)
 	draw_rect(video_buffer, player.pos.x, player.pos.y, player.pos.x + player.width,
 			  player.pos.y + player.height, player.color);
 
-	for (s32 i {}; i < 4; ++i) {
+	for (i32 i {}; i < 4; ++i) {
 		Color_u32 tile_color;
 		auto& corner = global::corners[i];
 

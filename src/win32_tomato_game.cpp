@@ -233,7 +233,7 @@ const TCHAR* g_game_DLL_name = _T("tomato_game.dll");
 
 Off_screen_buffer g_back_buffer;
 Window_dimensions g_window_dimensions;
-s64 g_performance_counter_frequency;
+i64 g_performance_counter_frequency;
 
 // TODO: the sleep precision issue is keeping this above 1 frame... I think
 constexpr f32 frames_of_audio_latency = (1.1f / 30) * game_update_hertz;
@@ -332,7 +332,7 @@ load_Xinput()
 }
 
 void
-init_WASAPI(s32 samples_per_second, s32 buffer_size_in_samples)
+init_WASAPI(i32 samples_per_second, i32 buffer_size_in_samples)
 {
 	if (FAILED(CoInitializeEx(0, COINIT_SPEED_OVER_MEMORY))) {
 		assert(false);
@@ -391,18 +391,18 @@ init_WASAPI(s32 samples_per_second, s32 buffer_size_in_samples)
 
 	// Check if we got what we requested (better would to pass this value back
 	// as real buffer size)
-	assert(buffer_size_in_samples <= (s32)soundFrmCnt);
+	assert(buffer_size_in_samples <= (i32)soundFrmCnt);
 }
 
 void
-fill_sound_buffer(Sound_output& soundOutput, s32 samplesToWrite,
+fill_sound_buffer(Sound_output& soundOutput, i32 samplesToWrite,
 				  Game_sound_output_buffer& sourceBuffer)
 {
 	{
 		BYTE* soundBufDat;
 		if (SUCCEEDED(g_audio_render_client->GetBuffer((UINT32)samplesToWrite, &soundBufDat))) {
-			s16* sourceSample = sourceBuffer.samples;
-			s16* destSample	  = (s16*)soundBufDat;
+			i16* sourceSample = sourceBuffer.samples;
+			i16* destSample	  = (i16*)soundBufDat;
 			for (szt i = 0; i < samplesToWrite; ++i) {
 				*destSample++ = *sourceSample++;
 				*destSample++ = *sourceSample++;
@@ -426,7 +426,7 @@ Get_window_dimensions(HWND hWnd)
 }
 
 void
-resize_DIB_section(Off_screen_buffer& buffer, s32 width, s32 height)
+resize_DIB_section(Off_screen_buffer& buffer, i32 width, i32 height)
 {
 	// TODO: bulletproof this
 	// maybe don't free first, free after, then free first if that fails
@@ -445,18 +445,18 @@ resize_DIB_section(Off_screen_buffer& buffer, s32 width, s32 height)
 	buffer.info.bmiHeader.biBitCount	= 32;
 	buffer.info.bmiHeader.biCompression = BI_RGB;
 
-	s32 bytes_per_pixel	   = 4;
-	s32 bitmap_memory_size = (width * height) * bytes_per_pixel;
+	i32 bytes_per_pixel	   = 4;
+	i32 bitmap_memory_size = (width * height) * bytes_per_pixel;
 	buffer.memory = VirtualAlloc(0, bitmap_memory_size, MEM_RESERVE | MEM_COMMIT, PAGE_READWRITE);
 
 	buffer.pitch = width * buffer.bytes_per_pixel;
 }
 
 void
-display_buffer_in_window(HDC hdc, Off_screen_buffer& buffer, s32 x, s32 y, s32 width, s32 height)
+display_buffer_in_window(HDC hdc, Off_screen_buffer& buffer, i32 x, i32 y, i32 width, i32 height)
 {
-	s32 offset_x = 10;
-	s32 offset_y = 10;
+	i32 offset_x = 10;
+	i32 offset_y = 10;
 
 #if 0
 	// NOTE: this causes screen flickering - out of sync with screen refersh rate?
@@ -525,7 +525,7 @@ do_controller_input(Game_input& old_input, Game_input& new_input, HWND hWnd)
 
 	// Controller
 	// poll the input device
-	s32 max_controller_count = XUSER_MAX_COUNT;
+	i32 max_controller_count = XUSER_MAX_COUNT;
 	if (max_controller_count > 4) {
 		max_controller_count = 4;
 	}
@@ -676,7 +676,7 @@ get_replay_buffer(Win32_state& state, szt index)
 }
 
 void
-begin_recording_input(Win32_state& state, s32 input_recording_index)
+begin_recording_input(Win32_state& state, i32 input_recording_index)
 {
 	auto& replay_buffer = get_replay_buffer(state, input_recording_index);
 	if (replay_buffer.memory_block) {
@@ -702,7 +702,7 @@ end_recording_input(Win32_state& state)
 }
 
 void
-begin_input_playback(Win32_state& state, s32 input_playback_index)
+begin_input_playback(Win32_state& state, i32 input_playback_index)
 {
 	auto& replay_buffer = get_replay_buffer(state, input_playback_index);
 	if (replay_buffer.memory_block) {
@@ -740,7 +740,7 @@ playback_input(Win32_state& state, Game_input& new_input)
 	if (ReadFile(state.playback_handle, &new_input, sizeof(new_input), &bytes_read, 0)) {
 		if (bytes_read == 0) {
 			// NOTE: hit end of stream, go back to begining;
-			s32 playback_index = state.input_playback_index;
+			i32 playback_index = state.input_playback_index;
 			end_input_playback(state);
 			begin_input_playback(state, playback_index);
 			ReadFile(state.playback_handle, &new_input, sizeof(new_input), &bytes_read, 0);
@@ -821,10 +821,10 @@ WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
 		case WM_PAINT: {
 			PAINTSTRUCT paint;
 			HDC device_context = BeginPaint(hWnd, &paint);
-			s32 x			   = paint.rcPaint.left;
-			s32 y			   = paint.rcPaint.right;
-			s32 height		   = paint.rcPaint.bottom - paint.rcPaint.top;
-			s32 width		   = paint.rcPaint.right - paint.rcPaint.left;
+			i32 x			   = paint.rcPaint.left;
+			i32 y			   = paint.rcPaint.right;
+			i32 height		   = paint.rcPaint.bottom - paint.rcPaint.top;
+			i32 width		   = paint.rcPaint.right - paint.rcPaint.left;
 			display_buffer_in_window(device_context, g_back_buffer, x, y, width, height);
 			EndPaint(hWnd, &paint);
 		} break;
@@ -840,8 +840,8 @@ WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
 // #START
 // ===============================================================================================
 
-s32
-Main(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLine, s32 nShowCmd)
+i32
+Main(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLine, i32 nShowCmd)
 {
 	// Init
 	auto console = new Console();
@@ -862,8 +862,8 @@ Main(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLine, s32 nShowCm
 
 	WNDCLASS window_class = {};	 // should init to 0n
 
-	static constexpr s32 win_width	= 960;
-	static constexpr s32 win_height = 540;
+	static constexpr i32 win_width	= 960;
+	static constexpr i32 win_height = 540;
 
 	resize_DIB_section(g_back_buffer, win_width, win_height);
 
@@ -935,21 +935,21 @@ Main(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLine, s32 nShowCm
 	g_pause						  = false;
 	g_back_buffer.bytes_per_pixel = 4;
 
-	s32 monitor_refresh_rate = GetDeviceCaps(device_context, VREFRESH);
+	i32 monitor_refresh_rate = GetDeviceCaps(device_context, VREFRESH);
 	printf("Monitor Refresh Rate: %d\n", monitor_refresh_rate);
 
 	Sound_output sound_output		= {};
 	sound_output.samples_per_sec	= 48000;
-	sound_output.bytes_per_sample	= sizeof(s16) * 2;
+	sound_output.bytes_per_sample	= sizeof(i16) * 2;
 	sound_output.secondary_buf_size = sound_output.samples_per_sec;
 	sound_output.latency_sample_count =
-		s32(frames_of_audio_latency * f32(sound_output.samples_per_sec / (f32)game_update_hertz));
+		i32(frames_of_audio_latency * f32(sound_output.samples_per_sec / (f32)game_update_hertz));
 
 	init_WASAPI(sound_output.samples_per_sec, sound_output.secondary_buf_size);
 	g_audio_client->Start();
 
 	// TODO: Pool with bitmap VirtualAlloc
-	s16* samples = (s16*)VirtualAlloc(0, sound_output.secondary_buf_size, MEM_RESERVE | MEM_COMMIT,
+	i16* samples = (i16*)VirtualAlloc(0, sound_output.secondary_buf_size, MEM_RESERVE | MEM_COMMIT,
 									  PAGE_READWRITE);
 
 #ifdef TOM_INTERNAL
@@ -975,7 +975,7 @@ Main(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLine, s32 nShowCm
 		((u8*)game_memory.permanent_storage + game_memory.permanent_storage_size);
 
 	// mapping memory to file
-	for (s32 replay_index {}; replay_index < ArrayCount(state.replay_buffers); ++replay_index) {
+	for (i32 replay_index {}; replay_index < ArrayCount(state.replay_buffers); ++replay_index) {
 		Replay_buffer& replay_buffer = state.replay_buffers[replay_index];
 		_stprintf_s(replay_buffer.file_name, sizeof(TCHAR) * 512, _T("replay_%d_state.ti"),
 					replay_index);
@@ -1041,11 +1041,11 @@ Main(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLine, s32 nShowCm
 			printf("ERROR--> Failed to get audio latency\n");
 		}
 
-		s32 samples_to_write = 0;
+		i32 samples_to_write = 0;
 		UINT32 sound_pad_size;
 		if (SUCCEEDED(g_audio_client->GetCurrentPadding(&sound_pad_size))) {
-			s32 maxSampleCnt = s32(sound_output.secondary_buf_size - sound_pad_size);
-			samples_to_write = s32(sound_output.latency_sample_count - sound_pad_size);
+			i32 maxSampleCnt = i32(sound_output.secondary_buf_size - sound_pad_size);
+			samples_to_write = i32(sound_output.latency_sample_count - sound_pad_size);
 			if (samples_to_write < 0) samples_to_write = 0;
 			// assert(samplesToWrite < maxSampleCnt);
 		}
@@ -1186,7 +1186,7 @@ wWinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _In_ LPWSTR
 	HRESULT hr = CoInitializeEx(nullptr, COINITBASE_MULTITHREADED);
 	if (FAILED(hr)) return 1;
 
-	s32 ecode = tomato::win32::Main(hInstance, hPrevInstance, lpCmdLine, nCmdShow);
+	i32 ecode = tomato::win32::Main(hInstance, hPrevInstance, lpCmdLine, nCmdShow);
 
 	CoUninitialize();
 

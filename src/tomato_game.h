@@ -49,23 +49,23 @@ typedef DEBUG_PLATFORM_WRITE_ENTIRE_FILE(debug_platform_write_entire_file);
 struct Game_offscreen_buffer
 {
 	void* memory;
-	s32 width;
-	s32 height;
-	s32 pitch;
-	s32 bytes_per_pixel;
+	i32 width;
+	i32 height;
+	i32 pitch;
+	i32 bytes_per_pixel;
 };
 
 struct Game_sound_output_buffer
 {
-	s32 samples_per_second;
-	s32 sample_count;
-	s16* samples;
-	s32 tone_hertz;
+	i32 samples_per_second;
+	i32 sample_count;
+	i16* samples;
+	i32 tone_hertz;
 };
 
 struct Game_button_state
 {
-	s32 half_transition_count;
+	i32 half_transition_count;
 	bool ended_down;
 };
 
@@ -139,7 +139,7 @@ struct Game_input
 
 	static constexpr szt mouse_button_count = 3;
 	Game_button_state mouse_buttons[3];
-	s32 mouse_x, mouse_y, mouse_z;
+	i32 mouse_x, mouse_y, mouse_z;
 	Game_keyboard keyboard;
 	Game_controller_input controllers[4];
 };
@@ -181,14 +181,14 @@ struct Color_u32
 struct Vector2_s32
 {
 	Vector2_s32() : x(0), y(0) {}
-	Vector2_s32(s32 x, s32 y)
+	Vector2_s32(i32 x, i32 y)
 	{
 		this->x = x;
 		this->y = y;
 	}
 
-	s32 x;
-	s32 y;
+	i32 x;
+	i32 y;
 };
 
 struct Vector2_f32
@@ -218,15 +218,10 @@ struct Player
 	f32 width;
 };
 
-struct Game_state
-{
-	Player player;
-};
-
 // TODO: implement this
 struct Thread_context
 {
-	s32 place_holder;
+	i32 place_holder;
 };
 
 // NOTE: helpers
@@ -249,8 +244,8 @@ typedef GAME_GET_SOUND_SAMPLES(game_get_sound_samples_stub);
 
 struct Tile_map
 {
-	s32 count_x;
-	s32 count_y;
+	i32 count_x;
+	i32 count_y;
 
 	f32 upper_left_x;
 	f32 upper_left_y;
@@ -262,7 +257,18 @@ struct Tile_map
 
 struct World
 {
+	i32 tile_map_count_x;
+	i32 tile_map_count_y;
+
 	Tile_map* tile_maps;
+};
+
+struct Game_state
+{
+	Player player;
+
+	i32 player_tile_map_x;
+	i32 player_tile_map_y;
 };
 
 }  // namespace tomato

@@ -67,7 +67,7 @@ inline szt
 GetWStrSz(const wchar* wstr)
 {
 	auto len  = GetWStrLen(wstr);
-	auto size = (szt)WideCharToMultiByte(CP_UTF8, 0, wstr, (s32)len, NULL, 0, NULL, NULL);
+	auto size = (szt)WideCharToMultiByte(CP_UTF8, 0, wstr, (i32)len, NULL, 0, NULL, NULL);
 	return size;
 }
 
@@ -75,7 +75,7 @@ inline szt
 GetStrSz(const char* str)
 {
 	auto len  = GetStrLen(str);
-	auto size = (szt)MultiByteToWideChar(CP_UTF8, 0, str, (s32)len, NULL, 0);
+	auto size = (szt)MultiByteToWideChar(CP_UTF8, 0, str, (i32)len, NULL, 0);
 	return size;
 }
 
@@ -84,15 +84,15 @@ inline void
 WStr2Str(const wchar* wstr, char* buf)
 {
 	auto len  = GetWStrLen(wstr);
-	auto size = (szt)WideCharToMultiByte(CP_UTF8, 0, wstr, (s32)len, buf, 0, NULL, NULL);
+	auto size = (szt)WideCharToMultiByte(CP_UTF8, 0, wstr, (i32)len, buf, 0, NULL, NULL);
 }
 
 inline void
 Str2WStr(const char* str, wchar* buf)
 {
 	auto len  = GetStrLen(str);
-	auto size = (szt)MultiByteToWideChar(CP_UTF8, 0, str, (s32)len, NULL, 0);
-	MultiByteToWideChar(CP_UTF8, 0, str, (s32)len, buf, (s32)size);
+	auto size = (szt)MultiByteToWideChar(CP_UTF8, 0, str, (i32)len, NULL, 0);
+	MultiByteToWideChar(CP_UTF8, 0, str, (i32)len, buf, (i32)size);
 }
 
 }  // namespace win32
