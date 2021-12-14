@@ -9,6 +9,9 @@ set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
+
+# NOTE: this all for emcas in wsl to find the right headers
+# it has nothing to do with actually compiling on windows
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 set(triple x86_64-pc-windows-gnu)

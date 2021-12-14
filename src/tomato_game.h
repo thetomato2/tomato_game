@@ -210,14 +210,6 @@ struct Col_debug
 	bool is_valid;
 };
 
-struct Player
-{
-	Vector2_f32 pos;
-	Color_u32 color;
-	f32 height;
-	f32 width;
-};
-
 // TODO: implement this
 struct Thread_context
 {
@@ -244,31 +236,60 @@ typedef GAME_GET_SOUND_SAMPLES(game_get_sound_samples_stub);
 
 struct Tile_map
 {
-	i32 count_x;
-	i32 count_y;
+	static constexpr i32 s_count_x = 16;
+	static constexpr i32 s_count_y = 9;
 
-	f32 upper_left_x;
-	f32 upper_left_y;
-	f32 tile_width;
-	f32 tile_height;
+	static constexpr f32 s_upper_left_x = 10.f;
+	static constexpr f32 s_upper_left_y = 10.f;
+	static constexpr f32 s_tile_width	= 50.f;
+	static constexpr f32 s_tile_height	= 50.f;
 
 	u32* tiles;
 };
 
+struct Canonical_pos
+{
+	i32 tile_map_x;
+	i32 tile_map_y;
+
+	i32 tile_x;
+	i32 tile_y;
+
+	// NOTE: relative to tile
+	f32 x;
+	f32 y;
+};
+
+struct Raw_pos
+{
+	i32 tile_map_x;
+	i32 tile_map_y;
+
+	// NOTE: relative to tile map
+	f32 x;
+	f32 y;
+};
+
+struct Player
+{
+	Raw_pos pos;
+	Color_u32 color;
+	f32 height;
+	f32 width;
+};
+
 struct World
 {
-	i32 tile_map_count_x;
-	i32 tile_map_count_y;
+	static constexpr i32 s_tile_map_count_x = 2;
+	static constexpr i32 s_tile_map_count_y = 2;
 
+	Tile_map* cur_tile_map;
 	Tile_map* tile_maps;
 };
 
 struct Game_state
 {
 	Player player;
-
-	i32 player_tile_map_x;
-	i32 player_tile_map_y;
 };
 
 }  // namespace tomato
