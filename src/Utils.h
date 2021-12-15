@@ -6,7 +6,7 @@
 namespace tomato::util
 {
 inline szt
-GetWStrLen(const wchar* wstr)
+get_wstr_len(const wchar* wstr)
 {
 	szt len {};
 	while (*wstr++) {
@@ -16,7 +16,7 @@ GetWStrLen(const wchar* wstr)
 }
 
 inline szt
-GetStrLen(const char* str)
+get_str_len(const char* str)
 {
 	szt len {};
 	while (*str++) {
@@ -25,35 +25,35 @@ GetStrLen(const char* str)
 	return len;
 }
 
-// Takes strings lenght inputs
+// Takes strings length inputs
 inline void
-CatStrings(const char* left, szt leftLen, const char* right, szt rightLen, char* out)
+cat_str(const char* left, szt left_len, const char* right, szt right_len, char* out)
 {
-	for (szt i {}; i < leftLen; ++i) {
+	for (szt i {}; i < left_len; ++i) {
 		*out++ = *left++;
 	}
-	for (szt i {}; i < rightLen; ++i) {
+	for (szt i {}; i < right_len; ++i) {
 		*out++ = *right++;
 	}
 	*out = '\0';
 }
 
-// calcs the string lenghts also
+// calcs the string lengths also
 inline void
-CatStrings(const char* left, const char* right, char* out)
+cat_str(const char* left, const char* right, char* out)
 {
-	auto leftLen  = GetStrLen(left);
-	auto rightLen = GetStrLen(right);
+	auto left_len  = get_str_len(left);
+	auto right_len = get_str_len(right);
 
-	if (!leftLen || !rightLen) {
+	if (!left_len || !right_len) {
 		printf("Empty strings passed in!");
 		return;
 	}
 
-	for (szt i {}; i < leftLen; ++i) {
+	for (szt i {}; i < left_len; ++i) {
 		*out++ = *left++;
 	}
-	for (szt i {}; i < rightLen; ++i) {
+	for (szt i {}; i < right_len; ++i) {
 		*out++ = *right++;
 	}
 	*out = '\0';
@@ -64,33 +64,33 @@ namespace win32
 
 // Convert a wide Unicode string to an UTF8 string
 inline szt
-GetWStrSz(const wchar* wstr)
+get_wstr_sz(const wchar* wstr)
 {
-	auto len  = GetWStrLen(wstr);
+	auto len  = get_wstr_len(wstr);
 	auto size = (szt)WideCharToMultiByte(CP_UTF8, 0, wstr, (i32)len, NULL, 0, NULL, NULL);
 	return size;
 }
 
 inline szt
-GetStrSz(const char* str)
+get_wstr_sz(const char* str)
 {
-	auto len  = GetStrLen(str);
+	auto len  = get_str_len(str);
 	auto size = (szt)MultiByteToWideChar(CP_UTF8, 0, str, (i32)len, NULL, 0);
 	return size;
 }
 
 // FIXME: idk if this is working
 inline void
-WStr2Str(const wchar* wstr, char* buf)
+wstr_to_str(const wchar* wstr, char* buf)
 {
-	auto len  = GetWStrLen(wstr);
+	auto len  = get_wstr_len(wstr);
 	auto size = (szt)WideCharToMultiByte(CP_UTF8, 0, wstr, (i32)len, buf, 0, NULL, NULL);
 }
 
 inline void
-Str2WStr(const char* str, wchar* buf)
+str_to_wstr(const char* str, wchar* buf)
 {
-	auto len  = GetStrLen(str);
+	auto len  = get_str_len(str);
 	auto size = (szt)MultiByteToWideChar(CP_UTF8, 0, str, (i32)len, NULL, 0);
 	MultiByteToWideChar(CP_UTF8, 0, str, (i32)len, buf, (i32)size);
 }

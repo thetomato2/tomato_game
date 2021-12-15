@@ -60,6 +60,7 @@ using wchar_t = uint16_t;
 
 #include "base_types.h"
 #include "macros.h"
+#include "tomato_math.h"
 #include "utils.h"
 #include "console.h"
 

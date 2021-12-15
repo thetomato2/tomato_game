@@ -16,23 +16,6 @@ Col_debug corners[4];
 
 namespace
 {
-inline i32
-round_f32_to_i32(f32 value)
-{
-	return i32(value + 0.5f);
-}
-
-inline u32
-rnd_f32_to_u32(f32 value)
-{
-	return u32(value + 0.5f);
-}
-
-inline i32
-floorf_to_i32(f32 val)
-{
-	return (i32)floorf(val);
-}
 
 void
 generate_rainbow(Color_u32& color, f32 frequency, f32 time)
@@ -93,10 +76,10 @@ void
 draw_rect(Game_offscreen_buffer& buffer, f32 f32_min_x, f32 f_min_y, f32 f32_max_x, f32 f32_max_y,
 		  Color_u32 color = { 0xFFFFFFFF })
 {
-	i32 min_x = round_f32_to_i32(f32_min_x);
-	i32 min_y = round_f32_to_i32(f_min_y);
-	i32 max_x = round_f32_to_i32(f32_max_x);
-	i32 max_y = round_f32_to_i32(f32_max_y);
+	i32 min_x = math::round_f32_to_i32(f32_min_x);
+	i32 min_y = math::round_f32_to_i32(f_min_y);
+	i32 max_x = math::round_f32_to_i32(f32_max_x);
+	i32 max_y = math::round_f32_to_i32(f32_max_y);
 
 	if (min_x < 0) min_x = 0;
 	if (min_y < 0) min_y = 0;
@@ -163,8 +146,8 @@ get_canonical_pos(Raw_pos pos)
 
 	f32 x	   = pos.x - Tile_map::s_upper_left_x;
 	f32 y	   = pos.y - Tile_map::s_upper_left_y;
-	res.tile_x = floorf_to_i32(x / Tile_map::s_tile_width);
-	res.tile_y = floorf_to_i32(y / Tile_map::s_tile_height);
+	res.tile_x = math::floorf_to_i32(x / Tile_map::s_tile_width);
+	res.tile_y = math::floorf_to_i32(y / Tile_map::s_tile_height);
 
 	res.x = x - res.tile_x * Tile_map::s_tile_width;
 	res.y = y - res.tile_y * Tile_map::s_tile_height;
@@ -239,6 +222,28 @@ check_player_collsion(World& world, Player player, Raw_pos test_pos)
 		result = true;
 
 	return result;
+}
+
+void
+player_check_tile_map(World& world, Player& player)
+{
+	// NOTE: this function gets the center of the player,
+	// then check if the player is out of the tile map,
+	// and if so moves the player to the correct position on the new tile map
+	auto player_center_pos = player.pos;
+	player_center_pos.x += player.width / 2;
+	player_center_pos.y += player.height / 2;
+	Canonical_pos can_pos = get_canonical_pos(player_center_pos);
+	Tile_map* tile_map	  = get_tile_map(world, can_pos.tile_map_x, can_pos.tile_map_y);
+	if (tile_map != nullptr && tile_map != world.cur_tile_map) {
+		world.cur_tile_map	  = tile_map;
+		player.pos.tile_map_x = can_pos.tile_map_x;
+		player.pos.tile_map_y = can_pos.tile_map_y;
+		player.pos.x		  = Tile_map::s_upper_left_x + Tile_map::s_tile_width * can_pos.tile_x +
+					   can_pos.x - player.width / 2;
+		player.pos.y = Tile_map::s_upper_left_y + Tile_map::s_tile_height * can_pos.tile_y +
+					   can_pos.y - player.height / 2;
+	}
 }
 
 void
@@ -387,25 +392,7 @@ GAME_UPDATE_AND_RENDER(game_update_and_render)
 
 	if (check_player_collsion(world, player, new_player_pos)) {
 		player.pos = new_player_pos;
-
-		// check for tile map change from center of player
-		// TODO: make actual vector classes
-		auto player_center_pos = player.pos;
-		player_center_pos.x += player.width / 2;
-		player_center_pos.y += player.height / 2;
-		Canonical_pos can_pos = get_canonical_pos(player_center_pos);
-		printf(" %d, %d ", can_pos.tile_x, can_pos.tile_y);
-		Tile_map* tile_map = get_tile_map(world, can_pos.tile_map_x, can_pos.tile_map_y);
-		if (tile_map != nullptr && tile_map != world.cur_tile_map) {
-			world.cur_tile_map	  = tile_map;
-			player.pos.tile_map_x = can_pos.tile_map_x;
-			player.pos.tile_map_y = can_pos.tile_map_y;
-			player.pos.x = Tile_map::s_upper_left_x + Tile_map::s_tile_width * can_pos.tile_x +
-						   can_pos.x - player.width / 2;
-			player.pos.y = Tile_map::s_upper_left_y + Tile_map::s_tile_height * can_pos.tile_y +
-						   can_pos.y - player.height / 2;
-		}
-		printf("%f, %f\n", player.pos.x, player.pos.y);
+		player_check_tile_map(world, player);
 	}
 
 	// ===============================================================================================

@@ -216,15 +216,6 @@ struct Thread_context
 	i32 place_holder;
 };
 
-// NOTE: helpers
-inline u32
-safe_truncate_u32_to_u64(u64 value)
-{
-	// TODO: defines for max values
-	assert(value <= 0xFFFFFFFF);
-	return (u32)value;
-}
-
 #define GAME_UPDATE_AND_RENDER(name)                                         \
 	void name(Thread_context thread, Game_memory& memory, Game_input& input, \
 			  Game_offscreen_buffer& video_buffer, Game_sound_output_buffer& sound_buffer)

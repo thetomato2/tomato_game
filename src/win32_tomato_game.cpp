@@ -20,7 +20,7 @@ DEBUG_PLATFORM_READ_ENTIRE_FILE(Debug_platform_read_entire_file)
 	if (file_handle != INVALID_HANDLE_VALUE) {
 		LARGE_INTEGER fileSize;
 		if (GetFileSizeEx(file_handle, &fileSize)) {
-			u32 fileSize32 = safe_truncate_u32_to_u64(fileSize.QuadPart);
+			u32 fileSize32 = math::safe_truncate_u32_to_u64(fileSize.QuadPart);
 			file.contents  = VirtualAlloc(0, fileSize32, MEM_RESERVE | MEM_COMMIT, PAGE_READWRITE);
 			if (file.contents) {
 				DWORD bytesRead;
