@@ -227,14 +227,6 @@ typedef GAME_GET_SOUND_SAMPLES(game_get_sound_samples_stub);
 
 struct Tile_map
 {
-	static constexpr i32 s_count_x = 16;
-	static constexpr i32 s_count_y = 9;
-
-	static constexpr f32 s_upper_left_x = 10.f;
-	static constexpr f32 s_upper_left_y = 10.f;
-	static constexpr f32 s_tile_width	= 50.f;
-	static constexpr f32 s_tile_height	= 50.f;
-
 	u32* tiles;
 };
 
@@ -273,6 +265,15 @@ struct World
 {
 	static constexpr i32 s_tile_map_count_x = 2;
 	static constexpr i32 s_tile_map_count_y = 2;
+
+	static constexpr i32 s_count_x = 16;
+	static constexpr i32 s_count_y = 9;
+
+	static constexpr f32 s_tile_size_meters = 1.4f;
+	static constexpr u32 s_tile_size_pixels = 60;
+
+	static constexpr f32 s_upper_left_x = 15.f;
+	static constexpr f32 s_upper_left_y = 15.f;
 
 	Tile_map* cur_tile_map;
 	Tile_map* tile_maps;

@@ -13,25 +13,29 @@ safe_truncate_u32_to_u64(u64 value)
 {
 	// TODO: defines for max values
 	assert(value <= 0xFFFFFFFF);
-	return (u32)value;
+	u32 res = (u32)value;
+	return res;
 }
 
 inline i32
 round_f32_to_i32(f32 value)
 {
-	return i32(value + 0.5f);
+	i32 res = i32(value + 0.5f);
+	return res;
 }
 
 inline u32
 rnd_f32_to_u32(f32 value)
 {
-	return u32(value + 0.5f);
+	u32 res = u32(value + 0.5f);
+	return res;
 }
 
 inline i32
 floorf_to_i32(f32 val)
 {
-	return (i32)floorf(val);
+	i32 res = (i32)floorf(val);
+	return res;
 }
 
 inline f32

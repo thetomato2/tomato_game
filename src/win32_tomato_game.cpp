@@ -458,7 +458,7 @@ display_buffer_in_window(HDC hdc, Off_screen_buffer& buffer, i32 x, i32 y, i32 w
 	i32 offset_x = 10;
 	i32 offset_y = 10;
 
-#if 0
+#if 1
 	// NOTE: this causes screen flickering - out of sync with screen refersh rate?
 	::PatBlt(hdc, 0, 0, width, offset_y, BLACKNESS);
 	::PatBlt(hdc, 0, offset_y + buffer.height, width, height, BLACKNESS);
@@ -862,8 +862,8 @@ Main(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLine, i32 nShowCm
 
 	WNDCLASS window_class = {};	 // should init to 0n
 
-	static constexpr i32 win_width	= 960;
-	static constexpr i32 win_height = 540;
+	static constexpr i32 win_width	= 1280;
+	static constexpr i32 win_height = 720;
 
 	resize_DIB_section(g_back_buffer, win_width, win_height);
 

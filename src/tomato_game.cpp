@@ -113,9 +113,9 @@ inline u32
 get_tile_value_unchecked(Tile_map& tile_map, i32 tile_x, i32 tile_y)
 {
 	assert(tile_map.tiles);
-	assert((tile_x >= 0) && (tile_x < Tile_map::s_count_x) && (tile_y >= 0) &&
-		   (tile_y < Tile_map::s_count_y));
-	return tile_map.tiles[tile_y * Tile_map::s_count_x + tile_x];
+	assert((tile_x >= 0) && (tile_x < World::s_count_x) && (tile_y >= 0) &&
+		   (tile_y < World::s_count_y));
+	return tile_map.tiles[tile_y * World::s_count_x + tile_x];
 }
 
 bool
@@ -127,8 +127,8 @@ is_tile_empty(Tile_map& tile_map, i32 test_tile_x, i32 test_tile_y)
 
 	// NOTE: if tiles is null map does not exists
 	if (tile_map.tiles) {
-		if (test_tile_x >= 0 && test_tile_x < Tile_map::s_count_x && test_tile_y >= 0 &&
-			test_tile_y < Tile_map::s_count_y) {
+		if (test_tile_x >= 0 && test_tile_x < World::s_count_x && test_tile_y >= 0 &&
+			test_tile_y < World::s_count_y) {
 			auto tile_map_value = get_tile_value_unchecked(tile_map, test_tile_x, test_tile_y);
 			is_empty			= (tile_map_value == 0);
 		}
@@ -144,36 +144,36 @@ get_canonical_pos(Raw_pos pos)
 	res.tile_map_x = pos.tile_map_x;
 	res.tile_map_y = pos.tile_map_y;
 
-	f32 x	   = pos.x - Tile_map::s_upper_left_x;
-	f32 y	   = pos.y - Tile_map::s_upper_left_y;
-	res.tile_x = math::floorf_to_i32(x / Tile_map::s_tile_width);
-	res.tile_y = math::floorf_to_i32(y / Tile_map::s_tile_height);
+	f32 x	   = pos.x - World::s_upper_left_x;
+	f32 y	   = pos.y - World::s_upper_left_y;
+	res.tile_x = math::floorf_to_i32(x / (f32)World::s_tile_size_pixels);
+	res.tile_y = math::floorf_to_i32(y / (f32)World::s_tile_size_pixels);
 
-	res.x = x - res.tile_x * Tile_map::s_tile_width;
-	res.y = y - res.tile_y * Tile_map::s_tile_height;
+	res.x = x - res.tile_x * (f32)World::s_tile_size_pixels;
+	res.y = y - res.tile_y * (f32)World::s_tile_size_pixels;
 
 	assert(res.x >= 0);
 	assert(res.y >= 0);
-	assert(res.x < Tile_map::s_tile_width);
-	assert(res.y < Tile_map::s_tile_height);
+	assert(res.x < World::s_tile_size_pixels);
+	assert(res.y < World::s_tile_size_pixels);
 
-	// check bounds to see if player is in a neigboring tile map
+	// check bounds to see if player is in a neighboring tile map
 	if (res.tile_x < 0) {
-		res.tile_x = Tile_map::s_count_x + res.tile_x;
+		res.tile_x = World::s_count_x + res.tile_x;
 		--res.tile_map_x;
 	}
-	if (res.tile_x > Tile_map::s_count_x - 1) {
-		res.tile_x = res.tile_x - Tile_map::s_count_x;
+	if (res.tile_x > World::s_count_x - 1) {
+		res.tile_x = res.tile_x - World::s_count_x;
 		++res.tile_map_x;
 	}
 
 	if (res.tile_y < 0) {
-		res.tile_y = Tile_map::s_count_y + res.tile_y;
+		res.tile_y = World::s_count_y + res.tile_y;
 		--res.tile_map_y;
 	}
 
-	if (res.tile_y > Tile_map::s_count_y - 1) {
-		res.tile_y = res.tile_y - Tile_map::s_count_y;
+	if (res.tile_y > World::s_count_y - 1) {
+		res.tile_y = res.tile_y - World::s_count_y;
 		++res.tile_map_y;
 	}
 
@@ -239,9 +239,9 @@ player_check_tile_map(World& world, Player& player)
 		world.cur_tile_map	  = tile_map;
 		player.pos.tile_map_x = can_pos.tile_map_x;
 		player.pos.tile_map_y = can_pos.tile_map_y;
-		player.pos.x		  = Tile_map::s_upper_left_x + Tile_map::s_tile_width * can_pos.tile_x +
+		player.pos.x		  = World::s_upper_left_x + World::s_tile_size_pixels * can_pos.tile_x +
 					   can_pos.x - player.width / 2;
-		player.pos.y = Tile_map::s_upper_left_y + Tile_map::s_tile_height * can_pos.tile_y +
+		player.pos.y = World::s_upper_left_y + World::s_tile_size_pixels * can_pos.tile_y +
 					   can_pos.y - player.height / 2;
 	}
 }
@@ -297,7 +297,7 @@ GAME_UPDATE_AND_RENDER(game_update_and_render)
 	// #Start
 	// ===============================================================================================
 
-	u32 tiles_0[Tile_map::s_count_y][Tile_map::s_count_x] = {
+	u32 tiles_0[World::s_count_y][World::s_count_x] = {
 		{ 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1 },
 		{ 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1 },
 		{ 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1 },
@@ -309,7 +309,7 @@ GAME_UPDATE_AND_RENDER(game_update_and_render)
 		{ 1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1 }
 	};
 
-	u32 tiles_1[Tile_map::s_count_y][Tile_map::s_count_x] = {
+	u32 tiles_1[World::s_count_y][World::s_count_x] = {
 		{ 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1 },
 		{ 1, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 0, 0, 1 },
 		{ 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1 },
@@ -321,7 +321,7 @@ GAME_UPDATE_AND_RENDER(game_update_and_render)
 		{ 1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1 }
 	};
 
-	u32 tiles_2[Tile_map::s_count_y][Tile_map::s_count_x] = {
+	u32 tiles_2[World::s_count_y][World::s_count_x] = {
 		{ 1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1 },
 		{ 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1 },
 		{ 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1 },
@@ -333,7 +333,7 @@ GAME_UPDATE_AND_RENDER(game_update_and_render)
 		{ 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1 }
 	};
 
-	u32 tiles_3[Tile_map::s_count_y][Tile_map::s_count_x] = {
+	u32 tiles_3[World::s_count_y][World::s_count_x] = {
 		{ 1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1 },
 		{ 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1 },
 		{ 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1 },
@@ -403,8 +403,8 @@ GAME_UPDATE_AND_RENDER(game_update_and_render)
 	Color_u32 clear_color { 0xFF'00'00'00 };
 	clear_buffer(video_buffer, clear_color);
 
-	for (i32 y {}; y < Tile_map::s_count_y; ++y) {
-		for (i32 x {}; x < Tile_map::s_count_x; ++x) {
+	for (i32 y {}; y < World::s_count_y; ++y) {
+		for (i32 x {}; x < World::s_count_x; ++x) {
 			u32 tile = get_tile_value_unchecked(*world.cur_tile_map, x, y);
 			Color_u32 tile_color;
 			if (tile) {
@@ -413,10 +413,10 @@ GAME_UPDATE_AND_RENDER(game_update_and_render)
 				tile_color.argb = 0xFF'88'88'88;
 			}
 
-			f32 min_x = Tile_map::s_upper_left_x + ((f32)x) * Tile_map::s_tile_width;
-			f32 min_y = Tile_map::s_upper_left_y + ((f32)y) * Tile_map::s_tile_height;
-			f32 max_x = min_x + Tile_map::s_tile_width;
-			f32 max_y = min_y + Tile_map::s_tile_height;
+			f32 min_x = World::s_upper_left_x + ((f32)x) * World::s_tile_size_pixels;
+			f32 min_y = World::s_upper_left_y + ((f32)y) * World::s_tile_size_pixels;
+			f32 max_x = min_x + World::s_tile_size_pixels;
+			f32 max_y = min_y + World::s_tile_size_pixels;
 
 			draw_rect(video_buffer, min_x, min_y, max_x, max_y, tile_color);
 			if (global::grid_on) {
@@ -448,7 +448,7 @@ GAME_UPDATE_AND_RENDER(game_update_and_render)
 namespace win32
 {
 		#ifndef WIN32_LEAN_AND_MEAN
-			#define WIN32_LEAN_AND_MEAN	 // Exclude rarely-used stuff from Windows headers
+			#define WIN32_LEAN_AND_MEAN	 // Exclude rarely-used stuff from Windows headerfs
 		#endif
 		#include <windows.h>
 BOOL APIENTRY DllMain(HMODULE hModule, DWORD ul_reason_for_call, LPVOID lpReserved)
