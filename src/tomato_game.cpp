@@ -1,16 +1,10 @@
-#include "tomato_game.h"
-
-#include <math.h>
+#include "tomato_game.hpp"
 
 namespace tomato
 {
 namespace global
 {
-constexpr bool grid_on	  = false;
-constexpr bool corners_on = true;
-
-i32 current_corner {};
-Col_debug corners[4];
+constexpr bool grid_on = false;
 
 }  // namespace global
 
@@ -18,118 +12,79 @@ namespace
 {
 
 void
-generate_rainbow(Color_u32& color, f32 frequency, f32 time)
+clear_buffer(Game_offscreen_buffer& buffer_, Color_u32 color_ = { 0xFF'FF'00'FF })
 {
-	f32 f = (f32)sin(time * frequency) / 2.0f + 0.5f;
+	i32 width  = buffer_.width;
+	i32 height = buffer_.height;
 
-	f32 a = (1.0f - f) / 0.2f;
-	f32 x = floorf(a);
-	f32 y = floorf(255.0f * (a - x));
-	f32 red, green, blue;
-
-	if (x == 0.0f) {
-		red	  = 255.0f;
-		green = y;
-		blue  = 0;
-	} else if (x == 1.0f) {
-		red	  = 255.0f - y;
-		green = 255.0f;
-		blue  = 0;
-	} else if (x == 2.0f) {
-		red	  = 0.0f;
-		green = 255.0f;
-		blue  = y;
-	} else if (x == 3.0f) {
-		red	  = 0.0f;
-		green = 255.0f - y;
-		blue  = 255.0f;
-	} else if (x == 4.0f) {
-		red	  = y;
-		green = 0.0f;
-		blue  = 255.0f;
-	} else if (x == 5.0f) {
-		red	  = 255.0f;
-		green = 0.0f;
-		blue  = 255.0f;
-	}
-
-	color.argb = (0xFF << 24) | ((u8)red << 16) | ((u8)green << 8) | ((u8)blue);
-}
-
-void
-clear_buffer(Game_offscreen_buffer& buffer, Color_u32 color = { 0xFF'FF'00'FF })
-{
-	i32 width  = buffer.width;
-	i32 height = buffer.height;
-
-	u8* row = (u8*)buffer.memory;
+	u8* row = (u8*)buffer_.memory;
 	for (i32 y = 0; y < height; ++y) {
 		u32* pixel = (u32*)row;
 		for (i32 x = 0; x < width; ++x) {
-			*pixel++ = color.argb;
+			*pixel++ = color_.argb;
 		}
-		row += buffer.pitch;
+		row += buffer_.pitch;
 	}
 }
 
 void
-draw_rect(Game_offscreen_buffer& buffer, f32 f32_min_x, f32 f_min_y, f32 f32_max_x, f32 f32_max_y,
-		  Color_u32 color = { 0xFFFFFFFF })
+draw_rect(Game_offscreen_buffer& buffer_, f32 f32_min_x_, f32 f_min_y_, f32 f32_max_x_,
+		  f32 f32_max_y_, Color_u32 color_ = { 0xFFFFFFFF })
 {
-	i32 min_x = math::round_f32_to_i32(f32_min_x);
-	i32 min_y = math::round_f32_to_i32(f_min_y);
-	i32 max_x = math::round_f32_to_i32(f32_max_x);
-	i32 max_y = math::round_f32_to_i32(f32_max_y);
+	i32 min_x = math::round_f32_to_i32(f32_min_x_);
+	i32 min_y = math::round_f32_to_i32(f_min_y_);
+	i32 max_x = math::round_f32_to_i32(f32_max_x_);
+	i32 max_y = math::round_f32_to_i32(f32_max_y_);
 
 	if (min_x < 0) min_x = 0;
 	if (min_y < 0) min_y = 0;
-	if (max_x > buffer.width) max_x = buffer.width;
-	if (max_y > buffer.height) max_y = buffer.height;
+	if (max_x > buffer_.width) max_x = buffer_.width;
+	if (max_y > buffer_.height) max_y = buffer_.height;
 
-	u8* row = ((u8*)buffer.memory + min_x * buffer.bytes_per_pixel + min_y * buffer.pitch);
+	u8* row = ((u8*)buffer_.memory + min_x * buffer_.bytes_per_pixel + min_y * buffer_.pitch);
 
 	for (i32 y = min_y; y < max_y; ++y) {
 		u32* pixel = (u32*)row;
 		for (i32 x = min_x; x < max_x; ++x) {
-			*pixel++ = color.argb;
+			*pixel++ = color_.argb;
 		}
-		row += buffer.pitch;
+		row += buffer_.pitch;
 	}
 }
 
 inline Tile_map*
-get_tile_map(World& world, i32 tile_map_x, i32 tile_map_y)
+get_tile_map(World& world_, i32 tile_map_x_, i32 tile_map_y_)
 {
 	Tile_map* tile_map = nullptr;
 
-	if (tile_map_x >= 0 && tile_map_x < World::s_tile_map_count_x && tile_map_y >= 0 &&
-		tile_map_y < World::s_tile_map_count_y) {
-		tile_map = &world.tile_maps[tile_map_y * World::s_tile_map_count_x + tile_map_x];
+	if (tile_map_x_ >= 0 && tile_map_x_ < World::s_tile_map_count_x && tile_map_y_ >= 0 &&
+		tile_map_y_ < World::s_tile_map_count_y) {
+		tile_map = &world_.tile_maps[tile_map_y_ * World::s_tile_map_count_x + tile_map_x_];
 	}
 	return tile_map;
 }
 
 inline u32
-get_tile_value_unchecked(Tile_map& tile_map, i32 tile_x, i32 tile_y)
+get_tile_value_unchecked(Tile_map& tile_map_, i32 tile_x_, i32 tile_y_)
 {
-	assert(tile_map.tiles);
-	assert((tile_x >= 0) && (tile_x < World::s_count_x) && (tile_y >= 0) &&
-		   (tile_y < World::s_count_y));
-	return tile_map.tiles[tile_y * World::s_count_x + tile_x];
+	assert(tile_map_.tiles);
+	assert((tile_x_ >= 0) && (tile_x_ < World::s_count_x) && (tile_y_ >= 0) &&
+		   (tile_y_ < World::s_count_y));
+	return tile_map_.tiles[tile_y_ * World::s_count_x + tile_x_];
 }
 
 bool
-is_tile_empty(Tile_map& tile_map, i32 test_tile_x, i32 test_tile_y)
+is_tile_empty(Tile_map& tile_map_, i32 test_tile_x_, i32 test_tile_y_)
 {
 	bool is_empty { false };
 
 	// printf("x: %d, y: %d", player_tile_x, player_tile_y);
 
 	// NOTE: if tiles is null map does not exists
-	if (tile_map.tiles) {
-		if (test_tile_x >= 0 && test_tile_x < World::s_count_x && test_tile_y >= 0 &&
-			test_tile_y < World::s_count_y) {
-			auto tile_map_value = get_tile_value_unchecked(tile_map, test_tile_x, test_tile_y);
+	if (tile_map_.tiles) {
+		if (test_tile_x_ >= 0 && test_tile_x_ < World::s_count_x && test_tile_y_ >= 0 &&
+			test_tile_y_ < World::s_count_y) {
+			auto tile_map_value = get_tile_value_unchecked(tile_map_, test_tile_x_, test_tile_y_);
 			is_empty			= (tile_map_value == 0);
 		}
 	}
@@ -138,24 +93,24 @@ is_tile_empty(Tile_map& tile_map, i32 test_tile_x, i32 test_tile_y)
 }
 
 inline Canonical_pos
-get_canonical_pos(Raw_pos pos)
+get_canonical_pos(Raw_pos pos_)
 {
 	Canonical_pos res;
-	res.tile_map_x = pos.tile_map_x;
-	res.tile_map_y = pos.tile_map_y;
+	res.tile_map_x = pos_.tile_map_x;
+	res.tile_map_y = pos_.tile_map_y;
 
-	f32 x	   = pos.x - World::s_upper_left_x;
-	f32 y	   = pos.y - World::s_upper_left_y;
+	f32 x	   = pos_.x - World::s_upper_left_x;
+	f32 y	   = pos_.y - World::s_upper_left_y;
 	res.tile_x = math::floorf_to_i32(x / (f32)World::s_tile_size_pixels);
 	res.tile_y = math::floorf_to_i32(y / (f32)World::s_tile_size_pixels);
 
-	res.x = x - res.tile_x * (f32)World::s_tile_size_pixels;
-	res.y = y - res.tile_y * (f32)World::s_tile_size_pixels;
+	res.tile_rel_x = x - res.tile_x * (f32)World::s_tile_size_pixels;
+	res.tile_rel_y = y - res.tile_y * (f32)World::s_tile_size_pixels;
 
-	assert(res.x >= 0);
-	assert(res.y >= 0);
-	assert(res.x < World::s_tile_size_pixels);
-	assert(res.y < World::s_tile_size_pixels);
+	assert(res.tile_rel_x >= 0);
+	assert(res.tile_rel_y >= 0);
+	assert(res.tile_rel_x < World::s_tile_size_pixels);
+	assert(res.tile_rel_y < World::s_tile_size_pixels);
 
 	// check bounds to see if player is in a neighboring tile map
 	if (res.tile_x < 0) {
@@ -181,78 +136,72 @@ get_canonical_pos(Raw_pos pos)
 }
 
 bool
-is_world_tile_empty(World& world, Raw_pos test_pos)
+is_world_tile_empty(World& world_, Canonical_pos test_pos_)
 {
 	bool is_empty { false };
 
-	Canonical_pos can_pos = get_canonical_pos(test_pos);
-	Tile_map& tile_map	  = *(get_tile_map(world, can_pos.tile_map_x, can_pos.tile_map_y));
+	Canonical_pos can_pos = test_pos_;
+	Tile_map& tile_map	  = *(get_tile_map(world_, can_pos.tile_map_x, can_pos.tile_map_y));
 	is_empty			  = is_tile_empty(tile_map, can_pos.tile_x, can_pos.tile_y);
 
-	// debug stuff
-	if (global::corners_on) {
-		global::corners[global::current_corner].pos.x	 = test_pos.x;
-		global::corners[global::current_corner].pos.y	 = test_pos.y;
-		global::corners[global::current_corner].is_valid = !is_empty;
-		++global::current_corner;
-		if (global::current_corner == 4) global::current_corner = 0;
-	}
 	return is_empty;
 }
 
 inline bool
-check_player_collsion(World& world, Player player, Raw_pos test_pos)
+check_player_collsion(World& world_, Player player_, Canonical_pos test_pos_)
 {
 	bool result				   = false;
-	auto test_pos_top_left	   = test_pos;
-	auto test_pos_top_right	   = test_pos;
-	auto test_pos_bottom_left  = test_pos;
-	auto test_pos_bottom_right = test_pos;
+	auto test_pos_top_left	   = test_pos_;
+	auto test_pos_top_right	   = test_pos_;
+	auto test_pos_bottom_left  = test_pos_;
+	auto test_pos_bottom_right = test_pos_;
 
-	test_pos_top_right.x += player.width;
-	test_pos_bottom_left.y += player.height;
-	test_pos_bottom_right.x += player.width;
-	test_pos_bottom_right.y += player.height;
+	test_pos_top_right.tile_rel_x += Player::s_width;
+	test_pos_bottom_left.tile_rel_y += Player::s_height;
+	test_pos_bottom_right.tile_rel_x += Player::s_width;
+	test_pos_bottom_right.tile_rel_y += Player::s_height;
 
 	// NOTE: checking each corner
-	if (is_world_tile_empty(world, test_pos_top_left) &&
-		is_world_tile_empty(world, test_pos_top_right) &&
-		is_world_tile_empty(world, test_pos_bottom_left) &&
-		is_world_tile_empty(world, test_pos_bottom_right))
+	if (is_world_tile_empty(world_, test_pos_top_left) &&
+		is_world_tile_empty(world_, test_pos_top_right) &&
+		is_world_tile_empty(world_, test_pos_bottom_left) &&
+		is_world_tile_empty(world_, test_pos_bottom_right))
 		result = true;
 
 	return result;
 }
 
 void
-player_check_tile_map(World& world, Player& player)
+player_check_tile_map(World& world_, Player& player_)
 {
 	// NOTE: this function gets the center of the player,
 	// then check if the player is out of the tile map,
 	// and if so moves the player to the correct position on the new tile map
-	auto player_center_pos = player.pos;
-	player_center_pos.x += player.width / 2;
-	player_center_pos.y += player.height / 2;
-	Canonical_pos can_pos = get_canonical_pos(player_center_pos);
-	Tile_map* tile_map	  = get_tile_map(world, can_pos.tile_map_x, can_pos.tile_map_y);
-	if (tile_map != nullptr && tile_map != world.cur_tile_map) {
-		world.cur_tile_map	  = tile_map;
-		player.pos.tile_map_x = can_pos.tile_map_x;
-		player.pos.tile_map_y = can_pos.tile_map_y;
-		player.pos.x		  = World::s_upper_left_x + World::s_tile_size_pixels * can_pos.tile_x +
-					   can_pos.x - player.width / 2;
-		player.pos.y = World::s_upper_left_y + World::s_tile_size_pixels * can_pos.tile_y +
-					   can_pos.y - player.height / 2;
+	auto player_center_pos = player_.pos;
+	player_center_pos.tile_rel_x += Player::s_width / 2;
+	player_center_pos.tile_rel_y += Player::s_height / 2;
+	Canonical_pos can_pos = player_.pos;
+	Tile_map* tile_map	  = get_tile_map(world_, can_pos.tile_map_x, can_pos.tile_map_y);
+	if (tile_map != nullptr && tile_map != world_.cur_tile_map) {
+		world_.cur_tile_map	   = tile_map;
+		player_.pos.tile_map_x = can_pos.tile_map_x;
+		player_.pos.tile_map_y = can_pos.tile_map_y;
+		player_.pos.tile_rel_x = World::s_upper_left_x +
+								 World::s_tile_size_pixels * can_pos.tile_x + can_pos.tile_rel_x -
+								 Player::s_width / 2;
+		player_.pos.tile_rel_y = World::s_upper_left_y +
+								 World::s_tile_size_pixels * can_pos.tile_y + can_pos.tile_rel_y -
+								 Player::s_height / 2;
 	}
 }
 
 void
-game_ouput_sound(Game_sound_output_buffer& sound_buffer)
+game_ouput_sound(Game_sound_output_buffer& sound_buffer_)
 {
 	// NOTE: outputs nothing atm
 	i16 sample_value = 0;
-	i16* sampleOut	 = sound_buffer.samples;
-	for (szt sampleIndex = 0; sampleIndex < sound_buffer.sample_count; ++sampleIndex) {
+	i16* sampleOut	 = sound_buffer_.samples;
+	for (szt sampleIndex = 0; sampleIndex < sound_buffer_.sample_count; ++sampleIndex) {
 		*sampleOut++ = sample_value;
 		*sampleOut++ = sample_value;
 	}
@@ -263,34 +212,36 @@ game_ouput_sound(Game_sound_output_buffer& sound_buffer)
 extern "C" TOM_DLL_EXPORT
 GAME_GET_SOUND_SAMPLES(game_get_sound_samples)
 {
-	auto* game_state = (Game_state*)memory.permanent_storage;
-	game_ouput_sound(sound_buffer);
+	auto* game_state = (Game_state*)memory_.permanent_storage;
+	game_ouput_sound(sound_buffer_);
 }
 
 extern "C" TOM_DLL_EXPORT
 GAME_UPDATE_AND_RENDER(game_update_and_render)
 {
-	assert(sizeof(Game_state) <= memory.permanent_storage_size);
+	assert(sizeof(Game_state) <= memory_.permanent_storage_size);
 
 	// NOTE: cast to GameState ptr, dereference and cast to GameState reference
-	auto& game_state = (Game_state&)(*(Game_state*)memory.permanent_storage);
+	auto& game_state = (Game_state&)(*(Game_state*)memory_.permanent_storage);
 
 	// ===============================================================================================
 	// #Initialization
-	// ===============================================================================================
-	if (!memory.is_initialized) {
+	if (!memory_.is_initialized) {
 		const char* file_name = __FILE__;
 
-		game_state.player.pos.x			 = 100.f;
-		game_state.player.pos.y			 = 100.f;
+		game_state.player.pos.tile_rel_x = 100.f;
+		game_state.player.pos.tile_rel_y = 100.f;
 		game_state.player.pos.tile_map_x = 0;
 		game_state.player.pos.tile_map_y = 0;
-		game_state.player.width			 = 20.f;
-		game_state.player.height		 = 30.f;
-		game_state.player.color			 = { 0xFF'FF'FF'00 };
+		game_state.player.pos.tile_x	 = 3;
+		game_state.player.pos.tile_y	 = 3;
+		game_state.player.pos.tile_rel_x = 5.f;
+		game_state.player.pos.tile_rel_y = 5.f;
+
+		game_state.player.color = { 0xFF'FF'FF'00 };
 
 		// TODO: this might be more appropriate in the platform layer
-		memory.is_initialized = true;
+		memory_.is_initialized = true;
 	}
 
 	// ===============================================================================================
@@ -361,33 +312,33 @@ GAME_UPDATE_AND_RENDER(game_update_and_render)
 		printf("Error-> Tile map is null!\n");
 	}
 
-	Game_controller_input& controller_0 = input.controllers[0];
+	Game_controller_input& controller_0 = input_.controllers[0];
 	if (controller_0.is_analog) {
 		// gameState.xOffset += i32(speed * (controller0.endLX));
 		// gameState.yOffset += i32(speed * (controller0.endLY));
 
 	} else {
-		// TODO: handle digital input
+		// TODO: handle digital input_
 	}
 
 	local_persist f32 time {};
-	time += input.deltaTime * 0.2f;
+	time += input_.deltaTime * 0.2f;
 
 	static constexpr f32 player_speed = 128.f;
 
 	auto& player		= game_state.player;
 	auto new_player_pos = player.pos;
 
-	if (input.keyboard.w.ended_down) {
-		new_player_pos.y -= player_speed * input.deltaTime;
-	} else if (input.keyboard.s.ended_down) {
-		new_player_pos.y += player_speed * input.deltaTime;
+	if (input_.keyboard.w.ended_down) {
+		new_player_pos.tile_rel_y -= player_speed * input_.deltaTime;
+	} else if (input_.keyboard.s.ended_down) {
+		new_player_pos.tile_rel_y += player_speed * input_.deltaTime;
 	}
 
-	if (input.keyboard.d.ended_down) {
-		new_player_pos.x += player_speed * input.deltaTime;
-	} else if (input.keyboard.a.ended_down) {
-		new_player_pos.x -= player_speed * input.deltaTime;
+	if (input_.keyboard.d.ended_down) {
+		new_player_pos.tile_rel_x += player_speed * input_.deltaTime;
+	} else if (input_.keyboard.a.ended_down) {
+		new_player_pos.tile_rel_x -= player_speed * input_.deltaTime;
 	}
 
 	if (check_player_collsion(world, player, new_player_pos)) {
@@ -401,7 +352,7 @@ GAME_UPDATE_AND_RENDER(game_update_and_render)
 
 	// NOTE: *not* using PatBlt in the win32 layer
 	Color_u32 clear_color { 0xFF'00'00'00 };
-	clear_buffer(video_buffer, clear_color);
+	clear_buffer(video_buffer_, clear_color);
 
 	for (i32 y {}; y < World::s_count_y; ++y) {
 		for (i32 x {}; x < World::s_count_x; ++x) {
@@ -418,29 +369,17 @@ GAME_UPDATE_AND_RENDER(game_update_and_render)
 			f32 max_x = min_x + World::s_tile_size_pixels;
 			f32 max_y = min_y + World::s_tile_size_pixels;
 
-			draw_rect(video_buffer, min_x, min_y, max_x, max_y, tile_color);
+			draw_rect(video_buffer_, min_x, min_y, max_x, max_y, tile_color);
 			if (global::grid_on) {
-				draw_rect(video_buffer, min_x, min_y, min_x + 2, max_y, { 0xFF'00'00'00 });
-				draw_rect(video_buffer, min_x, min_y, max_x, min_y + 2, { 0xFF'00'00'00 });
+				draw_rect(video_buffer_, min_x, min_y, min_x + 2, max_y, { 0xFF'00'00'00 });
+				draw_rect(video_buffer_, min_x, min_y, max_x, min_y + 2, { 0xFF'00'00'00 });
 			}
 		}
 	}
 
-	draw_rect(video_buffer, player.pos.x, player.pos.y, player.pos.x + player.width,
-			  player.pos.y + player.height, player.color);
-
-	for (i32 i {}; i < 4; ++i) {
-		Color_u32 tile_color;
-		auto& corner = global::corners[i];
-
-		if (corner.is_valid)
-			tile_color = { 0xFF'FF'00'00 };	 // red
-		else
-			tile_color = { 0xFF'00'FF'00 };	 // green
-
-		draw_rect(video_buffer, corner.pos.x, corner.pos.y, corner.pos.x + 2, corner.pos.y + 2,
-				  tile_color);
-	}
+	draw_rect(video_buffer_, player.pos.tile_rel_x, player.pos.tile_rel_y,
+			  player.pos.tile_rel_x + Player::s_width, player.pos.tile_rel_y + Player::s_height,
+			  player.color);
 }
 
 #if 0

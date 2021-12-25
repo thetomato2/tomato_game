@@ -1,5 +1,5 @@
-#ifndef TOMATO_FRAMEWORK_H_
-#define TOMATO_FRAMEWORK_H_
+#ifndef TOMATO_FRAMEWORK_HPP_
+#define TOMATO_FRAMEWORK_HPP_
 // C
 #include <tchar.h>
 
@@ -58,10 +58,10 @@ using wchar_t = uint16_t;
 #define local_persist	static
 #define global_variable static
 
-#include "base_types.h"
-#include "macros.h"
-#include "tomato_math.h"
-#include "utils.h"
-#include "console.h"
+#include "base_types.hpp"
+#include "macros.hpp"
+#include "tomato_math.hpp"
+#include "utils.hpp"
+#include "console.hpp"
 
 #endif

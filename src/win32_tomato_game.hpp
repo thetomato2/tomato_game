@@ -1,7 +1,7 @@
-#ifndef WIN32_TOMATO_GAME_H_
-#define WIN32_TOMATO_GAME_H_
+#ifndef WIN32_TOMATO_GAME_HPP_
+#define WIN32_TOMATO_GAME_HPP_
 
-#include "tomato_game.h"
+#include "tomato_game.hpp"
 
 namespace tomato::win32
 {
@@ -65,9 +65,9 @@ struct Debug_sound_time_marker
 
 template<typename T>
 consteval T
-debug_calculate_time_marker_count(const T size)
+debug_calculate_time_marker_count(const T size_)
 {
-	return size / 2;
+	return size_ / 2;
 }
 }  // namespace tomato::win32
 

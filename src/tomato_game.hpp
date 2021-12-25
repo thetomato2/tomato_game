@@ -1,7 +1,7 @@
-#ifndef TOMATO_GAME_H_
-#define TOMATO_GAME_H_
+#ifndef TOMATO_GAME_HPP_
+#define TOMATO_GAME_HPP_
 
-#include "tomato_framework.h"
+#include "tomato_framework.hpp"
 
 #define TOM_WIN32
 #ifdef TOM_WIN32
@@ -24,14 +24,15 @@ struct Debug_read_file_result
 
 	//! all these C shenanigans...
 	// TODO:  C++-ify this
-	#define DEBUG_PLATFORM_FREE_FILE_MEMORY(name) void name(void* memory)
+	#define DEBUG_PLATFORM_FREE_FILE_MEMORY(name) void name(void* memory_)
 typedef DEBUG_PLATFORM_FREE_FILE_MEMORY(debug_platform_free_file_memory);
 
-	#define DEBUG_PLATFORM_READ_ENTIRE_FILE(name) Debug_read_file_result name(const char* file_name)
+	#define DEBUG_PLATFORM_READ_ENTIRE_FILE(name) \
+		Debug_read_file_result name(const char* file_name_)
 typedef DEBUG_PLATFORM_READ_ENTIRE_FILE(debug_platform_read_entire_file);
 
 	#define DEBUG_PLATFORM_WRITE_ENTIRE_FILE(name) \
-		bool32 name(const char* file_name, u64 memory_size, void* memory)
+		bool32 name(const char* file_name_, u64 memory_size_, void* memory_)
 typedef DEBUG_PLATFORM_WRITE_ENTIRE_FILE(debug_platform_write_entire_file);
 #endif
 
@@ -216,13 +217,13 @@ struct Thread_context
 	i32 place_holder;
 };
 
-#define GAME_UPDATE_AND_RENDER(name)                                         \
-	void name(Thread_context thread, Game_memory& memory, Game_input& input, \
-			  Game_offscreen_buffer& video_buffer, Game_sound_output_buffer& sound_buffer)
+#define GAME_UPDATE_AND_RENDER(name)                                            \
+	void name(Thread_context thread_, Game_memory& memory_, Game_input& input_, \
+			  Game_offscreen_buffer& video_buffer_, Game_sound_output_buffer& sound_buffer_)
 typedef GAME_UPDATE_AND_RENDER(game_update_and_render_stub);
 
 #define GAME_GET_SOUND_SAMPLES(name) \
-	void name(Thread_context thread, Game_memory& memory, Game_sound_output_buffer& sound_buffer)
+	void name(Thread_context thread_, Game_memory& memory_, Game_sound_output_buffer& sound_buffer_)
 typedef GAME_GET_SOUND_SAMPLES(game_get_sound_samples_stub);
 
 struct Tile_map
@@ -239,8 +240,8 @@ struct Canonical_pos
 	i32 tile_y;
 
 	// NOTE: relative to tile
-	f32 x;
-	f32 y;
+	f32 tile_rel_x;
+	f32 tile_rel_y;
 };
 
 struct Raw_pos
@@ -255,10 +256,11 @@ struct Raw_pos
 
 struct Player
 {
-	Raw_pos pos;
+	static constexpr f32 s_height = 50.f;
+	static constexpr f32 s_width  = 40.f;
+
+	Canonical_pos pos;
 	Color_u32 color;
-	f32 height;
-	f32 width;
 };
 
 struct World

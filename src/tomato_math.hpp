@@ -1,8 +1,8 @@
-#ifndef TOMATO_MATH_H_
-#define TOMATO_MATH_H_
+#ifndef TOMATO_MATH_HPP_
+#define TOMATO_MATH_HPP_
 #include <cassert>
 #include <cmath>
-#include "base_types.h"
+#include "base_types.hpp"
 
 // TODO: convert all of these to platform-efficient versions and remove cmath
 

@@ -1,5 +1,5 @@
-#ifndef BASE_TYPES_H_
-#define BASE_TYPES_H_
+#ifndef BASE_TYPES_HPP_
+#define BASE_TYPES_HPP_
 #include <stdint.h>
 
 using i8  = int8_t;
