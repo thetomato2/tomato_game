@@ -1,4 +1,4 @@
 
-pushd .\cl_build
-win32_tomato_game.exe
+pushd ..\cl_build
+win32_layer.exe
 popd
