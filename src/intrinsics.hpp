@@ -4,4 +4,4 @@
 #include <cmath>
 #include "base_types.hpp"
 
-#endif	// TOMATO_INTRINSICS_H_
+#endif	// TOMATO_INTRINSICS_HPP_

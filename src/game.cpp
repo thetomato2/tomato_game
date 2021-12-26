@@ -1,4 +1,4 @@
-#include "tomato_game.hpp"
+#include "game.hpp"
 
 namespace tomato
 {

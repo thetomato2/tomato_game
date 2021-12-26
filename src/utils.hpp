@@ -1,7 +1,7 @@
-#ifndef UTILS_HPP_
-#define UTILS_HPP_
+#ifndef TOMATO_UTILS_HPP_
+#define TOMATO_UTILS_HPP_
 
-#include "tomato_framework.hpp"
+#include "framework.hpp"
 
 namespace tomato::util
 {

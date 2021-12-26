@@ -1,4 +1,4 @@
-#include "win32_tomato_game.hpp"
+#include "win32_layer.hpp"
 
 namespace tomato
 {
@@ -225,7 +225,7 @@ enum Keys : byt
 
 // #Globals
 constexpr u32 game_update_hertz		   = 60;
-constexpr f32 target_frames_per_second = 1.0f / (f32)game_update_hertz;
+constexpr f32 target_frames_per_second = 1.f / (f32)game_update_hertz;
 
 bool g_is_running;
 bool g_pause;
@@ -619,46 +619,6 @@ get_seconds_elapsed(LARGE_INTEGER start_, LARGE_INTEGER end_)
 	return seconds;
 }
 
-#if 0
-void
-debug_draw_vertical_line(OffScreenBffer& back_buffer_, s32 x_, s32 top_, s32 bot_, u32 color_)
-{
-	u8* pixel = (u8*)back_buffer_.mem + x_ * back_buffer_.bytPerPix + top_ * back_buffer_.pitch;
-	for (s32 y = top_; y < bot_; ++y) {
-		*(u32*)pixel = color_;
-		pixel += back_buffer_.pitch;
-	}
-}
-
-void
-debug_SyncDisplay(OffScreenBuffer& back_buffer_, SoundOutput& sound_output_,
-				  debug_SoundTimeMarker* debug_marker_arr_, szt debug_marker_arr_sz_,
-				  szt debug_markerInd, f32 targetSecondsPerFrame)
-
-{
-	s32 padX = 16;
-	s32 padY = 16;
-
-	s32 topPlay	 = padY;
-	s32 botPlay	 = back_buffer_.height - (back_buffer_.height - 50 - topPlay);
-	s32 topWrite = botPlay;
-	s32 botWrite = back_buffer_.height - (back_buffer_.height - 50 - botPlay);
-	f32 c		 = f32(back_buffer_.width) / f32(sound_output_.secondaryBufSz);
-
-	auto drawSoundBufferMarker = [&](DWORD cursor, s32 top, s32 bot, u32 color) {
-		// assert(cursor < sound_output_.secondaryBufSz);
-		s32 x = padX + s32(c * (f32)cursor);
-		debug_DrawVerticalLine(back_buffer_, x, top, bot, color);
-	};
-
-	for (szt i {}; i < debug_marker_arr_sz_; ++i) {
-		drawSoundBufferMarker(debug_marker_arr_[i].playCursor, topPlay, botPlay, 0xFFFFFFFF);
-		drawSoundBufferMarker(debug_marker_arr_[i].writeCursor, topWrite, botWrite, 0xFFFF0000);
-	}
-}
-
-#endif
-
 // ===============================================================================================
 // #PLAYBACK
 // ===============================================================================================
@@ -1000,11 +960,6 @@ Main(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLine, i32 nShowCm
 	Game_input& new_input = input[0];
 	Game_input& old_input = input[1];
 
-#ifdef TOM_INTERNAL
-	Debug_sound_time_marker debug_marker_array[game_update_hertz / 2] {};
-	szt debug_time_marker_index {};
-#endif
-
 	LARGE_INTEGER last_counter = get_wall_clock();
 	u64 last_cycle_count	   = __rdtsc();
 
@@ -1134,19 +1089,6 @@ Main(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLine, i32 nShowCm
 		if (write_cursor > sound_output.secondary_buf_size) {
 			write_cursor -= sound_output.secondary_buf_size;
 		}
-
-#ifdef TOM_INTERNAL
-
-		if (!g_pause) {
-			debug_marker_array[debug_time_marker_index].play_cursor	 = play_cursor;
-			debug_marker_array[debug_time_marker_index].write_cursor = write_cursor;
-
-			++debug_time_marker_index;
-			if (debug_time_marker_index > ArrayCount(debug_marker_array))
-				debug_time_marker_index = 0;
-		}
-#endif
-
 		// f64 FPS	 = (f64)gs_perfCountFrequency / (f64)counterElapsed;
 		// f64 MCPF = (f64)(cyclesElapsed / (1000.f * 1000.f));
 

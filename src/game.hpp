@@ -1,7 +1,7 @@
 #ifndef TOMATO_GAME_HPP_
 #define TOMATO_GAME_HPP_
 
-#include "tomato_framework.hpp"
+#include "framework.hpp"
 
 #define TOM_WIN32
 #ifdef TOM_WIN32

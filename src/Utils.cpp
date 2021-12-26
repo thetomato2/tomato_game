@@ -3,6 +3,7 @@
 
 namespace tomato::util
 {
+#if 0
 void
 DeletionQueue::pushFunction(std::function<void()>&& voidFunc)
 {
@@ -19,5 +20,5 @@ DeletionQueue::flush()
 	}
 	deletors_.clear();
 }
-
+#endif 
 }  // namespace tomato::util

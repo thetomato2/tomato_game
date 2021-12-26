@@ -1,7 +1,7 @@
-#ifndef WIN32_TOMATO_GAME_HPP_
-#define WIN32_TOMATO_GAME_HPP_
+#ifndef TOMATO_WIN32_LAYER_HPP_
+#define TOMATO_WIN32_LAYER_HPP_
 
-#include "tomato_game.hpp"
+#include "game.hpp"
 
 namespace tomato::win32
 {

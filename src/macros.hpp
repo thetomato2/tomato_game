@@ -1,5 +1,5 @@
-#ifndef MACROS_H_
-#define MACROS_H_
+#ifndef TOMATO_MACROS_HPP_
+#define TOMATO_MACROS_HPP_
 
 #ifdef TOM_INTERNAL
 	#define TOM_ASSERT(x, ...)                                                            \

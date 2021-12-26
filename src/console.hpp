@@ -1,7 +1,7 @@
-#ifndef CONSOLE_HPP_
-#define CONSOLE_HPP_
+#ifndef TOMATO_CONSOLE_HPP_
+#define TOMATO_CONSOLE_HPP_
 
-#include "tomato_framework.hpp"
+#include "framework.hpp"
 
 namespace tomato
 {
