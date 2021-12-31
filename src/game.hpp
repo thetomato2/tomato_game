@@ -231,7 +231,7 @@ struct Tile_map
 	u32* tiles;
 };
 
-struct Canonical_pos
+struct World_pos
 {
 	i32 tile_map_x;
 	i32 tile_map_y;
@@ -244,22 +244,12 @@ struct Canonical_pos
 	f32 tile_rel_y;
 };
 
-struct Raw_pos
-{
-	i32 tile_map_x;
-	i32 tile_map_y;
-
-	// NOTE: relative to tile map
-	f32 x;
-	f32 y;
-};
-
 struct Player
 {
 	static constexpr f32 s_height = 50.f;
 	static constexpr f32 s_width  = 40.f;
 
-	Canonical_pos pos;
+	World_pos pos;
 	Color_u32 color;
 };
 
@@ -268,8 +258,8 @@ struct World
 	static constexpr i32 s_tile_map_count_x = 2;
 	static constexpr i32 s_tile_map_count_y = 2;
 
-	static constexpr i32 s_count_x = 16;
-	static constexpr i32 s_count_y = 9;
+	static constexpr i32 s_tile_count_x = 16;
+	static constexpr i32 s_tile_count_y = 9;
 
 	static constexpr f32 s_tile_size_meters = 1.4f;
 	static constexpr u32 s_tile_size_pixels = 60;

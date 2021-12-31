@@ -21,13 +21,4 @@
 
 #define ArrayCount(Array) (sizeof((Array)) / sizeof((Array)[0]))
 
-#if TOM_INTERNAL
-	#define Assert(expression) \
-		if (!(expression)) {   \
-			*(int*)0 = 0;      \
-		}
-#elif
-	#define Assert(expression)
-#endif
-
 #endif

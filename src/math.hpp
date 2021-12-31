@@ -9,54 +9,54 @@
 namespace tomato::math
 {
 inline u32
-safe_truncate_u32_to_u64(u64 value)
+safe_truncate_u32_to_u64(u64 value_)
 {
 	// TODO: defines for max values
-	assert(value <= 0xFFFFFFFF);
-	u32 res = (u32)value;
-	return res;
+	assert(value_ <= 0xFFFFFFFF);
+	u32 result = (u32)value_;
+	return result;
 }
 
 inline i32
-round_f32_to_i32(f32 value)
+round_f32_to_i32(f32 value_)
 {
-	i32 res = i32(value + 0.5f);
-	return res;
+	i32 result = i32(value_ + 0.5f);
+	return result;
 }
 
 inline u32
-rnd_f32_to_u32(f32 value)
+rnd_f32_to_u32(f32 value_)
 {
-	u32 res = u32(value + 0.5f);
-	return res;
+	u32 result = u32(value_ + 0.5f);
+	return result;
 }
 
 inline i32
-floorf_to_i32(f32 val)
+floorf_to_i32(f32 value_)
 {
-	i32 res = (i32)floorf(val);
-	return res;
+	i32 result = (i32)floorf(value_);
+	return result;
 }
 
 inline f32
-sin(f32 angle)
+sin(f32 angle_)
 {
-	f32 res = sinf(angle);
-	return res;
+	f32 result = sinf(angle_);
+	return result;
 }
 
 inline f32
-cos(f32 angle)
+cos(f32 angle_)
 {
-	f32 res = cosf(angle);
-	return res;
+	f32 result = cosf(angle_);
+	return result;
 }
 
 inline f32
-atan2(f32 x, f32 y)
+atan2(f32 x_, f32 y_)
 {
-	f32 res = atan2f(x, y);
-	return res;
+	f32 result = atan2f(x_, y_);
+	return result;
 }
 
 }  // namespace tomato::math
