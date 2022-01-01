@@ -96,12 +96,12 @@ inline void
 recanonicalize_coord(const World& world_, const i32 tile_count_, i32& tile_map_, i32& tile_,
 					 f32& tile_rel_)
 {
-	i32 offset = math::floorf_to_i32(tile_rel_ / (f32)World::s_tile_size_pixels);
+	i32 offset = math::floorf_to_i32(tile_rel_ / (f32)World::s_tile_size_meters);
 	tile_ += offset;
-	tile_rel_ -= offset * (f32)World::s_tile_size_pixels;
+	tile_rel_ -= offset * (f32)World::s_tile_size_meters;
 
 	assert(tile_rel_ >= 0);
-	assert(tile_rel_ < World::s_tile_size_pixels);
+	assert(tile_rel_ < World::s_tile_size_meters);
 
 	// check bounds to see if player is in a neighboring tile map
 	if (tile_ < 0) {
@@ -226,14 +226,12 @@ GAME_UPDATE_AND_RENDER(game_update_and_render)
 	if (!memory_.is_initialized) {
 		const char* file_name = __FILE__;
 
-		game_state.player.pos.tile_rel_x = 10.f;
-		game_state.player.pos.tile_rel_y = 10.f;
+		game_state.player.pos.tile_rel_x = .5f;
+		game_state.player.pos.tile_rel_y = .5f;
 		game_state.player.pos.tile_map_x = 0;
 		game_state.player.pos.tile_map_y = 0;
 		game_state.player.pos.tile_x	 = 3;
 		game_state.player.pos.tile_y	 = 3;
-		game_state.player.pos.tile_rel_x = 5.f;
-		game_state.player.pos.tile_rel_y = 5.f;
 
 		game_state.player.color = { 0xFF'FF'FF'00 };
 
@@ -317,7 +315,7 @@ GAME_UPDATE_AND_RENDER(game_update_and_render)
 		// TODO: handle digital input_
 	}
 
-	static constexpr f32 player_speed = 128.f;
+	static constexpr f32 player_speed = 5.f;
 
 	auto& player = game_state.player;
 	// TODO: temp
@@ -374,12 +372,16 @@ GAME_UPDATE_AND_RENDER(game_update_and_render)
 
 	// NOTE: caching for clarity, not perf
 	auto player_center_pos = get_player_center_pos(world, player);
-	f32 x = player_center_pos.tile_rel_x + (world.s_tile_size_pixels * player_center_pos.tile_x) +
-			world.s_upper_left_x - (player.s_width / 2);
-	f32 y = player_center_pos.tile_rel_y + (world.s_tile_size_pixels * player_center_pos.tile_y) +
-			world.s_upper_left_y - (player.s_height / 2);
 
-	draw_rect(video_buffer_, x, y, x + Player::s_width, y + Player::s_height, player.color);
+	f32 x = (player_center_pos.tile_rel_x * World::s_meters_to_pixels) +
+			(world.s_tile_size_pixels * player_center_pos.tile_x) + world.s_upper_left_x -
+			((player.s_width * World::s_meters_to_pixels) / 2);
+	f32 y = (player_center_pos.tile_rel_y * World::s_meters_to_pixels) +
+			(world.s_tile_size_pixels * player_center_pos.tile_y) + world.s_upper_left_y -
+			((player.s_height * World::s_meters_to_pixels) / 2);
+
+	draw_rect(video_buffer_, x, y, x + Player::s_width * World::s_meters_to_pixels,
+			  y + Player::s_height * World::s_meters_to_pixels, player.color);
 }
 
 #if 0

@@ -246,8 +246,8 @@ struct World_pos
 
 struct Player
 {
-	static constexpr f32 s_height = 50.f;
-	static constexpr f32 s_width  = 40.f;
+	static constexpr f32 s_height = .75f;
+	static constexpr f32 s_width  = 0.75f * s_height;
 
 	World_pos pos;
 	Color_u32 color;
@@ -263,6 +263,7 @@ struct World
 
 	static constexpr f32 s_tile_size_meters = 1.4f;
 	static constexpr u32 s_tile_size_pixels = 60;
+	static constexpr f32 s_meters_to_pixels = s_tile_size_pixels / s_tile_size_meters;
 
 	static constexpr f32 s_upper_left_x = 15.f;
 	static constexpr f32 s_upper_left_y = 15.f;
