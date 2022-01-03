@@ -847,12 +847,12 @@ Main(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLine, i32 nShowCm
 		return 0;
 	}
 
-	// DWORD dwStyle = WS_OVERLAPPEDWINDOW | WS_VISIBLE;
-	DWORD dw_style = WS_OVERLAPPED | WS_MINIMIZEBOX | WS_SYSMENU;
+	DWORD dw_style = WS_OVERLAPPEDWINDOW | WS_VISIBLE;
+	// DWORD dw_style = WS_OVERLAPPED | WS_MINIMIZEBOX | WS_SYSMENU;
 
 	RECT wr;
-	wr.left	  = 100;
-	wr.top	  = 100;
+	wr.left	  = 0;
+	wr.top	  = 0;
 	wr.right  = win_width + wr.left;
 	wr.bottom = win_height + wr.top;
 
