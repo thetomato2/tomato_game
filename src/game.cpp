@@ -359,22 +359,29 @@ GAME_UPDATE_AND_RENDER(game_update_and_render)
                 tile_color.argb = 0xFF'88'88'88;
             }
 
-            f32 min_x = world.s_lower_left_x + ((f32)x) * World::s_tile_size_pixels;
-            f32 min_y = world.s_lower_left_y - ((f32)y) * World::s_tile_size_pixels;
+            f32 min_x = world.s_lower_left_x + ((f32)x * World::s_tile_size_pixels);
+            f32 min_y =
+                world.s_lower_left_y - ((f32)y * World::s_tile_size_pixels) -
+                (video_buffer_.height - (World::s_tile_count_y * World::s_tile_size_pixels));
             f32 max_x = min_x + World::s_tile_size_pixels;
-            f32 max_y = min_y - World::s_tile_size_pixels;
+            f32 max_y =
+                min_y - World::s_tile_size_pixels -
+                (video_buffer_.height - (World::s_tile_count_y * World::s_tile_size_pixels));
 
             draw_rect(video_buffer_, min_x, max_y, max_x, min_y, tile_color);
         }
     }
 
+    // NOTE: this is getting a bit convoluted, but will be eventually factored out
     f32 x = (player_center_pos.tile_rel_x * World::s_meters_to_pixels) +
             (world.s_tile_size_pixels * player_center_pos.tile_x) +
             ((player.s_width * World::s_meters_to_pixels) / 2);
 
-    f32 y = world.s_lower_left_y - ((player_center_pos.tile_rel_y * World::s_meters_to_pixels) +
-                                    (world.s_tile_size_pixels * player_center_pos.tile_y) +
-                                    (player.s_height * World::s_meters_to_pixels) / 2);
+    f32 y = world.s_lower_left_y -
+            ((player_center_pos.tile_rel_y * World::s_meters_to_pixels) +
+             (world.s_tile_size_pixels * player_center_pos.tile_y) +
+             (player.s_height * World::s_meters_to_pixels) / 2) -
+            (video_buffer_.height - (World::s_tile_count_y * World::s_tile_size_pixels));
 
     draw_rect(video_buffer_, x, y, x + Player::s_width * World::s_meters_to_pixels,
               y + Player::s_height * World::s_meters_to_pixels, player.color);
@@ -390,13 +397,13 @@ namespace win32
         #include <windows.h>
 BOOL APIENTRY DllMain(HMODULE hModule, DWORD ul_reason_for_call, LPVOID lpReserved)
 {
-	switch (ul_reason_for_call) {
-		case DLL_PROCESS_ATTACH:
-		case DLL_THREAD_ATTACH:
-		case DLL_THREAD_DETACH:
-		case DLL_PROCESS_DETACH: break;
-	}
-	return TRUE;
+    switch (ul_reason_for_call) {
+        case DLL_PROCESS_ATTACH:
+        case DLL_THREAD_ATTACH:
+        case DLL_THREAD_DETACH:
+        case DLL_PROCESS_DETACH: break;
+    }
+    return TRUE;
 }
 }  // namespace win32
 
