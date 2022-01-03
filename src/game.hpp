@@ -265,8 +265,8 @@ struct World
 	static constexpr u32 s_tile_size_pixels = 60;
 	static constexpr f32 s_meters_to_pixels = s_tile_size_pixels / s_tile_size_meters;
 
-	static constexpr f32 s_upper_left_x = 15.f;
-	static constexpr f32 s_upper_left_y = 15.f;
+	f32 s_lower_left_x;
+	f32 s_lower_left_y;
 
 	Tile_map* cur_tile_map;
 	Tile_map* tile_maps;

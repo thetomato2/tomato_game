@@ -2,11 +2,6 @@
 
 namespace tomato
 {
-namespace global
-{
-constexpr bool grid_on = false;
-
-}  // namespace global
 
 namespace
 {
@@ -101,7 +96,7 @@ recanonicalize_coord(const World& world_, const i32 tile_count_, i32& tile_map_,
 	tile_rel_ -= offset * (f32)World::s_tile_size_meters;
 
 	assert(tile_rel_ >= 0);
-	assert(tile_rel_ < World::s_tile_size_meters);
+	assert(tile_rel_ <= World::s_tile_size_meters);
 
 	// check bounds to see if player is in a neighboring tile map
 	if (tile_ < 0) {
@@ -293,6 +288,8 @@ GAME_UPDATE_AND_RENDER(game_update_and_render)
 
 	World world {};
 	Tile_map tile_maps[World::s_tile_map_count_x][World::s_tile_map_count_y] {};
+	world.s_lower_left_x = (f32)World::s_tile_size_pixels / 2.f;
+	world.s_lower_left_y = (f32)video_buffer_.height;
 
 	tile_maps[0][0].tiles = (u32*)tiles_0;
 	tile_maps[0][1].tiles = (u32*)tiles_1;
@@ -323,9 +320,9 @@ GAME_UPDATE_AND_RENDER(game_update_and_render)
 	auto new_player_pos = player.pos;
 
 	if (input_.keyboard.w.ended_down) {
-		new_player_pos.tile_rel_y -= player_speed * input_.deltaTime;
-	} else if (input_.keyboard.s.ended_down) {
 		new_player_pos.tile_rel_y += player_speed * input_.deltaTime;
+	} else if (input_.keyboard.s.ended_down) {
+		new_player_pos.tile_rel_y -= player_speed * input_.deltaTime;
 	}
 
 	if (input_.keyboard.d.ended_down) {
@@ -347,38 +344,37 @@ GAME_UPDATE_AND_RENDER(game_update_and_render)
 	Color_u32 clear_color { 0xFF'00'00'00 };
 	clear_buffer(video_buffer_, clear_color);
 
+	// NOTE: caching for clarity, not perf
+	auto player_center_pos = get_player_center_pos(world, player);
+
 	for (i32 y {}; y < World::s_tile_count_y; ++y) {
 		for (i32 x {}; x < World::s_tile_count_x; ++x) {
 			u32 tile = get_tile_value_unchecked(*world.cur_tile_map, x, y);
 			Color_u32 tile_color;
-			if (tile) {
+			if (player_center_pos.tile_x == x && player_center_pos.tile_y == y) {
+				tile_color.argb = 0xFF'00'00'00;
+			} else if (tile) {
 				tile_color.argb = 0xFF'DD'DD'DD;
 			} else {
 				tile_color.argb = 0xFF'88'88'88;
 			}
 
-			f32 min_x = World::s_upper_left_x + ((f32)x) * World::s_tile_size_pixels;
-			f32 min_y = World::s_upper_left_y + ((f32)y) * World::s_tile_size_pixels;
+			f32 min_x = world.s_lower_left_x + ((f32)x) * World::s_tile_size_pixels;
+			f32 min_y = world.s_lower_left_y - ((f32)y) * World::s_tile_size_pixels;
 			f32 max_x = min_x + World::s_tile_size_pixels;
-			f32 max_y = min_y + World::s_tile_size_pixels;
+			f32 max_y = min_y - World::s_tile_size_pixels;
 
-			draw_rect(video_buffer_, min_x, min_y, max_x, max_y, tile_color);
-			if (global::grid_on) {
-				draw_rect(video_buffer_, min_x, min_y, min_x + 2, max_y, { 0xFF'00'00'00 });
-				draw_rect(video_buffer_, min_x, min_y, max_x, min_y + 2, { 0xFF'00'00'00 });
-			}
+			draw_rect(video_buffer_, min_x, max_y, max_x, min_y, tile_color);
 		}
 	}
 
-	// NOTE: caching for clarity, not perf
-	auto player_center_pos = get_player_center_pos(world, player);
-
 	f32 x = (player_center_pos.tile_rel_x * World::s_meters_to_pixels) +
-			(world.s_tile_size_pixels * player_center_pos.tile_x) + world.s_upper_left_x -
+			(world.s_tile_size_pixels * player_center_pos.tile_x) +
 			((player.s_width * World::s_meters_to_pixels) / 2);
-	f32 y = (player_center_pos.tile_rel_y * World::s_meters_to_pixels) +
-			(world.s_tile_size_pixels * player_center_pos.tile_y) + world.s_upper_left_y -
-			((player.s_height * World::s_meters_to_pixels) / 2);
+
+	f32 y = world.s_lower_left_y - ((player_center_pos.tile_rel_y * World::s_meters_to_pixels) +
+									(world.s_tile_size_pixels * player_center_pos.tile_y) +
+									(player.s_height * World::s_meters_to_pixels) / 2);
 
 	draw_rect(video_buffer_, x, y, x + Player::s_width * World::s_meters_to_pixels,
 			  y + Player::s_height * World::s_meters_to_pixels, player.color);
