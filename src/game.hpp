@@ -263,7 +263,7 @@ struct World
 {
     // NOTE: set to 256x256 tiles per chunk
     static constexpr u32 s_chunk_bit_shift  = 8;
-    static constexpr u32 s_chunk_bit_mask   = 0xFF;
+    static constexpr u32 s_chunk_bit_mask   = (1 << s_chunk_bit_shift) - 1;
     static constexpr u32 s_chunk_tile_count = 256;
     static constexpr u32 s_chunk_count      = 1;
 

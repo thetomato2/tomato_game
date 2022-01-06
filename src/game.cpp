@@ -3,9 +3,6 @@
 namespace tomato
 {
 
-// ===============================================================================================
-// #Internal
-// ===============================================================================================
 namespace
 {
 
@@ -49,10 +46,6 @@ draw_rect(Game_offscreen_buffer& buffer_, f32 f32_min_x_, f32 f_min_y_, f32 f32_
         row += buffer_.pitch;
     }
 }
-
-// ===============================================================================================
-// #Coords
-// ===============================================================================================
 
 inline Tile_chunk_pos
 get_chunk_pos(u32 abs_tile_x_, u32 abs_tile_y_)
@@ -104,7 +97,10 @@ get_tile_value(World& world_, u32 abs_tile_x_, u32 abs_tile_y_)
 
     Tile_chunk_pos chunk_pos = get_chunk_pos(abs_tile_x_, abs_tile_y_);
     Tile_chunk* tile_chunk = get_tile_chunk(world_, chunk_pos.chunk_tile_x, chunk_pos.chunk_tile_y);
-    tile_value = get_tile_value_unchecked(*tile_chunk, chunk_pos.rel_tile_x, chunk_pos.rel_tile_y);
+    if (tile_chunk) {
+        tile_value =
+            get_tile_value_unchecked(*tile_chunk, chunk_pos.rel_tile_x, chunk_pos.rel_tile_y);
+    }
 
     return tile_value;
 }
@@ -175,13 +171,13 @@ check_player_collision(World& world_, Player player_, World_pos test_pos_)
 inline World_pos
 get_player_center_pos(World& world_, Player& player_)
 {
-    auto result = player_.pos;
+    auto center_pos = player_.pos;
 
-    result.tile_rel_x += Player::s_width / 2;
-    result.tile_rel_y += Player::s_height / 2;
-    result = recanonicalize_pos(world_, result);
+    center_pos.tile_rel_x += Player::s_width / 2;
+    center_pos.tile_rel_y += Player::s_height / 2;
+    center_pos = recanonicalize_pos(world_, center_pos);
 
-    return result;
+    return center_pos;
 }
 
 void
@@ -262,7 +258,7 @@ GAME_UPDATE_AND_RENDER(game_update_and_render)
         { 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 1,
           1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1 },
         { 1, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0,
-          1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 },
+          0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 },
         { 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1,
           1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1 },
         { 1, 0, 0, 1, 1, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 1,
@@ -270,8 +266,8 @@ GAME_UPDATE_AND_RENDER(game_update_and_render)
         { 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1,
           1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1 },
         { 1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1,
-          1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1 },
-        { 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+          1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1 },
+        { 1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1,
           1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1 },
         { 1, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 0, 0, 1,
           1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1 },
@@ -279,7 +275,7 @@ GAME_UPDATE_AND_RENDER(game_update_and_render)
           1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1 },
         { 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1,
           1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1 },
-        { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1,
+        { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
           0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1 },
         { 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1,
           1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1 },
@@ -287,7 +283,7 @@ GAME_UPDATE_AND_RENDER(game_update_and_render)
           1, 0, 0, 1, 1, 0, 1, 0, 0, 0, 1, 0, 0, 0, 0, 1 },
         { 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1,
           1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1 },
-        { 1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1,
+        { 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
           1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1 }
     };
 
@@ -348,11 +344,15 @@ GAME_UPDATE_AND_RENDER(game_update_and_render)
     // NOTE: caching for clarity, not perf
     auto player_center_pos = get_player_center_pos(world, player);
 
-    u32 draw_tiles_x = 16;
-    u32 draw_tiles_y = 9;
+    i32 num_draw_tiles = 10;
+    f32 center_x       = .5f * (f32)video_buffer_.width;
+    f32 center_y       = .5f * (f32)video_buffer_.height;
 
-    for (i32 y {}; y < draw_tiles_y; ++y) {
-        for (i32 x {}; x < draw_tiles_x; ++x) {
+    for (i32 rel_y = -10; rel_y < num_draw_tiles; ++rel_y) {
+        for (i32 rel_x = -10; rel_x < num_draw_tiles; ++rel_x) {
+            u32 x = player.pos.abs_tile_x + rel_x;
+            u32 y = player.pos.abs_tile_y + rel_y;
+
             u32 tile = get_tile_value(world, x, y);
             Color_u32 tile_color;
             if (player_center_pos.abs_tile_x == x && player_center_pos.abs_tile_y == y) {
@@ -363,27 +363,19 @@ GAME_UPDATE_AND_RENDER(game_update_and_render)
                 tile_color.argb = 0xFF'88'88'88;
             }
 
-            f32 min_x = lower_left_x + ((f32)x * World::s_tile_size_pixels);
-            f32 min_y = lower_left_y - ((f32)y * World::s_tile_size_pixels) -
-                        (video_buffer_.height - (draw_tiles_y * World::s_tile_size_pixels));
+            f32 min_x = center_x - (player.pos.tile_rel_x * World::s_meters_to_pixels) +
+                        (f32)rel_x * World::s_tile_size_pixels;
+            f32 min_y = center_y + (player.pos.tile_rel_y * World::s_meters_to_pixels) -
+                        (f32)rel_y * World::s_tile_size_pixels;
             f32 max_x = min_x + World::s_tile_size_pixels;
-            f32 max_y = min_y - World::s_tile_size_pixels -
-                        (video_buffer_.height - (draw_tiles_y * World::s_tile_size_pixels));
+            f32 max_y = min_y - World::s_tile_size_pixels;
 
             draw_rect(video_buffer_, min_x, max_y, max_x, min_y, tile_color);
         }
     }
 
-    // NOTE: this is getting a bit convoluted, but will be eventually factored out
-    f32 x = (player_center_pos.tile_rel_x * World::s_meters_to_pixels) +
-            (world.s_tile_size_pixels * player_center_pos.abs_tile_x) +
-            ((player.s_width * World::s_meters_to_pixels) / 2);
-
-    f32 y = lower_left_y -
-            ((player_center_pos.tile_rel_y * World::s_meters_to_pixels) +
-             (world.s_tile_size_pixels * player_center_pos.abs_tile_y) +
-             (player.s_height * World::s_meters_to_pixels) / 2) -
-            (video_buffer_.height - (draw_tiles_y * World::s_tile_size_pixels));
+    f32 x = center_x;
+    f32 y = center_y - (player.s_height * World::s_meters_to_pixels);
 
     draw_rect(video_buffer_, x, y, x + Player::s_width * World::s_meters_to_pixels,
               y + Player::s_height * World::s_meters_to_pixels, player.color);
