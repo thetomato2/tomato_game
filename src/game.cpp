@@ -116,16 +116,15 @@ is_world_tile_empty(World& world_, World_pos test_pos_)
 inline void
 recanonicalize_coord(const World& world_, u32& tile_, f32& tile_rel_)
 {
-    i32 offset = math::floorf_to_i32(tile_rel_ / (f32)World::s_tile_size_meters);
-
-    // NOTE: wrold is assumed to be torodial (torus shaped world),
+    // NOTE: world is assumed to be torodial (torus shaped world),
     // if you step off one end where you wrap around
+    i32 offset = math::round_f32_to_i32(tile_rel_ / (f32)World::s_tile_size_meters);
 
     tile_ += offset;
     tile_rel_ -= offset * (f32)World::s_tile_size_meters;
 
-    assert(tile_rel_ >= 0);
-    assert(tile_rel_ <= World::s_tile_size_meters);
+    assert(tile_rel_ >= -.5f * World::s_tile_size_meters);
+    assert(tile_rel_ <= .5f * World::s_tile_size_meters);
 }
 
 inline World_pos
@@ -235,7 +234,7 @@ GAME_UPDATE_AND_RENDER(game_update_and_render)
 
         game_state.player.pos.tile_rel_x = .5f;
         game_state.player.pos.tile_rel_y = .5f;
-        game_state.player.pos.abs_tile_x = 3;
+        game_state.player.pos.abs_tile_x = 4;
         game_state.player.pos.abs_tile_y = 3;
 
         game_state.player.color = { 0xFF'FF'FF'00 };
@@ -289,9 +288,6 @@ GAME_UPDATE_AND_RENDER(game_update_and_render)
 
     World world {};
 
-    f32 lower_left_x = (f32)World::s_tile_size_pixels / 2.f;
-    f32 lower_left_y = (f32)video_buffer_.height;
-
     Tile_chunk tile_chunk;
     tile_chunk.tiles     = (u32*)tiles;
     world.tile_chunks    = &tile_chunk;
@@ -344,9 +340,9 @@ GAME_UPDATE_AND_RENDER(game_update_and_render)
     // NOTE: caching for clarity, not perf
     auto player_center_pos = get_player_center_pos(world, player);
 
-    i32 num_draw_tiles = 10;
-    f32 center_x       = .5f * (f32)video_buffer_.width;
-    f32 center_y       = .5f * (f32)video_buffer_.height;
+    i32 num_draw_tiles  = 10;
+    f32 screen_center_x = .5f * (f32)video_buffer_.width;
+    f32 screen_center_y = .5f * (f32)video_buffer_.height;
 
     for (i32 rel_y = -10; rel_y < num_draw_tiles; ++rel_y) {
         for (i32 rel_x = -10; rel_x < num_draw_tiles; ++rel_x) {
@@ -363,19 +359,21 @@ GAME_UPDATE_AND_RENDER(game_update_and_render)
                 tile_color.argb = 0xFF'88'88'88;
             }
 
-            f32 min_x = center_x - (player.pos.tile_rel_x * World::s_meters_to_pixels) +
+            f32 cen_x = screen_center_x - (player.pos.tile_rel_x * World::s_meters_to_pixels) +
                         (f32)rel_x * World::s_tile_size_pixels;
-            f32 min_y = center_y + (player.pos.tile_rel_y * World::s_meters_to_pixels) -
+            f32 cen_y = screen_center_y + (player.pos.tile_rel_y * World::s_meters_to_pixels) -
                         (f32)rel_y * World::s_tile_size_pixels;
-            f32 max_x = min_x + World::s_tile_size_pixels;
-            f32 max_y = min_y - World::s_tile_size_pixels;
+            f32 min_x = cen_x - .5f * World::s_tile_size_pixels;
+            f32 min_y = cen_y - .5f * World::s_tile_size_pixels;
+            f32 max_x = cen_x + .5f * World::s_tile_size_pixels;
+            f32 max_y = cen_y + .5f * World::s_tile_size_pixels;
 
-            draw_rect(video_buffer_, min_x, max_y, max_x, min_y, tile_color);
+            draw_rect(video_buffer_, min_x, min_y, max_x, max_y, tile_color);
         }
     }
 
-    f32 x = center_x;
-    f32 y = center_y - (player.s_height * World::s_meters_to_pixels);
+    f32 x = screen_center_x;
+    f32 y = screen_center_y - (player.s_height * World::s_meters_to_pixels);
 
     draw_rect(video_buffer_, x, y, x + Player::s_width * World::s_meters_to_pixels,
               y + Player::s_height * World::s_meters_to_pixels, player.color);

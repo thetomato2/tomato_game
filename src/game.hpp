@@ -242,10 +242,11 @@ struct Tile_chunk_pos
 
 struct World_pos
 {
+    // NOTE: these are fixed point positioins. The high bits are the tile
+    // chunk index, and the lower bits are the tile index in the chunk
     u32 abs_tile_x;
     u32 abs_tile_y;
 
-    // TODO: rename to offset?
     f32 tile_rel_x;
     f32 tile_rel_y;
 };
