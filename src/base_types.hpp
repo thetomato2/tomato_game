@@ -1,5 +1,4 @@
-#ifndef TOMATO_BASE_TYPES_HPP_
-#define TOMATO_BASE_TYPES_HPP_
+#pragma once
 #include <stdint.h>
 
 using i8  = int8_t;
@@ -23,5 +22,3 @@ using wchar = wchar_t;
 #endif
 
 using bool32 = i32;
-
-#endif

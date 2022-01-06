@@ -1,4 +1,3 @@
-
 #include "utils.hpp"
 
 namespace tomato::util
@@ -20,5 +19,5 @@ DeletionQueue::flush()
 	}
 	deletors_.clear();
 }
-#endif 
+#endif
 }  // namespace tomato::util

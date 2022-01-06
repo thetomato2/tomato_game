@@ -1,5 +1,4 @@
-#ifndef TOMATO_MATH_HPP_
-#define TOMATO_MATH_HPP_
+#pragma once
 #include <cassert>
 #include <cmath>
 #include "base_types.hpp"
@@ -60,5 +59,3 @@ atan2(f32 x_, f32 y_)
 }
 
 }  // namespace tomato::math
-
-#endif  // TOMATO_MATH_H_

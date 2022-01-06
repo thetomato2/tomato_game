@@ -1,6 +1,4 @@
-#ifndef TOMATO_GAME_HPP_
-#define TOMATO_GAME_HPP_
-
+#pragma once
 #include "framework.hpp"
 
 #define TOM_WIN32
@@ -282,4 +280,3 @@ struct Game_state
 };
 
 }  // namespace tomato
-#endif
