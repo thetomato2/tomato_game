@@ -17,7 +17,7 @@ using f64 = double;
 using szt = size_t;
 using byt = unsigned char;
 
-#ifdef WIN32
+#ifdef _WIN32
 using wchar = wchar_t;
 #endif
 

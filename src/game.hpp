@@ -1,5 +1,6 @@
 #pragma once
 #include "framework.hpp"
+#include "tile.hpp"
 
 #define TOM_WIN32
 #ifdef TOM_WIN32
@@ -35,15 +36,6 @@ typedef DEBUG_PLATFORM_WRITE_ENTIRE_FILE(debug_platform_write_entire_file);
 #endif
 
 #define ArrayCount(Array) (sizeof((Array)) / sizeof((Array)[0]))
-
-#if TOM_INTERNAL
-    #define Assert(expression) \
-        if (!(expression)) {   \
-            *(int*)0 = 0;      \
-        }
-#elif
-    #define Assert(expression)
-#endif
 
 struct Game_offscreen_buffer
 {
@@ -224,54 +216,18 @@ typedef GAME_UPDATE_AND_RENDER(game_update_and_render_stub);
     void name(Thread_context thread_, Game_memory& memory_, Game_sound_output_buffer& sound_buffer_)
 typedef GAME_GET_SOUND_SAMPLES(game_get_sound_samples_stub);
 
-struct Tile_chunk
-{
-    u32* tiles;
-};
-
-struct Tile_chunk_pos
-{
-    u32 chunk_tile_x;
-    u32 chunk_tile_y;
-
-    u32 rel_tile_x;
-    u32 rel_tile_y;
-};
-
-struct World_pos
-{
-    // NOTE: these are fixed point positioins. The high bits are the tile
-    // chunk index, and the lower bits are the tile index in the chunk
-    u32 abs_tile_x;
-    u32 abs_tile_y;
-
-    f32 tile_rel_x;
-    f32 tile_rel_y;
-};
-
 struct Player
 {
     static constexpr f32 s_height = .75f;
     static constexpr f32 s_width  = 0.75f * s_height;
 
-    World_pos pos;
+    Tile_map_pos pos;
     Color_u32 color;
 };
 
 struct World
 {
-    // NOTE: set to 256x256 tiles per chunk
-    static constexpr u32 s_chunk_bit_shift  = 8;
-    static constexpr u32 s_chunk_bit_mask   = (1 << s_chunk_bit_shift) - 1;
-    static constexpr u32 s_chunk_tile_count = 256;
-    static constexpr u32 s_chunk_count      = 1;
-
-    static constexpr f32 s_tile_size_meters = 1.4f;
-    static constexpr u32 s_tile_size_pixels = 60;
-    static constexpr f32 s_meters_to_pixels = s_tile_size_pixels / s_tile_size_meters;
-
-    Tile_chunk* tile_chunks;
-    Tile_chunk* cur_tile_chunk;
+    Tile_map* tile_map;
 };
 
 struct Game_state
