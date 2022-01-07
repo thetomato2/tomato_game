@@ -18,20 +18,20 @@ namespace tomato
 struct Debug_read_file_result
 {
     u32 content_size;
-    void* contents;
+    void *contents;
 };
 
     //! all these C shenanigans...
     // TODO:  C++-ify this
-    #define DEBUG_PLATFORM_FREE_FILE_MEMORY(name) void name(void* memory_)
+    #define DEBUG_PLATFORM_FREE_FILE_MEMORY(name) void name(void *memory_)
 typedef DEBUG_PLATFORM_FREE_FILE_MEMORY(debug_platform_free_file_memory);
 
     #define DEBUG_PLATFORM_READ_ENTIRE_FILE(name) \
-        Debug_read_file_result name(const char* file_name_)
+        Debug_read_file_result name(const char *file_name_)
 typedef DEBUG_PLATFORM_READ_ENTIRE_FILE(debug_platform_read_entire_file);
 
     #define DEBUG_PLATFORM_WRITE_ENTIRE_FILE(name) \
-        bool32 name(const char* file_name_, u64 memory_size_, void* memory_)
+        bool32 name(const char *file_name_, u64 memory_size_, void *memory_)
 typedef DEBUG_PLATFORM_WRITE_ENTIRE_FILE(debug_platform_write_entire_file);
 #endif
 
@@ -39,7 +39,7 @@ typedef DEBUG_PLATFORM_WRITE_ENTIRE_FILE(debug_platform_write_entire_file);
 
 struct Game_offscreen_buffer
 {
-    void* memory;
+    void *memory;
     i32 width;
     i32 height;
     i32 pitch;
@@ -50,7 +50,7 @@ struct Game_sound_output_buffer
 {
     i32 samples_per_second;
     i32 sample_count;
-    i16* samples;
+    i16 *samples;
     i32 tone_hertz;
 };
 
@@ -135,19 +135,19 @@ struct Game_input
     Game_controller_input controllers[4];
 };
 
-struct Game_memory
+struct Game_mem
 {
     bool is_initialized;
     u64 permanent_storage_size;
-    void* permanent_storage;  //! required to be cleared to 0!
+    void *permanent_storage;  //! required to be cleared to 0!
 
     u64 transient_storage_size;
-    void* transient_storage;  //! required to be cleared to 0!
+    void *transient_storage;  //! required to be cleared to 0!
 
 #ifdef TOM_INTERNAL
-    debug_platform_free_file_memory* debug_platform_free_file_memory;
-    debug_platform_read_entire_file* debug_platfrom_read_entire_file;
-    debug_platform_write_entire_file* debug_platform_write_entire_file;
+    debug_platform_free_file_memory *debug_platform_free_file_memory;
+    debug_platform_read_entire_file *debug_platfrom_read_entire_file;
+    debug_platform_write_entire_file *debug_platform_write_entire_file;
 #endif
 };
 
@@ -207,14 +207,21 @@ struct Thread_context
     i32 place_holder;
 };
 
-#define GAME_UPDATE_AND_RENDER(name)                                            \
-    void name(Thread_context thread_, Game_memory& memory_, Game_input& input_, \
-              Game_offscreen_buffer& video_buffer_, Game_sound_output_buffer& sound_buffer_)
+#define GAME_UPDATE_AND_RENDER(name)                                         \
+    void name(Thread_context thread_, Game_mem &memory_, Game_input &input_, \
+              Game_offscreen_buffer &video_buffer_, Game_sound_output_buffer &sound_buffer_)
 typedef GAME_UPDATE_AND_RENDER(game_update_and_render_stub);
 
 #define GAME_GET_SOUND_SAMPLES(name) \
-    void name(Thread_context thread_, Game_memory& memory_, Game_sound_output_buffer& sound_buffer_)
+    void name(Thread_context thread_, Game_mem &memory_, Game_sound_output_buffer &sound_buffer_)
 typedef GAME_GET_SOUND_SAMPLES(game_get_sound_samples_stub);
+
+struct Mem_arena
+{
+    mem_ind size;
+    u8 *base;
+    mem_ind used;
+};
 
 struct Player
 {
@@ -227,11 +234,13 @@ struct Player
 
 struct World
 {
-    Tile_map* tile_map;
+    Tile_map *tile_map;
 };
 
 struct Game_state
 {
+    Mem_arena world_arena;
+    World *world;
     Player player;
 };
 

@@ -45,7 +45,7 @@ IndentWidth: '4'
 KeepEmptyLinesAtTheStartOfBlocks: 'false'
 Language: Cpp
 MaxEmptyLinesToKeep: '1'
-PointerAlignment: Left
+PointerAlignment: Right
 SortIncludes: 'true'
 SpaceAfterCStyleCast: 'false'
 SpaceAfterLogicalNot: 'false'

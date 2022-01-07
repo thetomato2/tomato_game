@@ -68,21 +68,21 @@ DEBUG_PLATFORM_WRITE_ENTIRE_FILE(Debug_platform_write_entire_file)
 namespace win32
 {
 //! this is a roundabout way of extracting a method out of a header...
-#define X_INPUT_GET_STATE(name) DWORD WINAPI name(DWORD dwUserIndex, XINPUT_STATE* pState)
+#define X_INPUT_GET_STATE(name) DWORD WINAPI name(DWORD dwUserIndex, XINPUT_STATE *pState)
 typedef X_INPUT_GET_STATE(x_input_get_state);
 X_INPUT_GET_STATE(XInputGetStateStub)
 {
     return (ERROR_DEVICE_NOT_CONNECTED);
 }
-static x_input_get_state* XInputGetState_ = XInputGetStateStub;
+static x_input_get_state *XInputGetState_ = XInputGetStateStub;
 
-#define X_INPUT_SET_STATE(name) DWORD WINAPI name(DWORD dwUserIndex, XINPUT_VIBRATION* pVibration)
+#define X_INPUT_SET_STATE(name) DWORD WINAPI name(DWORD dwUserIndex, XINPUT_VIBRATION *pVibration)
 typedef X_INPUT_SET_STATE(x_input_set_state);
 X_INPUT_SET_STATE(XInputSetStateStub)
 {
     return (ERROR_DEVICE_NOT_CONNECTED);
 }
-static x_input_set_state* XInputSetState_ = XInputSetStateStub;
+static x_input_set_state *XInputSetState_ = XInputSetStateStub;
 
 #define XInputGetState XInputGetState_
 #define XInputSetState XInputSetState_
@@ -229,7 +229,7 @@ constexpr f32 target_frames_per_second = 1.f / (f32)game_update_hertz;
 
 bool g_is_running;
 bool g_pause;
-const TCHAR* g_game_DLL_name = _T("tomato_game.dll");
+const TCHAR *g_game_DLL_name = _T("tomato_game.dll");
 
 Off_screen_buffer g_back_buffer;
 Window_dimensions g_window_dimensions;
@@ -237,21 +237,21 @@ i64 g_performance_counter_frequency;
 
 // TODO: the sleep precision issue is keeping this above 1 frame... I think
 constexpr f32 frames_of_audio_latency = (1.1f / 30) * game_update_hertz;
-IAudioClient* g_audio_client;
-IAudioRenderClient* g_audio_render_client;
-IAudioClock* g_audio_clock;
+IAudioClient *g_audio_client;
+IAudioRenderClient *g_audio_render_client;
+IAudioClock *g_audio_clock;
 
 struct Game_code
 {
     HMODULE game_code_DLL;
     FILETIME last_write_time_DLL;
-    game_update_and_render_stub* update_and_render;
-    game_get_sound_samples_stub* get_sound_samples;
+    game_update_and_render_stub *update_and_render;
+    game_get_sound_samples_stub *get_sound_samples;
     bool is_valid;
 };
 
 inline FILETIME
-get_last_write_time(const TCHAR* file_name_)
+get_last_write_time(const TCHAR *file_name_)
 {
     FILETIME last_write_time {};
 
@@ -275,10 +275,10 @@ get_last_write_time(const TCHAR* file_name_)
 }
 
 Game_code
-load_game_code(const TCHAR* DLL_name_)
+load_game_code(const TCHAR *DLL_name_)
 {
     Game_code game_code {};
-    const TCHAR* DLL_copy = _T("loaded_gamecode_copy.dll");
+    const TCHAR *DLL_copy = _T("loaded_gamecode_copy.dll");
 
     game_code.last_write_time_DLL = get_last_write_time(DLL_name_);
 
@@ -286,9 +286,9 @@ load_game_code(const TCHAR* DLL_name_)
 
     game_code.game_code_DLL = LoadLibrary(DLL_copy);
     if (game_code.game_code_DLL) {
-        game_code.update_and_render = (game_update_and_render_stub*)GetProcAddress(
+        game_code.update_and_render = (game_update_and_render_stub *)GetProcAddress(
             game_code.game_code_DLL, "game_update_and_render");
-        game_code.get_sound_samples = (game_get_sound_samples_stub*)GetProcAddress(
+        game_code.get_sound_samples = (game_get_sound_samples_stub *)GetProcAddress(
             game_code.game_code_DLL, "game_get_sound_samples");
         game_code.is_valid = (game_code.update_and_render && game_code.get_sound_samples);
     }
@@ -305,7 +305,7 @@ load_game_code(const TCHAR* DLL_name_)
 }
 
 void
-unload_game_code(Game_code& game_code_)
+unload_game_code(Game_code &game_code_)
 {
     if (game_code_.game_code_DLL) {
         FreeLibrary(game_code_.game_code_DLL);
@@ -324,8 +324,8 @@ load_Xinput()
         HMODULE XInputLibrary = LoadLibraryA("xinput1_3.dll");
     }
     if (XInputLibrary) {
-        XInputGetState = (x_input_get_state*)GetProcAddress(XInputLibrary, "XInputGetState");
-        XInputSetState = (x_input_set_state*)GetProcAddress(XInputLibrary, "XInputSetState");
+        XInputGetState = (x_input_get_state *)GetProcAddress(XInputLibrary, "XInputGetState");
+        XInputSetState = (x_input_set_state *)GetProcAddress(XInputLibrary, "XInputSetState");
     } else {
         printf("ERROR->failed to load XInput!\n");
     }
@@ -338,19 +338,19 @@ init_WASAPI(i32 samples_per_second_, i32 buffer_size_in_samples_)
         assert(false);
     }
 
-    IMMDeviceEnumerator* enumerator;
+    IMMDeviceEnumerator *enumerator;
     if (FAILED(CoCreateInstance(__uuidof(MMDeviceEnumerator), nullptr, CLSCTX_ALL,
                                 IID_PPV_ARGS(&enumerator)))) {
         assert(false);
     }
 
-    IMMDevice* device;
+    IMMDevice *device;
     if (FAILED(enumerator->GetDefaultAudioEndpoint(eRender, eConsole, &device))) {
         assert(false);
     }
 
-    if (FAILED(
-            device->Activate(__uuidof(IAudioClient), CLSCTX_ALL, NULL, (LPVOID*)&g_audio_client))) {
+    if (FAILED(device->Activate(__uuidof(IAudioClient), CLSCTX_ALL, NULL,
+                                (LPVOID *)&g_audio_client))) {
         assert(false);
     }
 
@@ -395,14 +395,14 @@ init_WASAPI(i32 samples_per_second_, i32 buffer_size_in_samples_)
 }
 
 void
-fill_sound_buffer(Sound_output& sound_output_, i32 samples_to_write_,
-                  Game_sound_output_buffer& sourceBuffer)
+fill_sound_buffer(Sound_output &sound_output_, i32 samples_to_write_,
+                  Game_sound_output_buffer &sourceBuffer)
 {
     {
-        BYTE* soundBufDat;
+        BYTE *soundBufDat;
         if (SUCCEEDED(g_audio_render_client->GetBuffer((UINT32)samples_to_write_, &soundBufDat))) {
-            i16* sourceSample = sourceBuffer.samples;
-            i16* destSample   = (i16*)soundBufDat;
+            i16 *sourceSample = sourceBuffer.samples;
+            i16 *destSample   = (i16 *)soundBufDat;
             for (szt i = 0; i < samples_to_write_; ++i) {
                 *destSample++ = *sourceSample++;
                 *destSample++ = *sourceSample++;
@@ -426,7 +426,7 @@ Get_window_dimensions(HWND hWnd_)
 }
 
 void
-resize_DIB_section(Off_screen_buffer& buffer_, i32 width_, i32 height_)
+resize_DIB_section(Off_screen_buffer &buffer_, i32 width_, i32 height_)
 {
     // TODO: bulletproof this
     // maybe don't free first, free after, then free first if that fails
@@ -453,7 +453,7 @@ resize_DIB_section(Off_screen_buffer& buffer_, i32 width_, i32 height_)
 }
 
 void
-display_buffer_in_window(HDC hdc_, Off_screen_buffer& buffer_, i32 x_, i32 y_, i32 width_,
+display_buffer_in_window(HDC hdc_, Off_screen_buffer &buffer_, i32 x_, i32 y_, i32 width_,
                          i32 height_)
 {
     i32 offset_x = 10;
@@ -477,7 +477,7 @@ display_buffer_in_window(HDC hdc_, Off_screen_buffer& buffer_, i32 x_, i32 y_, i
 }
 
 void
-process_keyboard_message(Game_button_state& new_state_, bool32 is_down_)
+process_keyboard_message(Game_button_state &new_state_, bool32 is_down_)
 {
     if (new_state_.ended_down != (is_down_ != 0)) {
         new_state_.ended_down = is_down_;
@@ -486,15 +486,15 @@ process_keyboard_message(Game_button_state& new_state_, bool32 is_down_)
 }
 
 void
-process_Xinput_digital_button(DWORD Xinput_button_state_, Game_button_state& old_state_,
-                              DWORD button_bit_, Game_button_state& new_state_)
+process_Xinput_digital_button(DWORD Xinput_button_state_, Game_button_state &old_state_,
+                              DWORD button_bit_, Game_button_state &new_state_)
 {
     new_state_.ended_down            = ((Xinput_button_state_ & button_bit_) == button_bit_);
     new_state_.half_transition_count = (old_state_.ended_down != new_state_.ended_down) ? 1 : 0;
 }
 
 void
-do_controller_input(Game_input& old_input_, Game_input& new_input_, HWND hWnd_)
+do_controller_input(Game_input &old_input_, Game_input &new_input_, HWND hWnd_)
 {
     // mouse cursor
     POINT mouse_point;
@@ -532,13 +532,13 @@ do_controller_input(Game_input& old_input_, Game_input& new_input_, HWND hWnd_)
     }
 
     for (DWORD controller_index = 0; controller_index < XUSER_MAX_COUNT; controller_index++) {
-        Game_controller_input& old_controller = old_input_.controllers[controller_index];
-        Game_controller_input& new_controller = new_input_.controllers[controller_index];
+        Game_controller_input &old_controller = old_input_.controllers[controller_index];
+        Game_controller_input &new_controller = new_input_.controllers[controller_index];
 
         XINPUT_STATE controller_state;
         if (XInputGetState(controller_index, &controller_state) == ERROR_SUCCESS) {
             //! the controller is plugged in
-            XINPUT_GAMEPAD& pad = controller_state.Gamepad;
+            XINPUT_GAMEPAD &pad = controller_state.Gamepad;
 
             new_controller.is_connected = true;
 
@@ -624,22 +624,22 @@ get_seconds_elapsed(LARGE_INTEGER start_, LARGE_INTEGER end_)
 // ===============================================================================================
 
 void
-get_input_file_path(Win32_state& state_, bool32 is_input_stream_)
+get_input_file_path(Win32_state &state_, bool32 is_input_stream_)
 {
     int x = 0;
 }
 
-Replay_buffer&
-get_replay_buffer(Win32_state& state_, szt index_)
+Replay_buffer &
+get_replay_buffer(Win32_state &state_, szt index_)
 {
     assert(index_ < ArrayCount(state_.replay_buffers));
     return state_.replay_buffers[index_];
 }
 
 void
-begin_recording_input(Win32_state& state_, i32 input_recording_index_)
+begin_recording_input(Win32_state &state_, i32 input_recording_index_)
 {
-    auto& replay_buffer = get_replay_buffer(state_, input_recording_index_);
+    auto &replay_buffer = get_replay_buffer(state_, input_recording_index_);
     if (replay_buffer.memory_block) {
         printf("Recording...\n");
         state_.input_recording_index = input_recording_index_;
@@ -655,7 +655,7 @@ begin_recording_input(Win32_state& state_, i32 input_recording_index_)
 }
 
 void
-end_recording_input(Win32_state& state_)
+end_recording_input(Win32_state &state_)
 {
     printf("Recording ended.\n");
     CloseHandle(state_.recording_handle);
@@ -663,9 +663,9 @@ end_recording_input(Win32_state& state_)
 }
 
 void
-begin_input_playback(Win32_state& state_, i32 input_playback_index_)
+begin_input_playback(Win32_state &state_, i32 input_playback_index_)
 {
-    auto& replay_buffer = get_replay_buffer(state_, input_playback_index_);
+    auto &replay_buffer = get_replay_buffer(state_, input_playback_index_);
     if (replay_buffer.memory_block) {
         printf("Input Playback started...\n");
         state_.input_playback_index = input_playback_index_;
@@ -680,7 +680,7 @@ begin_input_playback(Win32_state& state_, i32 input_playback_index_)
 }
 
 void
-end_input_playback(Win32_state& state_)
+end_input_playback(Win32_state &state_)
 {
     printf("Input playback ended.\n");
     CloseHandle(state_.playback_handle);
@@ -688,14 +688,14 @@ end_input_playback(Win32_state& state_)
 }
 
 void
-record_input(Win32_state& state_, Game_input& new_input_)
+record_input(Win32_state &state_, Game_input &new_input_)
 {
     DWORD bytes_written;
     WriteFile(state_.recording_handle, &new_input_, sizeof(new_input_), &bytes_written, 0);
 }
 
 void
-playback_input(Win32_state& state_, Game_input& new_input_)
+playback_input(Win32_state &state_, Game_input &new_input_)
 {
     DWORD bytes_read;
     if (ReadFile(state_.playback_handle, &new_input_, sizeof(new_input_), &bytes_read, 0)) {
@@ -710,7 +710,7 @@ playback_input(Win32_state& state_, Game_input& new_input_)
 }
 
 void
-process_pending_messages(Win32_state& state_, Game_input& input_)
+process_pending_messages(Win32_state &state_, Game_input &input_)
 {
     MSG msg;
     while (PeekMessage(&msg, 0, 0, 0, PM_REMOVE)) {
@@ -829,7 +829,7 @@ Main(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLine, i32 nShowCm
     resize_DIB_section(g_back_buffer, win_width, win_height);
 
     // TODO: install assets eventuallly
-    const TCHAR* icon_path = _T("C:\\dev\\tomato_game\\assets\\icon\\tomato.ico");
+    const TCHAR *icon_path = _T("C:\\dev\\tomato_game\\assets\\icon\\tomato.ico");
     auto icon_big          = (HICON)(LoadImage(NULL, icon_path, IMAGE_ICON, 0, 0,
                                                LR_LOADFROMFILE | LR_DEFAULTSIZE | LR_SHARED));
 
@@ -910,8 +910,8 @@ Main(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLine, i32 nShowCm
     g_audio_client->Start();
 
     // TODO: Pool with bitmap VirtualAlloc
-    i16* samples = (i16*)VirtualAlloc(0, sound_output.secondary_buf_size, MEM_RESERVE | MEM_COMMIT,
-                                      PAGE_READWRITE);
+    i16 *samples = (i16 *)VirtualAlloc(0, sound_output.secondary_buf_size, MEM_RESERVE | MEM_COMMIT,
+                                       PAGE_READWRITE);
 
 #ifdef TOM_INTERNAL
     LPVOID base_address = (LPVOID)TERABYTES((u64)2);
@@ -919,7 +919,7 @@ Main(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLine, i32 nShowCm
     LPVOID base_address = 0;
 #endif
 
-    Game_memory game_memory                      = {};
+    Game_mem game_memory                         = {};
     game_memory.permanent_storage_size           = MEGABYTES(64);
     game_memory.transient_storage_size           = GIGABYTES(1);
     game_memory.debug_platform_free_file_memory  = Debug_platform_free_file_memory;
@@ -933,11 +933,11 @@ Main(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLine, i32 nShowCm
     game_memory.permanent_storage = state.game_memory_block;
 
     game_memory.transient_storage =
-        ((u8*)game_memory.permanent_storage + game_memory.permanent_storage_size);
+        ((u8 *)game_memory.permanent_storage + game_memory.permanent_storage_size);
 
     // mapping memory to file
     for (i32 replay_index {}; replay_index < ArrayCount(state.replay_buffers); ++replay_index) {
-        Replay_buffer& replay_buffer = state.replay_buffers[replay_index];
+        Replay_buffer &replay_buffer = state.replay_buffers[replay_index];
         _stprintf_s(replay_buffer.file_name, sizeof(TCHAR) * 512, _T("replay_%d_state.ti"),
                     replay_index);
 
@@ -957,8 +957,8 @@ Main(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLine, i32 nShowCm
     }
 
     Game_input input[2]   = {};
-    Game_input& new_input = input[0];
-    Game_input& old_input = input[1];
+    Game_input &new_input = input[0];
+    Game_input &old_input = input[1];
 
     LARGE_INTEGER last_counter = get_wall_clock();
     u64 last_cycle_count       = __rdtsc();
@@ -1092,7 +1092,7 @@ Main(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLine, i32 nShowCm
         // f64 FPS	 = (f64)gs_perfCountFrequency / (f64)counterElapsed;
         // f64 MCPF = (f64)(cyclesElapsed / (1000.f * 1000.f));
 
-        Game_input& temp_input = new_input;
+        Game_input &temp_input = new_input;
         new_input              = old_input;
         old_input              = temp_input;
 

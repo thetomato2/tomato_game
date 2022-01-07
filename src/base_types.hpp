@@ -14,8 +14,9 @@ using u64 = uint64_t;
 using f32 = float;
 using f64 = double;
 
-using szt = size_t;
-using byt = unsigned char;
+using szt     = size_t;
+using mem_ind = size_t;
+using byt     = unsigned char;
 
 #ifdef _WIN32
 using wchar = wchar_t;
