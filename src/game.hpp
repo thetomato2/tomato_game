@@ -15,7 +15,7 @@ namespace tomato
 // NOTE: services that the platform provides for the game
 #ifdef TOM_INTERNAL
 
-struct Debug_read_file_result
+struct debug_read_file_result
 {
     u32 content_size;
     void *contents;
@@ -27,7 +27,7 @@ struct Debug_read_file_result
 typedef DEBUG_PLATFORM_FREE_FILE_MEMORY(debug_platform_free_file_memory);
 
     #define DEBUG_PLATFORM_READ_ENTIRE_FILE(name) \
-        Debug_read_file_result name(const char *file_name_)
+        debug_read_file_result name(const char *file_name_)
 typedef DEBUG_PLATFORM_READ_ENTIRE_FILE(debug_platform_read_entire_file);
 
     #define DEBUG_PLATFORM_WRITE_ENTIRE_FILE(name) \
@@ -37,7 +37,7 @@ typedef DEBUG_PLATFORM_WRITE_ENTIRE_FILE(debug_platform_write_entire_file);
 
 #define ArrayCount(Array) (sizeof((Array)) / sizeof((Array)[0]))
 
-struct Game_offscreen_buffer
+struct game_offscreen_buffer
 {
     void *memory;
     i32 width;
@@ -46,7 +46,7 @@ struct Game_offscreen_buffer
     i32 bytes_per_pixel;
 };
 
-struct Game_sound_output_buffer
+struct game_sound_output_buffer
 {
     i32 samples_per_second;
     i32 sample_count;
@@ -54,13 +54,13 @@ struct Game_sound_output_buffer
     i32 tone_hertz;
 };
 
-struct Game_button_state
+struct game_button_state
 {
     i32 half_transition_count;
     bool ended_down;
 };
 
-struct Game_controller_input
+struct game_controller_input
 {
     bool is_connected;
     bool is_analog;
@@ -83,59 +83,59 @@ struct Game_controller_input
 
     union
     {
-        Game_button_state buttons[12];
+        game_button_state buttons[12];
         struct
         {
-            Game_button_state dpad_up;
-            Game_button_state dpad_right;
-            Game_button_state dpad_down;
-            Game_button_state dpad_left;
-            Game_button_state button_A;
-            Game_button_state button_B;
-            Game_button_state button_X;
-            Game_button_state button_Y;
-            Game_button_state button_RB;
-            Game_button_state button_LB;
-            Game_button_state button_back;
-            Game_button_state button_start;
+            game_button_state dpad_up;
+            game_button_state dpad_right;
+            game_button_state dpad_down;
+            game_button_state dpad_left;
+            game_button_state button_A;
+            game_button_state button_B;
+            game_button_state button_X;
+            game_button_state button_Y;
+            game_button_state button_RB;
+            game_button_state button_LB;
+            game_button_state button_back;
+            game_button_state button_start;
         };
     };
 };
 
-struct Game_keyboard
+struct game_keyboard
 {
     union
     {
-        Game_button_state keys[11];
+        game_button_state keys[11];
         struct
         {
-            Game_button_state w;
-            Game_button_state s;
-            Game_button_state a;
-            Game_button_state d;
-            Game_button_state space;
-            Game_button_state left_shift;
-            Game_button_state p;
-            Game_button_state d1;
-            Game_button_state d2;
-            Game_button_state d3;
-            Game_button_state d4;
+            game_button_state w;
+            game_button_state s;
+            game_button_state a;
+            game_button_state d;
+            game_button_state space;
+            game_button_state left_shift;
+            game_button_state p;
+            game_button_state d1;
+            game_button_state d2;
+            game_button_state d3;
+            game_button_state d4;
         };
     };
 };
 
-struct Game_input
+struct game_input
 {
     f32 deltaTime;
 
     static constexpr szt mouse_button_count = 3;
-    Game_button_state mouse_buttons[3];
+    game_button_state mouse_buttons[3];
     i32 mouse_x, mouse_y, mouse_z;
-    Game_keyboard keyboard;
-    Game_controller_input controllers[4];
+    game_keyboard keyboard;
+    game_controller_input controllers[4];
 };
 
-struct Game_mem
+struct game_mem
 {
     bool is_initialized;
     u64 permanent_storage_size;
@@ -145,16 +145,16 @@ struct Game_mem
     void *transient_storage;  //! required to be cleared to 0!
 
 #ifdef TOM_INTERNAL
-    debug_platform_free_file_memory *debug_platform_free_file_memory;
-    debug_platform_read_entire_file *debug_platfrom_read_entire_file;
-    debug_platform_write_entire_file *debug_platform_write_entire_file;
+    debug_platform_free_file_memory *platform_free_file_memory;
+    debug_platform_read_entire_file *platfrom_read_entire_file;
+    debug_platform_write_entire_file *platform_write_entire_file;
 #endif
 };
 
-struct Color_u32
+struct color_u32
 {
-    Color_u32() : argb(0xFFFFFFFF) {}
-    Color_u32(u32 color) : argb(color) {}
+    color_u32() : argb(0xFFFFFFFF) {}
+    color_u32(u32 color) : argb(color) {}
 
     union
     {
@@ -169,10 +169,10 @@ struct Color_u32
     };
 };
 
-struct Vector2_s32
+struct vector2_s32
 {
-    Vector2_s32() : x(0), y(0) {}
-    Vector2_s32(i32 x, i32 y)
+    vector2_s32() : x(0), y(0) {}
+    vector2_s32(i32 x, i32 y)
     {
         this->x = x;
         this->y = y;
@@ -182,10 +182,10 @@ struct Vector2_s32
     i32 y;
 };
 
-struct Vector2_f32
+struct vector2_f32
 {
-    Vector2_f32() : x(0.f), y(0.f) {}
-    Vector2_f32(f32 x, f32 y)
+    vector2_f32() : x(0.f), y(0.f) {}
+    vector2_f32(f32 x, f32 y)
     {
         this->x = x;
         this->y = y;
@@ -195,53 +195,53 @@ struct Vector2_f32
     f32 y;
 };
 
-struct Col_debug
+struct col_debug
 {
-    Vector2_f32 pos;
+    vector2_f32 pos;
     bool is_valid;
 };
 
 // TODO: implement this
-struct Thread_context
+struct thread_context
 {
     i32 place_holder;
 };
 
 #define GAME_UPDATE_AND_RENDER(name)                                         \
-    void name(Thread_context thread_, Game_mem &memory_, Game_input &input_, \
-              Game_offscreen_buffer &video_buffer_, Game_sound_output_buffer &sound_buffer_)
+    void name(thread_context thread_, game_mem &memory_, game_input &input_, \
+              game_offscreen_buffer &video_buffer_, game_sound_output_buffer &sound_buffer_)
 typedef GAME_UPDATE_AND_RENDER(game_update_and_render_stub);
 
 #define GAME_GET_SOUND_SAMPLES(name) \
-    void name(Thread_context thread_, Game_mem &memory_, Game_sound_output_buffer &sound_buffer_)
+    void name(thread_context thread_, game_mem &memory_, game_sound_output_buffer &sound_buffer_)
 typedef GAME_GET_SOUND_SAMPLES(game_get_sound_samples_stub);
 
-struct Mem_arena
+struct mem_arena
 {
     mem_ind size;
     u8 *base;
     mem_ind used;
 };
 
-struct Player
+struct player
 {
     static constexpr f32 s_height = .75f;
     static constexpr f32 s_width  = 0.75f * s_height;
 
-    Tile_map_pos pos;
-    Color_u32 color;
+    tile_map_pos pos;
+    color_u32 color;
 };
 
-struct World
+struct world
 {
-    Tile_map *tile_map;
+    tile_map *tile_map;
 };
 
-struct Game_state
+struct game_state
 {
-    Mem_arena world_arena;
-    World *world;
-    Player player;
+    mem_arena world_arena;
+    world *world;
+    player player;
 };
 
 }  // namespace tomato
