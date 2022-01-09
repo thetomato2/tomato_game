@@ -132,7 +132,7 @@ set_tile_value(mem_arena *arena_, tile_map &tile_map_, u32 abs_tile_x_, u32 abs_
 bool
 is_world_tile_empty(tile_map &tile_map_, tile_map_pos test_pos_)
 {
-    bool is_empty = get_tile_value(tile_map_, test_pos_.abs_tile_x, test_pos_.abs_tile_y) == 0;
+    bool is_empty = get_tile_value(tile_map_, test_pos_.abs_tile_x, test_pos_.abs_tile_y) == 1;
 
     return is_empty;
 }

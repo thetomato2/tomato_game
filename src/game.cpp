@@ -7,7 +7,7 @@ namespace
 {
 
 void
-clear_buffer(game_offscreen_buffer &buffer_, color_u32 color_ = { 0xFF'FF'00'FF })
+clear_buffer(game_offscreen_buffer &buffer_, color_u32 color_ = { 0xff'ff'00'ff })
 {
     i32 width  = buffer_.width;
     i32 height = buffer_.height;
@@ -24,7 +24,7 @@ clear_buffer(game_offscreen_buffer &buffer_, color_u32 color_ = { 0xFF'FF'00'FF 
 
 void
 draw_rect(game_offscreen_buffer &buffer_, f32 f32_min_x_, f32 f_min_y_, f32 f32_max_x_,
-          f32 f32_max_y_, color_u32 color_ = { 0xFFFFFFFF })
+          f32 f32_max_y_, color_u32 color_ = { 0xffffffff })
 {
     i32 min_x = math::round_f32_to_i32(f32_min_x_);
     i32 min_y = math::round_f32_to_i32(f_min_y_);
@@ -134,6 +134,8 @@ push_size(mem_arena *arena_, mem_ind size_)
     return result;
 }
 
+#include "rng_nums.h"
+
 }  // namespace
 
 // ===============================================================================================
@@ -181,27 +183,33 @@ GAME_UPDATE_AND_RENDER(game_update_and_render)
             }
         }
 
-        for (u32 screen_y {}; screen_y < num_screens; ++screen_y) {
-            for (u32 screen_x {}; screen_x < num_screens; ++screen_x) {
-                for (u32 tile_y {}; tile_y < num_tiles_per_screen_y; ++tile_y) {
-                    for (u32 tile_x {}; tile_x < num_tiles_per_screen_x; ++tile_x) {
-                        u32 abs_tile_x = screen_x * num_tiles_per_screen_x + tile_x;
-                        u32 abs_tile_y = screen_y * num_tiles_per_screen_y + tile_y;
-                        u32 tile_value = 0;
+        u32 screen_y {};
+        u32 screen_x {};
+        u32 rng_ind {};
 
-                        if (tile_x == 0 || tile_x == num_tiles_per_screen_x - 1) {
-                            tile_value = tile_y == num_tiles_per_screen_y / 2 ? 0 : 1;
-                        }
+        for (u32 screen_ind {}; screen_ind < num_screens; ++screen_ind) {
+            for (u32 tile_y {}; tile_y < num_tiles_per_screen_y; ++tile_y) {
+                for (u32 tile_x {}; tile_x < num_tiles_per_screen_x; ++tile_x) {
+                    u32 abs_tile_x = screen_x * num_tiles_per_screen_x + tile_x;
+                    u32 abs_tile_y = screen_y * num_tiles_per_screen_y + tile_y;
+                    u32 tile_value = 1;
 
-                        if (tile_y == 0 || tile_y == num_tiles_per_screen_y - 1) {
-                            tile_value = tile_x == num_tiles_per_screen_x / 2 ? 0 : 1;
-                        }
-
-                        set_tile_value(&state.world_arena, *tile_map, abs_tile_x, abs_tile_y,
-                                       tile_value);
+                    if (tile_x == 2 || tile_x == num_tiles_per_screen_x - 1) {
+                        tile_value = tile_y == num_tiles_per_screen_y / 2 ? 1 : 2;
                     }
+
+                    if (tile_y == 2 || tile_y == num_tiles_per_screen_y - 1) {
+                        tile_value = tile_x == num_tiles_per_screen_x / 2 ? 1 : 2;
+                    }
+
+                    set_tile_value(&state.world_arena, *tile_map, abs_tile_x, abs_tile_y,
+                                   tile_value);
                 }
             }
+
+            u32 rng_choice = rng_table[rng_ind];
+
+            rng_choice % 2 == 0 ? ++screen_x : ++screen_y;
         }
 
         state.player.pos.tile_rel_x = .5f;
@@ -262,29 +270,31 @@ GAME_UPDATE_AND_RENDER(game_update_and_render)
     // ===============================================================================================
 
     // NOTE: *not* using PatBlt in the win32 layer
-    color_u32 clear_color { 0xFF'00'00'00 };
+    color_u32 clear_color { 0xff'00'00'00 };
     clear_buffer(video_buffer_, clear_color);
 
     // NOTE: caching for clarity, not perf
     auto player_center_pos = get_player_center_pos(*world->tile_map, player);
 
-    i32 num_draw_tiles  = 10;
+    i32 num_draw_tiles  = 100;
     f32 screen_center_x = .5f * (f32)video_buffer_.width;
     f32 screen_center_y = .5f * (f32)video_buffer_.height;
 
-    for (i32 rel_y = -10; rel_y < num_draw_tiles; ++rel_y) {
-        for (i32 rel_x = -10; rel_x < num_draw_tiles; ++rel_x) {
+    for (i32 rel_y = -1 * num_draw_tiles; rel_y < num_draw_tiles; ++rel_y) {
+        for (i32 rel_x = -1 * num_draw_tiles; rel_x < num_draw_tiles; ++rel_x) {
             u32 x = player.pos.abs_tile_x + rel_x;
             u32 y = player.pos.abs_tile_y + rel_y;
 
             u32 tile = get_tile_value(*world->tile_map, x, y);
             color_u32 tile_color;
             if (player_center_pos.abs_tile_x == x && player_center_pos.abs_tile_y == y) {
-                tile_color.argb = 0xFF'00'00'00;
-            } else if (tile) {
-                tile_color.argb = 0xFF'DD'DD'DD;
+                tile_color.argb = 0xff'00'00'00;
+            } else if (tile == 2) {
+                tile_color.argb = 0xff'dd'dd'dd;
+            } else if (tile == 1) {
+                tile_color.argb = 0xff'88'88'88;
             } else {
-                tile_color.argb = 0xFF'88'88'88;
+                tile_color.argb = 0xff'ff'00'00;
             }
 
             f32 cen_x = screen_center_x - (player.pos.tile_rel_x * tile_map::s_meters_to_pixels) +

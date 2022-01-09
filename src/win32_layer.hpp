@@ -41,16 +41,17 @@ struct win32_state
 {
     szt total_size;
 
-    HANDLE recording_handle;
-    i32 input_recording_index;
-
-    HANDLE playback_handle;
-    i32 input_playback_index;
-
     char exe_path[MAX_PATH];
 
     void *game_memory_block;
+
+#if REPLAY_BUFFERS
+    HANDLE recording_handle;
+    i32 input_recording_index;
+    HANDLE playback_handle;
+    i32 input_playback_index;
     replay_buffer replay_buffers[4];
+#endif
 };
 
 struct game_code

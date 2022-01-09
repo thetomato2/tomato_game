@@ -247,13 +247,13 @@ get_last_write_time(const TCHAR *file_name_)
     FILETIME last_write_time {};
 
 #if 0
-	// NOTE: old way with a handle
-	WIN32_FIND_DATA find_data;
-	HANDLE find_handle = FindFirstFile(fileName, &findData);
-	if (find_handle != INVALID_HANDLE_VALUE) {
-		last_write_time = findData.ftLastWriteTime;
-		FindClose(find_handle);
-	}
+    // NOTE: old way with a handle
+    WIN32_FIND_DATA find_data;
+    HANDLE find_handle = FindFirstFile(fileName, &findData);
+    if (find_handle != INVALID_HANDLE_VALUE) {
+        last_write_time = findData.ftLastWriteTime;
+        FindClose(find_handle);
+    }
 #endif
 
     // NOTE: this has no handle
@@ -614,6 +614,7 @@ get_seconds_elapsed(LARGE_INTEGER start_, LARGE_INTEGER end_)
 // #PLAYBACK
 // ===============================================================================================
 
+#if REPLAY_BUFFERS == 1
 void
 get_input_file_path(win32_state &state_, bool32 is_input_stream_)
 {
@@ -699,6 +700,7 @@ playback_input(win32_state &state_, game_input &new_input_)
         }
     }
 }
+#endif
 
 void
 process_pending_messages(win32_state &state_, game_input &input_)
@@ -717,12 +719,12 @@ process_pending_messages(win32_state &state_, game_input &input_)
                 if (was_down != is_down) {
                     switch (VKCode) {
                         case VK_ESCAPE: g_is_running = false; break;
-#ifdef TOM_INTERNAL
                         case 'P': {
                             if (is_down) {
                                 g_pause = !g_pause;
                             }
                         } break;
+#if REPLAY_BUFFERS
                         case 'L': {
                             if (is_down) {
                                 if (state_.input_playback_index == 0) {
@@ -865,14 +867,13 @@ Main(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLine, i32 nShowCm
     ::ShowWindow(hWnd, SW_SHOWNORMAL);
 
     HRESULT hr;
-
     hr = GetLastError();
 
     // BOOL fOK;
     // TCHAR msgBuf[128];
     // fOK = FormatMessage(
-    // 	FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
-    // 	NULL, hr, 0, (PTSTR)&msgBuf, 0, NULL);
+    //     FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM |
+    //     FORMAT_MESSAGE_IGNORE_INSERTS, NULL, hr, 0, (PTSTR)&msgBuf, 0, NULL);
     // // if (!fOK) msgBuf = _T("Failed to format Message!");
     // _tprintf(TEXT("%d\t%s\n"), hr, msgBuf);
     // LocalFree(msgBuf);
@@ -925,6 +926,7 @@ Main(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLine, i32 nShowCm
 
     memory.transient_storage = ((u8 *)memory.permanent_storage + memory.permanent_storage_size);
 
+#if REPLAY_BUFFERS
     // mapping memory to file
     for (i32 replay_index {}; replay_index < ArrayCount(state.replay_buffers); ++replay_index) {
         replay_buffer &replay_buffer = state.replay_buffers[replay_index];
@@ -945,6 +947,7 @@ Main(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLine, i32 nShowCm
             MapViewOfFile(replay_buffer.memory_map, FILE_MAP_ALL_ACCESS, 0, 0, state.total_size),
         assert(replay_buffer.memory_block);
     }
+#endif
 
     game_input input[2]   = {};
     game_input &new_input = input[0];
@@ -1009,13 +1012,14 @@ Main(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLine, i32 nShowCm
         buffer.bytes_per_pixel       = 4;
         buffer.pitch                 = g_back_buffer.pitch;
 
+#if REPLAY_BUFFERS
         if (state.input_recording_index) {
             record_input(state, new_input);
         }
         if (state.input_playback_index) {
             playback_input(state, new_input);
         }
-
+#endif
         // null check for stub sections
         is_game_code_loaded = code.update_and_render && code.get_sound_samples;
         // isGameCodeLoaded = false;

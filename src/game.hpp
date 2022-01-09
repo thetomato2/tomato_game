@@ -9,6 +9,8 @@
     #define TOM_DLL_EXPORT
 #endif
 
+#define REPLAY_BUFFERS 0
+
 namespace tomato
 {
 
@@ -153,7 +155,7 @@ struct game_mem
 
 struct color_u32
 {
-    color_u32() : argb(0xFFFFFFFF) {}
+    color_u32() : argb(0xffffffff) {}
     color_u32(u32 color) : argb(color) {}
 
     union

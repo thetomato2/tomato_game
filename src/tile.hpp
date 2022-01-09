@@ -37,10 +37,10 @@ struct tile_map
     static constexpr u32 s_chunk_bit_shift  = 8;
     static constexpr u32 s_chunk_bit_mask   = (1 << s_chunk_bit_shift) - 1;
     static constexpr u32 s_chunk_tile_count = (1 << s_chunk_bit_shift);
-    static constexpr u32 s_chunk_count      = 4;
+    static constexpr u32 s_chunk_count      = 8;
 
     static constexpr f32 s_tile_size_meters = 1.4f;
-    static constexpr u32 s_tile_size_pixels = 60;
+    static constexpr u32 s_tile_size_pixels = 6;
     static constexpr f32 s_meters_to_pixels = s_tile_size_pixels / s_tile_size_meters;
 
     tile_chunk *tile_chunks;
