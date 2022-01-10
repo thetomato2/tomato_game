@@ -45,7 +45,7 @@ generate_rainbow(Color_u32& color_, f32 frequency_, f32 time_)
 #endif
 
 inline szt
-get_wstr_len(const wchar* wstr_)
+get_wstr_len(const wchar *wstr_)
 {
     szt len {};
     while (*wstr_++) {
@@ -55,7 +55,7 @@ get_wstr_len(const wchar* wstr_)
 }
 
 inline szt
-get_str_len(const char* str_)
+get_str_len(const char *str_)
 {
     szt len {};
     while (*str_++) {
@@ -66,7 +66,7 @@ get_str_len(const char* str_)
 
 // Takes strings length inputs
 inline void
-cat_str(const char* left_, szt left_len_, const char* right_, szt right_len_, char* out_)
+cat_str(const char *left_, szt left_len_, const char *right_, szt right_len_, char *out_)
 {
     for (szt i {}; i < left_len_; ++i) {
         *out_++ = *left_++;
@@ -79,7 +79,7 @@ cat_str(const char* left_, szt left_len_, const char* right_, szt right_len_, ch
 
 // calcs the string lengths also
 inline void
-cat_str(const char* left_, const char* right_, char* out_)
+cat_str(const char *left_, const char *right_, char *out_)
 {
     auto left_len  = get_str_len(left_);
     auto right_len = get_str_len(right_);
@@ -103,7 +103,7 @@ namespace win32
 
 // Convert a wide Unicode string to an UTF8 string
 inline szt
-get_wstr_sz(const wchar* wstr_)
+get_wstr_sz(const wchar *wstr_)
 {
     auto len  = get_wstr_len(wstr_);
     auto size = (szt)WideCharToMultiByte(CP_UTF8, 0, wstr_, (i32)len, NULL, 0, NULL, NULL);
@@ -111,7 +111,7 @@ get_wstr_sz(const wchar* wstr_)
 }
 
 inline szt
-get_wstr_sz(const char* str_)
+get_wstr_sz(const char *str_)
 {
     auto len  = get_str_len(str_);
     auto size = (szt)MultiByteToWideChar(CP_UTF8, 0, str_, (i32)len, NULL, 0);
@@ -120,14 +120,14 @@ get_wstr_sz(const char* str_)
 
 // FIXME: idk if this is working
 inline void
-wstr_to_str(const wchar* wstr_, char* buf_)
+wstr_to_str(const wchar *wstr_, char *buf_)
 {
     auto len  = get_wstr_len(wstr_);
     auto size = (szt)WideCharToMultiByte(CP_UTF8, 0, wstr_, (i32)len, buf_, 0, NULL, NULL);
 }
 
 inline void
-str_to_wstr(const char* str_, wchar* buf_)
+str_to_wstr(const char *str_, wchar *buf_)
 {
     auto len  = get_str_len(str_);
     auto size = (szt)MultiByteToWideChar(CP_UTF8, 0, str_, (i32)len, NULL, 0);

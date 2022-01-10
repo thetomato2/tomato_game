@@ -4,9 +4,9 @@
 namespace tomato
 {
 
-struct mem_arena;
+struct MemArena;
 
-struct tile_map_pos
+struct TileMapPos
 {
     // NOTE: these are fixed point positioins. The high bits are the tile
     // chunk index, and the lower bits are the tile index in the chunk
@@ -18,7 +18,7 @@ struct tile_map_pos
     f32 off_rel_y;
 };
 
-struct tile_chunk_pos
+struct TileChunkPos
 {
     u32 chunk_tile_x;
     u32 chunk_tile_y;
@@ -28,12 +28,12 @@ struct tile_chunk_pos
     u32 rel_tile_y;
 };
 
-struct tile_chunk
+struct TileChunk
 {
     u32 *tiles;
 };
 
-struct tile_map
+struct TileMap
 {
     // NOTE: set to 16x16 tiles per chunk
     static constexpr u32 s_chunk_bit_shift        = 4;
@@ -45,46 +45,46 @@ struct tile_map
 
     static constexpr f32 s_tile_size_meters = 1.4f;
 
-    tile_chunk *tile_chunks;
-    tile_chunk *cur_tile_chunk;
+    TileChunk *tile_chunks;
+    TileChunk *cur_tile_chunk;
 };
 
 void
-recanonicalize_coord(const tile_map &tile_map_, u32 &tile_, f32 &tile_rel_);
+recanonicalize_coord(const TileMap &tile_map_, u32 &tile_, f32 &tile_rel_);
 
-tile_map_pos
-recanonicalize_pos(tile_map &tile_map_, tile_map_pos pos_);
+TileMapPos
+recanonicalize_pos(TileMap &tile_map_, TileMapPos pos_);
 
-tile_chunk_pos
+TileChunkPos
 get_chunk_pos(u32 abs_tile_x_, u32 abs_tile_y_, u32 abs_tile_z_);
 
-tile_chunk_pos
-get_chunk_pos(tile_map_pos pos_);
+TileChunkPos
+get_chunk_pos(TileMapPos pos_);
 
-tile_chunk *
-get_tile_chunk(tile_map &tile_map_, u32 tile_chunk_x_, u32 tile_chunk_y_, u32 tile_chunk_z_);
-
-u32
-get_tile_value_unchecked(tile_chunk &tile_chunk_, u32 tile_x_, u32 tile_y_);
+TileChunk *
+get_tile_chunk(TileMap &tile_map_, u32 tile_chunk_x_, u32 tile_chunk_y_, u32 tile_chunk_z_);
 
 u32
-get_tile_value(tile_chunk *tile_chunk_, u32 abs_tile_x_, u32 abs_tile_y_);
+get_tile_value_unchecked(TileChunk &tile_chunk_, u32 tile_x_, u32 tile_y_);
 
 u32
-get_tile_value(tile_map &tile_map_, u32 abs_tile_x_, u32 abs_tile_y_, u32 abs_tile_z_);
+get_tile_value(TileChunk *tile_chunk_, u32 abs_tile_x_, u32 abs_tile_y_);
+
+u32
+get_tile_value(TileMap &tile_map_, u32 abs_tile_x_, u32 abs_tile_y_, u32 abs_tile_z_);
 
 void
-set_tile_value_unchecked(tile_chunk &tile_chunk_, u32 tile_x_, u32 tile_y_, u32 tile_value_);
+set_tile_value_unchecked(TileChunk &tile_chunk_, u32 tile_x_, u32 tile_y_, u32 tile_value_);
 
 void
-set_tile_value(tile_chunk *tile_chunk_, u32 abs_tile_x_, u32 abs_tile_y_, u32 abs_tile_z_,
+set_tile_value(TileChunk *tile_chunk_, u32 abs_tile_x_, u32 abs_tile_y_, u32 abs_tile_z_,
                u32 tile_value_);
 
 void
-set_tile_value(mem_arena *arena_, tile_map &tile_map_, u32 abs_tile_x_, u32 abs_tile_y_,
+set_tile_value(MemArena *arena_, TileMap &tile_map_, u32 abs_tile_x_, u32 abs_tile_y_,
                u32 abs_tile_z_, u32 tile_value_);
 
 bool
-is_world_tile_empty(tile_map &tile_map_, tile_map_pos test_pos_);
+is_world_tile_empty(TileMap &tile_map_, TileMapPos test_pos_);
 
 }  // namespace tomato
