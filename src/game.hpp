@@ -246,4 +246,10 @@ struct game_state
     player player;
 };
 
+void *
+push_size(mem_arena *arena_, mem_ind size_);
+
+#define PushStruct(arena, type)       (type *)push_size(arena, sizeof(type))
+#define PushArray(arena, count, type) (type *)push_size(arena, (count * sizeof(type)))
+
 }  // namespace tomato

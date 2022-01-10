@@ -3,8 +3,15 @@
 namespace tomato
 {
 
+namespace global
+{
+static constexpr u32 s_tile_size_pixels = 60;
+static constexpr f32 s_meters_to_pixels = s_tile_size_pixels / tile_map::s_tile_size_meters;
+}  // namespace global
+
 namespace
 {
+#include "rng_nums.h"
 
 void
 clear_buffer(game_offscreen_buffer &buffer_, color_u32 color_ = { 0xff'ff'00'ff })
@@ -95,8 +102,8 @@ player_check_tile_map(tile_map &tile_map_, player &player_)
     // then check if the player is out of the tile map,
     // and if so moves the player to the correct position on the new tile map
     auto player_center_pos = get_player_center_pos(tile_map_, player_);
-    auto *tile_map =
-        get_tile_chunk(tile_map_, player_center_pos.abs_tile_x, player_center_pos.abs_tile_y);
+    auto *tile_map         = get_tile_chunk(tile_map_, player_center_pos.abs_tile_x,
+                                            player_center_pos.abs_tile_y, player_center_pos.abs_tile_z);
     if (tile_map != nullptr && tile_map_.cur_tile_chunk != tile_map)
         tile_map_.cur_tile_chunk = tile_map;
 }
@@ -121,8 +128,7 @@ init_arena(mem_arena *arena_, mem_ind size_, u8 *base_)
     arena_->used = 0;
 }
 
-#define PushStruct(arena, type)       (type *)push_size(arena, sizeof(type))
-#define PushArray(arena, count, type) (type *)push_size(arena, (count * sizeof(type)))
+}  // namespace
 
 void *
 push_size(mem_arena *arena_, mem_ind size_)
@@ -133,10 +139,6 @@ push_size(mem_arena *arena_, mem_ind size_)
 
     return result;
 }
-
-#include "rng_nums.h"
-
-}  // namespace
 
 // ===============================================================================================
 // #EXPORT
@@ -166,50 +168,97 @@ GAME_UPDATE_AND_RENDER(game_update_and_render)
 
         state.world = PushStruct(&state.world_arena, world);
 
-        world *world          = state.world;
-        world->tile_map       = PushStruct(&state.world_arena, tile_map);
-        tile_map *tile_map    = world->tile_map;
-        tile_map->tile_chunks = PushArray(
-            &state.world_arena, tile_map::s_chunk_count * tile_map::s_chunk_count, tile_chunk);
+        world *world       = state.world;
+        world->tile_map    = PushStruct(&state.world_arena, tile_map);
+        tile_map *tile_map = world->tile_map;
+        tile_map->tile_chunks =
+            PushArray(&state.world_arena,
+                      tile_map::s_chunk_count * tile_map::s_chunk_count * tile_map::s_chunk_count_z,
+                      tile_chunk);
 
-        u32 constexpr num_screens { 16 };
+        u32 constexpr num_screens { 50 };
         u32 constexpr num_tiles_per_screen_x { 16 };
         u32 constexpr num_tiles_per_screen_y { 9 };
 
-        for (u32 y {}; y < tile_map::s_chunk_count; ++y) {
-            for (u32 x {}; x < tile_map::s_chunk_count; ++x) {
-                tile_map->tile_chunks[y * tile_map::s_chunk_count * x].tiles = PushArray(
-                    &state.world_arena, tile_map::s_chunk_count * tile_map::s_chunk_count, u32);
-            }
-        }
-
         u32 screen_y {};
         u32 screen_x {};
+        u32 screen_z {};
         u32 rng_ind {};
 
+        bool door_left   = false;
+        bool door_right  = false;
+        bool door_top    = false;
+        bool door_bottom = false;
+        bool stairs      = false;
+        bool stairs_back = false;
+
         for (u32 screen_ind {}; screen_ind < num_screens; ++screen_ind) {
+            u32 rng_choice = rng_table[rng_ind++] % 3;
+
+            switch (rng_choice) {
+                case 0: {
+                    door_right = true;
+                } break;
+                case 1: {
+                    door_top = true;
+                } break;
+                case 2: {
+                    stairs = true;
+                } break;
+            }
+
             for (u32 tile_y {}; tile_y < num_tiles_per_screen_y; ++tile_y) {
                 for (u32 tile_x {}; tile_x < num_tiles_per_screen_x; ++tile_x) {
                     u32 abs_tile_x = screen_x * num_tiles_per_screen_x + tile_x;
                     u32 abs_tile_y = screen_y * num_tiles_per_screen_y + tile_y;
                     u32 tile_value = 1;
 
-                    if (tile_x == 2 || tile_x == num_tiles_per_screen_x - 1) {
-                        tile_value = tile_y == num_tiles_per_screen_y / 2 ? 1 : 2;
+                    if (tile_x == 0 && !(tile_y == num_tiles_per_screen_y / 2 && door_left)) {
+                        tile_value = 2;
+                    }
+                    if (tile_x == num_tiles_per_screen_x - 1 &&
+                        !(tile_y == num_tiles_per_screen_y / 2 && door_right)) {
+                        tile_value = 2;
+                    }
+                    if (tile_y == 0 && !(tile_x == num_tiles_per_screen_x / 2 && door_bottom)) {
+                        tile_value = 2;
                     }
 
-                    if (tile_y == 2 || tile_y == num_tiles_per_screen_y - 1) {
-                        tile_value = tile_x == num_tiles_per_screen_x / 2 ? 1 : 2;
+                    if (tile_y == num_tiles_per_screen_y - 1 &&
+                        !(tile_x == num_tiles_per_screen_x / 2 && door_top)) {
+                        tile_value = 2;
                     }
 
-                    set_tile_value(&state.world_arena, *tile_map, abs_tile_x, abs_tile_y,
+                    set_tile_value(&state.world_arena, *tile_map, abs_tile_x, abs_tile_y, screen_z,
                                    tile_value);
                 }
             }
 
-            u32 rng_choice = rng_table[rng_ind];
+            if (stairs || stairs_back) {
+                u32 mid_tile_x = screen_x * num_tiles_per_screen_x + num_tiles_per_screen_x / 2;
+                u32 mid_tile_y = screen_y * num_tiles_per_screen_y + num_tiles_per_screen_y / 2;
+                set_tile_value(&state.world_arena, *tile_map, mid_tile_x, mid_tile_y, screen_z, 3);
+            }
 
-            rng_choice % 2 == 0 ? ++screen_x : ++screen_y;
+            stairs_back = stairs;
+            door_left   = door_right;
+            door_bottom = door_top;
+
+            door_right = false;
+            door_top   = false;
+            stairs     = false;
+
+            switch (rng_choice) {
+                case 0: {
+                    ++screen_x;
+                } break;
+                case 1: {
+                    ++screen_y;
+                } break;
+                case 2: {
+                    screen_z == 0 ? screen_z = 1 : screen_z = 0;
+                } break;
+            }
         }
 
         state.player.pos.tile_rel_x = .5f;
@@ -229,7 +278,8 @@ GAME_UPDATE_AND_RENDER(game_update_and_render)
     world *world = state.world;
 
     world->tile_map->cur_tile_chunk =
-        get_tile_chunk(*world->tile_map, state.player.pos.abs_tile_x, state.player.pos.abs_tile_y);
+        get_tile_chunk(*world->tile_map, state.player.pos.abs_tile_x, state.player.pos.abs_tile_y,
+                       state.player.pos.abs_tile_z);
 
     game_controller_input &controller_0 = input_.controllers[0];
     if (controller_0.is_analog) {
@@ -263,6 +313,15 @@ GAME_UPDATE_AND_RENDER(game_update_and_render)
     if (check_player_collision(*world->tile_map, player, new_player_pos)) {
         player.pos = recanonicalize_pos(*world->tile_map, new_player_pos);
         player_check_tile_map(*world->tile_map, player);
+
+        if (get_tile_value(*world->tile_map, player.pos.abs_tile_x, player.pos.abs_tile_y,
+                           player.pos.abs_tile_z) == 3) {
+            player.pos.abs_tile_z == 0 ? player.pos.abs_tile_z = 1 : player.pos.abs_tile_z = 0;
+            player.pos.abs_tile_x += 2;
+            player.pos.abs_tile_y += 2;
+
+            printf("player touched stairs!\n");
+        }
     }
 
     // ===============================================================================================
@@ -276,7 +335,7 @@ GAME_UPDATE_AND_RENDER(game_update_and_render)
     // NOTE: caching for clarity, not perf
     auto player_center_pos = get_player_center_pos(*world->tile_map, player);
 
-    i32 num_draw_tiles  = 100;
+    i32 num_draw_tiles  = 12;
     f32 screen_center_x = .5f * (f32)video_buffer_.width;
     f32 screen_center_y = .5f * (f32)video_buffer_.height;
 
@@ -285,10 +344,10 @@ GAME_UPDATE_AND_RENDER(game_update_and_render)
             u32 x = player.pos.abs_tile_x + rel_x;
             u32 y = player.pos.abs_tile_y + rel_y;
 
-            u32 tile = get_tile_value(*world->tile_map, x, y);
+            u32 tile = get_tile_value(*world->tile_map, x, y, player.pos.abs_tile_z);
             color_u32 tile_color;
-            if (player_center_pos.abs_tile_x == x && player_center_pos.abs_tile_y == y) {
-                tile_color.argb = 0xff'00'00'00;
+            if (tile == 3) {
+                tile_color.argb = 0xff'1e'1e'1e;
             } else if (tile == 2) {
                 tile_color.argb = 0xff'dd'dd'dd;
             } else if (tile == 1) {
@@ -297,24 +356,24 @@ GAME_UPDATE_AND_RENDER(game_update_and_render)
                 tile_color.argb = 0xff'ff'00'00;
             }
 
-            f32 cen_x = screen_center_x - (player.pos.tile_rel_x * tile_map::s_meters_to_pixels) +
-                        (f32)rel_x * tile_map::s_tile_size_pixels;
-            f32 cen_y = screen_center_y + (player.pos.tile_rel_y * tile_map::s_meters_to_pixels) -
-                        (f32)rel_y * tile_map::s_tile_size_pixels;
-            f32 min_x = cen_x - .5f * tile_map::s_tile_size_pixels;
-            f32 min_y = cen_y - .5f * tile_map::s_tile_size_pixels;
-            f32 max_x = cen_x + .5f * tile_map::s_tile_size_pixels;
-            f32 max_y = cen_y + .5f * tile_map::s_tile_size_pixels;
+            f32 cen_x = screen_center_x - (player.pos.tile_rel_x * global::s_meters_to_pixels) +
+                        (f32)rel_x * global::s_tile_size_pixels;
+            f32 cen_y = screen_center_y + (player.pos.tile_rel_y * global::s_meters_to_pixels) -
+                        (f32)rel_y * global::s_tile_size_pixels;
+            f32 min_x = cen_x - .5f * global::s_tile_size_pixels;
+            f32 min_y = cen_y - .5f * global::s_tile_size_pixels;
+            f32 max_x = cen_x + .5f * global::s_tile_size_pixels;
+            f32 max_y = cen_y + .5f * global::s_tile_size_pixels;
 
             draw_rect(video_buffer_, min_x, min_y, max_x, max_y, tile_color);
         }
     }
 
     f32 x = screen_center_x;
-    f32 y = screen_center_y - (player.s_height * tile_map::s_meters_to_pixels);
+    f32 y = screen_center_y - (player.s_height * global::s_meters_to_pixels);
 
-    draw_rect(video_buffer_, x, y, x + player::s_width * tile_map::s_meters_to_pixels,
-              y + player::s_height * tile_map::s_meters_to_pixels, player.color);
+    draw_rect(video_buffer_, x, y, x + player::s_width * global::s_meters_to_pixels,
+              y + player::s_height * global::s_meters_to_pixels, player.color);
 }
 
 #if 0

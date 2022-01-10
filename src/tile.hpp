@@ -12,6 +12,7 @@ struct tile_map_pos
     // chunk index, and the lower bits are the tile index in the chunk
     u32 abs_tile_x;
     u32 abs_tile_y;
+    u32 abs_tile_z;
 
     f32 tile_rel_x;
     f32 tile_rel_y;
@@ -21,6 +22,7 @@ struct tile_chunk_pos
 {
     u32 chunk_tile_x;
     u32 chunk_tile_y;
+    u32 chunk_tile_z;
 
     u32 rel_tile_x;
     u32 rel_tile_y;
@@ -33,15 +35,15 @@ struct tile_chunk
 
 struct tile_map
 {
-    // NOTE: set to 256x256 tiles per chunk
-    static constexpr u32 s_chunk_bit_shift  = 8;
-    static constexpr u32 s_chunk_bit_mask   = (1 << s_chunk_bit_shift) - 1;
-    static constexpr u32 s_chunk_tile_count = (1 << s_chunk_bit_shift);
-    static constexpr u32 s_chunk_count      = 8;
+    // NOTE: set to 16x16 tiles per chunk
+    static constexpr u32 s_chunk_bit_shift        = 4;
+    static constexpr u32 s_chunk_bit_mask         = (1 << s_chunk_bit_shift) - 1;
+    static constexpr u32 s_chunk_tile_count       = (1 << s_chunk_bit_shift);
+    static constexpr u32 s_chunk_tile_count_total = s_chunk_tile_count * s_chunk_tile_count;
+    static constexpr u32 s_chunk_count            = 128;
+    static constexpr u32 s_chunk_count_z          = 2;
 
     static constexpr f32 s_tile_size_meters = 1.4f;
-    static constexpr u32 s_tile_size_pixels = 6;
-    static constexpr f32 s_meters_to_pixels = s_tile_size_pixels / s_tile_size_meters;
 
     tile_chunk *tile_chunks;
     tile_chunk *cur_tile_chunk;
@@ -54,13 +56,13 @@ tile_map_pos
 recanonicalize_pos(tile_map &tile_map_, tile_map_pos pos_);
 
 tile_chunk_pos
-get_chunk_pos(u32 abs_tile_x_, u32 abs_tile_y_);
+get_chunk_pos(u32 abs_tile_x_, u32 abs_tile_y_, u32 abs_tile_z_);
 
 tile_chunk_pos
 get_chunk_pos(tile_map_pos pos_);
 
 tile_chunk *
-get_tile_chunk(tile_map &tile_map_, i32 tile_chunk_x_, i32 tile_chunk_y_);
+get_tile_chunk(tile_map &tile_map_, u32 tile_chunk_x_, u32 tile_chunk_y_, u32 tile_chunk_z_);
 
 u32
 get_tile_value_unchecked(tile_chunk &tile_chunk_, u32 tile_x_, u32 tile_y_);
@@ -69,17 +71,18 @@ u32
 get_tile_value(tile_chunk *tile_chunk_, u32 abs_tile_x_, u32 abs_tile_y_);
 
 u32
-get_tile_value(tile_map &tile_map_, u32 abs_tile_x_, u32 abs_tile_y_);
+get_tile_value(tile_map &tile_map_, u32 abs_tile_x_, u32 abs_tile_y_, u32 abs_tile_z_);
 
 void
 set_tile_value_unchecked(tile_chunk &tile_chunk_, u32 tile_x_, u32 tile_y_, u32 tile_value_);
 
 void
-set_tile_value(tile_chunk *tile_chunk_, u32 abs_tile_x_, u32 abs_tile_y_, u32 tile_value_);
+set_tile_value(tile_chunk *tile_chunk_, u32 abs_tile_x_, u32 abs_tile_y_, u32 abs_tile_z_,
+               u32 tile_value_);
 
 void
 set_tile_value(mem_arena *arena_, tile_map &tile_map_, u32 abs_tile_x_, u32 abs_tile_y_,
-               u32 tile_value_);
+               u32 abs_tile_z_, u32 tile_value_);
 
 bool
 is_world_tile_empty(tile_map &tile_map_, tile_map_pos test_pos_);

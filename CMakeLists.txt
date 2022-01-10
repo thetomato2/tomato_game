@@ -69,6 +69,7 @@ add_library(Tomato_Game_Lib SHARED
     ${Source_Dir}/intrinsics.hpp
     ${Source_Dir}/macros.hpp
     ${Source_Dir}/math.hpp
+    ${Source_Dir}/rng_nums.h
     ${Source_Dir}/tile.cpp
     ${Source_Dir}/tile.hpp
     ${Source_Dir}/utils.cpp
