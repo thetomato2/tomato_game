@@ -24,8 +24,8 @@ recanonicalize_pos(tile_map &tile_map_, tile_map_pos pos_)
 {
     auto new_pos = pos_;
 
-    recanonicalize_coord(tile_map_, new_pos.abs_tile_x, new_pos.tile_rel_x);
-    recanonicalize_coord(tile_map_, new_pos.abs_tile_y, new_pos.tile_rel_y);
+    recanonicalize_coord(tile_map_, new_pos.abs_tile_x, new_pos.off_rel_x);
+    recanonicalize_coord(tile_map_, new_pos.abs_tile_y, new_pos.off_rel_y);
 
     return new_pos;
 }
@@ -63,7 +63,8 @@ get_tile_chunk(tile_map &tile_map_, u32 tile_chunk_x_, u32 tile_chunk_y_, u32 ti
         tile_chunk_y_ < tile_map::s_chunk_count && tile_chunk_z_ >= 0 &&
         tile_chunk_z_ < tile_map::s_chunk_count_z) {
         tile_chunk =
-            &tile_map_.tile_chunks[tile_chunk_z_ * tile_map::s_chunk_count_z +
+            &tile_map_.tile_chunks[tile_chunk_z_ * tile_map::s_chunk_count *
+                                       tile_map::s_chunk_tile_count +
                                    tile_chunk_y_ * tile_map::s_chunk_count + tile_chunk_x_];
     }
     return tile_chunk;

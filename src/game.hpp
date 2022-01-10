@@ -17,6 +17,12 @@ namespace tomato
 // NOTE: services that the platform provides for the game
 #ifdef TOM_INTERNAL
 
+// TODO: implement this
+struct thread_context
+{
+    i32 place_holder;
+};
+
 struct debug_read_file_result
 {
     u32 content_size;
@@ -25,15 +31,16 @@ struct debug_read_file_result
 
     //! all these C shenanigans...
     // TODO:  C++-ify this
-    #define DEBUG_PLATFORM_FREE_FILE_MEMORY(name) void name(void *memory_)
+    #define DEBUG_PLATFORM_FREE_FILE_MEMORY(name) void name(thread_context *thread_, void *memory_)
 typedef DEBUG_PLATFORM_FREE_FILE_MEMORY(debug_platform_free_file_memory);
 
     #define DEBUG_PLATFORM_READ_ENTIRE_FILE(name) \
-        debug_read_file_result name(const char *file_name_)
+        debug_read_file_result name(thread_context *thread_, const char *file_name_)
 typedef DEBUG_PLATFORM_READ_ENTIRE_FILE(debug_platform_read_entire_file);
 
-    #define DEBUG_PLATFORM_WRITE_ENTIRE_FILE(name) \
-        bool32 name(const char *file_name_, u64 memory_size_, void *memory_)
+    #define DEBUG_PLATFORM_WRITE_ENTIRE_FILE(name)                                     \
+        bool32 name(thread_context *thread_, const char *file_name_, u64 memory_size_, \
+                    void *memory_)
 typedef DEBUG_PLATFORM_WRITE_ENTIRE_FILE(debug_platform_write_entire_file);
 #endif
 
@@ -203,19 +210,13 @@ struct col_debug
     bool is_valid;
 };
 
-// TODO: implement this
-struct thread_context
-{
-    i32 place_holder;
-};
-
-#define GAME_UPDATE_AND_RENDER(name)                                         \
-    void name(thread_context thread_, game_mem &memory_, game_input &input_, \
+#define GAME_UPDATE_AND_RENDER(name)                                          \
+    void name(thread_context *thread_, game_mem &memory_, game_input &input_, \
               game_offscreen_buffer &video_buffer_, game_sound_output_buffer &sound_buffer_)
 typedef GAME_UPDATE_AND_RENDER(game_update_and_render_stub);
 
 #define GAME_GET_SOUND_SAMPLES(name) \
-    void name(thread_context thread_, game_mem &memory_, game_sound_output_buffer &sound_buffer_)
+    void name(thread_context *thread_, game_mem &memory_, game_sound_output_buffer &sound_buffer_)
 typedef GAME_GET_SOUND_SAMPLES(game_get_sound_samples_stub);
 
 struct mem_arena

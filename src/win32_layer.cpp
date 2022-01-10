@@ -29,7 +29,7 @@ DEBUG_PLATFORM_READ_ENTIRE_FILE(_debug_platform_read_entire_file)
                     // NOTE: file read successfully
                     file.content_size = fileSize32;
                 } else {
-                    _debug_platform_free_file_memory(file.contents);
+                    _debug_platform_free_file_memory(thread_, file.contents);
                     file.contents = 0;
                 }
             } else {
@@ -1028,8 +1028,8 @@ Main(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLine, i32 nShowCm
         thread_context thread {};
 
         if (is_game_code_loaded) {
-            code.update_and_render(thread, memory, *input, buffer, sound_buffer);
-            code.get_sound_samples(thread, memory, sound_buffer);
+            code.update_and_render(&thread, memory, *input, buffer, sound_buffer);
+            code.get_sound_samples(&thread, memory, sound_buffer);
         }
 
         fill_sound_buffer(sound_output, samples_to_write, sound_buffer);

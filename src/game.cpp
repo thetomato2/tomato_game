@@ -63,10 +63,10 @@ check_player_collision(tile_map &tile_map_, player player_, tile_map_pos test_po
     auto test_pos_bottom_left  = test_pos_;
     auto test_pos_bottom_right = test_pos_;
 
-    test_pos_top_right.tile_rel_x += player::s_width;
-    test_pos_bottom_left.tile_rel_y += player::s_height;
-    test_pos_bottom_right.tile_rel_x += player::s_width;
-    test_pos_bottom_right.tile_rel_y += player::s_height;
+    test_pos_top_right.off_rel_x += player::s_width;
+    test_pos_bottom_left.off_rel_y += player::s_height;
+    test_pos_bottom_right.off_rel_x += player::s_width;
+    test_pos_bottom_right.off_rel_y += player::s_height;
 
     test_pos_top_left     = recanonicalize_pos(tile_map_, test_pos_top_left);
     test_pos_top_right    = recanonicalize_pos(tile_map_, test_pos_top_right);
@@ -88,8 +88,8 @@ get_player_center_pos(tile_map &tile_map_, player &player_)
 {
     auto center_pos = player_.pos;
 
-    center_pos.tile_rel_x += player::s_width / 2;
-    center_pos.tile_rel_y += player::s_height / 2;
+    center_pos.off_rel_x += player::s_width / 2;
+    center_pos.off_rel_y += player::s_height / 2;
     center_pos = recanonicalize_pos(tile_map_, center_pos);
 
     return center_pos;
@@ -128,6 +128,34 @@ init_arena(mem_arena *arena_, mem_ind size_, u8 *base_)
     arena_->used = 0;
 }
 
+#pragma pack(push, 1)
+struct bmp_header
+{
+    u16 file_type;
+    u32 file_size;
+    u16 reserved_1;
+    u16 reserved_2;
+    u32 bitmap_offset;
+    u32 size;
+    i32 width;
+    i32 height;
+    u16 planes;
+    u16 bits_per_pixel;
+};
+#pragma pack(pop)
+
+void
+load_bmp(thread_context *thread_, debug_platform_read_entire_file *read_entire_file_,
+         const char *file_name_)
+{
+    debug_read_file_result read_result = read_entire_file_(thread_, file_name_);
+
+    if (read_result.content_size != 0) {
+        bmp_header *header = (bmp_header *)read_result.contents;
+        printf("fucking a\n");
+    }
+}
+
 }  // namespace
 
 void *
@@ -163,6 +191,9 @@ GAME_UPDATE_AND_RENDER(game_update_and_render)
     // #Initialization
     // ===============================================================================================
     if (!memory_.is_initialized) {
+        const char *bmp_path = "C:/dev/tomato_game/assets/images/woman.bmp";
+        load_bmp(thread_, memory_.platfrom_read_entire_file, bmp_path);
+
         init_arena(&state.world_arena, memory_.permanent_storage_size - sizeof(state),
                    (u8 *)memory_.permanent_storage + sizeof(state));
 
@@ -203,7 +234,7 @@ GAME_UPDATE_AND_RENDER(game_update_and_render)
                     door_top = true;
                 } break;
                 case 2: {
-                    stairs = true;
+                    stairs_back ? door_top = true : stairs = true;
                 } break;
             }
 
@@ -240,6 +271,14 @@ GAME_UPDATE_AND_RENDER(game_update_and_render)
                 set_tile_value(&state.world_arena, *tile_map, mid_tile_x, mid_tile_y, screen_z, 3);
             }
 
+            if (door_right) {
+                ++screen_x;
+            } else if (door_top) {
+                ++screen_y;
+            } else if (stairs) {
+                screen_z == 0 ? screen_z = 1 : screen_z = 0;
+            }
+
             stairs_back = stairs;
             door_left   = door_right;
             door_bottom = door_top;
@@ -247,22 +286,10 @@ GAME_UPDATE_AND_RENDER(game_update_and_render)
             door_right = false;
             door_top   = false;
             stairs     = false;
-
-            switch (rng_choice) {
-                case 0: {
-                    ++screen_x;
-                } break;
-                case 1: {
-                    ++screen_y;
-                } break;
-                case 2: {
-                    screen_z == 0 ? screen_z = 1 : screen_z = 0;
-                } break;
-            }
         }
 
-        state.player.pos.tile_rel_x = .5f;
-        state.player.pos.tile_rel_y = .5f;
+        state.player.pos.off_rel_x  = .5f;
+        state.player.pos.off_rel_y  = .5f;
         state.player.pos.abs_tile_x = 3;
         state.player.pos.abs_tile_y = 3;
         state.player.color          = { 0xFF'FF'FF'00 };
@@ -299,15 +326,15 @@ GAME_UPDATE_AND_RENDER(game_update_and_render)
     player_speed = input_.keyboard.left_shift.ended_down ? 20.f : 5.f;
 
     if (input_.keyboard.w.ended_down) {
-        new_player_pos.tile_rel_y += player_speed * input_.deltaTime;
+        new_player_pos.off_rel_y += player_speed * input_.deltaTime;
     } else if (input_.keyboard.s.ended_down) {
-        new_player_pos.tile_rel_y -= player_speed * input_.deltaTime;
+        new_player_pos.off_rel_y -= player_speed * input_.deltaTime;
     }
 
     if (input_.keyboard.d.ended_down) {
-        new_player_pos.tile_rel_x += player_speed * input_.deltaTime;
+        new_player_pos.off_rel_x += player_speed * input_.deltaTime;
     } else if (input_.keyboard.a.ended_down) {
-        new_player_pos.tile_rel_x -= player_speed * input_.deltaTime;
+        new_player_pos.off_rel_x -= player_speed * input_.deltaTime;
     }
 
     if (check_player_collision(*world->tile_map, player, new_player_pos)) {
@@ -356,9 +383,9 @@ GAME_UPDATE_AND_RENDER(game_update_and_render)
                 tile_color.argb = 0xff'ff'00'00;
             }
 
-            f32 cen_x = screen_center_x - (player.pos.tile_rel_x * global::s_meters_to_pixels) +
+            f32 cen_x = screen_center_x - (player.pos.off_rel_x * global::s_meters_to_pixels) +
                         (f32)rel_x * global::s_tile_size_pixels;
-            f32 cen_y = screen_center_y + (player.pos.tile_rel_y * global::s_meters_to_pixels) -
+            f32 cen_y = screen_center_y + (player.pos.off_rel_y * global::s_meters_to_pixels) -
                         (f32)rel_y * global::s_tile_size_pixels;
             f32 min_x = cen_x - .5f * global::s_tile_size_pixels;
             f32 min_y = cen_y - .5f * global::s_tile_size_pixels;

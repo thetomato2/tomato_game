@@ -14,8 +14,8 @@ struct tile_map_pos
     u32 abs_tile_y;
     u32 abs_tile_z;
 
-    f32 tile_rel_x;
-    f32 tile_rel_y;
+    f32 off_rel_x;
+    f32 off_rel_y;
 };
 
 struct tile_chunk_pos
