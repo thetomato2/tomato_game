@@ -232,19 +232,27 @@ GAME_UPDATE_AND_RENDER(game_update_and_render)
                     u32 abs_tile_y = screen_y * num_tiles_per_screen_y + tile_y;
                     u32 tile_value = 1;
 
-                    if (tile_x == 0 && !(tile_y == num_tiles_per_screen_y / 2 && door_left)) {
+                    if (tile_x == 0 && !((tile_y == num_tiles_per_screen_y / 2 ||
+                                          (tile_y == num_tiles_per_screen_y / 2) - 1) &&
+                                         door_left)) {
                         tile_value = 2;
                     }
                     if (tile_x == num_tiles_per_screen_x - 1 &&
-                        !(tile_y == num_tiles_per_screen_y / 2 && door_right)) {
+                        !((tile_y == num_tiles_per_screen_y / 2 ||
+                           (tile_y == num_tiles_per_screen_y / 2) - 1) &&
+                          door_right)) {
                         tile_value = 2;
                     }
-                    if (tile_y == 0 && !(tile_x == num_tiles_per_screen_x / 2 && door_bottom)) {
+                    if (tile_y == 0 && !((tile_x == num_tiles_per_screen_x / 2 ||
+                                          (tile_x == num_tiles_per_screen_x / 2) - 1) &&
+                                         door_bottom)) {
                         tile_value = 2;
                     }
 
                     if (tile_y == num_tiles_per_screen_y - 1 &&
-                        !(tile_x == num_tiles_per_screen_x / 2 && door_top)) {
+                        !((tile_x == num_tiles_per_screen_x / 2 ||
+                           (tile_x == num_tiles_per_screen_x / 2) - 1) &&
+                          door_top)) {
                         tile_value = 2;
                     }
 
@@ -333,10 +341,8 @@ GAME_UPDATE_AND_RENDER(game_update_and_render)
         if (get_tile_value(*world->tile_map, player.pos.abs_tile_x, player.pos.abs_tile_y,
                            player.pos.abs_tile_z) == 3) {
             player.pos.abs_tile_z == 0 ? player.pos.abs_tile_z = 1 : player.pos.abs_tile_z = 0;
-            player.pos.abs_tile_x += 2;
-            player.pos.abs_tile_y += 2;
-
-            printf("player touched stairs!\n");
+            player.pos.abs_tile_x += 1;
+            player.pos.abs_tile_y += 1;
         }
     }
 
@@ -347,6 +353,19 @@ GAME_UPDATE_AND_RENDER(game_update_and_render)
     // NOTE: *not* using PatBlt in the win32 layer
     u32_Color clear_color { 0xff'00'00'00 };
     clear_buffer(video_buffer_, clear_color);
+
+    // FIXME: test code
+    u32 *source = game_state.bitmap.pixel_ptr;
+    source += game_state.bitmap.width * game_state.bitmap.height;
+    u32 *dest = (u32 *)video_buffer_.memory;
+    for (i32 y {}; y < game_state.bitmap.height && y < video_buffer_.height; ++y) {
+        source -= game_state.bitmap.width;
+        for (i32 x {}; x < game_state.bitmap.width && x < video_buffer_.width; ++x) {
+            *dest++ = *source++;
+        }
+        source -= game_state.bitmap.width;
+        dest += video_buffer_.width - game_state.bitmap.width;
+    }
 
     // NOTE: caching for clarity, not perf
     auto player_center_pos = get_player_center_pos(*world->tile_map, player);
@@ -369,6 +388,7 @@ GAME_UPDATE_AND_RENDER(game_update_and_render)
             } else if (tile == 1) {
                 tile_color.argb = 0xff'88'88'88;
             } else {
+                continue;
                 tile_color.argb = 0xff'ff'00'00;
             }
 
@@ -390,19 +410,6 @@ GAME_UPDATE_AND_RENDER(game_update_and_render)
 
     draw_rect(video_buffer_, x, y, x + Player::s_width * global::s_meters_to_pixels,
               y + Player::s_height * global::s_meters_to_pixels, player.color);
-
-    // FIXME: test code
-    u32 *source = game_state.bitmap.pixel_ptr;
-    source += game_state.bitmap.width * game_state.bitmap.height;
-    u32 *dest = (u32 *)video_buffer_.memory;
-    for (i32 y {}; y < game_state.bitmap.height && y < video_buffer_.height; ++y) {
-        source -= game_state.bitmap.width;
-        for (i32 x {}; x < game_state.bitmap.width && x < video_buffer_.width; ++x) {
-            *dest++ = *source++;
-        }
-        source -= game_state.bitmap.width;
-        dest += video_buffer_.width - game_state.bitmap.width;
-    }
 }
 
 #if 0
