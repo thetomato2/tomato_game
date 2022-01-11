@@ -239,11 +239,20 @@ struct World
     TileMap *tile_map;
 };
 
+struct Bitmap
+{
+    i32 width;
+    i32 height;
+    u32 *pixel_ptr;
+};
+
 struct GameState
 {
     MemArena world_arena;
     World *world;
     Player player;
+
+    Bitmap bitmap;
 };
 
 void *
@@ -251,5 +260,21 @@ push_size(MemArena *arena_, mem_ind size_);
 
 #define PushStruct(arena, type)       (type *)push_size(arena, sizeof(type))
 #define PushArray(arena, count, type) (type *)push_size(arena, (count * sizeof(type)))
+
+#pragma pack(push, 1)
+struct BitmapHeader
+{
+    u16 file_type;
+    u32 file_size;
+    u16 reserved_1;
+    u16 reserved_2;
+    u32 bitmap_offset;
+    u32 size;
+    i32 width;
+    i32 height;
+    u16 planes;
+    u16 bits_per_pixel;
+};
+#pragma pack(pop)
 
 }  // namespace tomato

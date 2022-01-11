@@ -450,7 +450,7 @@ display_buffer_in_window(HDC hdc_, OffscreenBuffer &buffer_, i32 x_, i32 y_, i32
     i32 offset_x = 10;
     i32 offset_y = 10;
 
-#if 1
+#if 0
     // NOTE: this causes screen flickering - out of sync with screen refersh rate?
     ::PatBlt(hdc_, 0, 0, width_, offset_y, BLACKNESS);
     ::PatBlt(hdc_, 0, offset_y + buffer_.height, width_, height_, BLACKNESS);

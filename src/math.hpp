@@ -58,4 +58,11 @@ atan2(f32 x_, f32 y_)
     return result;
 }
 
+template<typename T>
+T
+square(T val_)
+{
+    return val_ * val_;
+}
+
 }  // namespace tomato::math

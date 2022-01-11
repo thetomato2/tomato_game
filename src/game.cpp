@@ -19,7 +19,7 @@ clear_buffer(GameOffscreenBuffer &buffer_, u32_Color color_ = { 0xff'ff'00'ff })
     i32 width  = buffer_.width;
     i32 height = buffer_.height;
 
-    u8 *row = (u8 *)buffer_.memory;
+    byt *row = (byt *)buffer_.memory;
     for (i32 y = 0; y < height; ++y) {
         u32 *pixel = (u32 *)row;
         for (i32 x = 0; x < width; ++x) {
@@ -43,7 +43,7 @@ draw_rect(GameOffscreenBuffer &buffer_, f32 f32_min_x_, f32 f_min_y_, f32 f32_ma
     if (max_x > buffer_.width) max_x = buffer_.width;
     if (max_y > buffer_.height) max_y = buffer_.height;
 
-    u8 *row = ((u8 *)buffer_.memory + min_x * buffer_.bytes_per_pixel + min_y * buffer_.pitch);
+    byt *row = ((byt *)buffer_.memory + min_x * buffer_.bytes_per_pixel + min_y * buffer_.pitch);
 
     for (i32 y = min_y; y < max_y; ++y) {
         u32 *pixel = (u32 *)row;
@@ -121,42 +121,31 @@ game_ouput_sound(GameSoundOutputBuffer &sound_buffer_)
 }
 
 void
-init_arena(MemArena *arena_, mem_ind size_, u8 *base_)
+init_arena(MemArena *arena_, mem_ind size_, byt *base_)
 {
     arena_->size = size_;
     arena_->base = base_;
     arena_->used = 0;
 }
 
-#pragma pack(push, 1)
-struct bmp_header
-{
-    u16 file_type;
-    u32 file_size;
-    u16 reserved_1;
-    u16 reserved_2;
-    u32 bitmap_offset;
-    u32 size;
-    i32 width;
-    i32 height;
-    u16 planes;
-    u16 bits_per_pixel;
-};
-#pragma pack(pop)
+}  // namespace
 
-void
+Bitmap
 load_bmp(ThreadContext *thread_, debug_platform_read_entire_file *read_entire_file_,
          const char *file_name_)
 {
     debug_ReadFileResult read_result = read_entire_file_(thread_, file_name_);
+    Bitmap result;
 
     if (read_result.content_size != 0) {
-        bmp_header *header = (bmp_header *)read_result.contents;
-        printf("fucking a\n");
+        BitmapHeader *header = (BitmapHeader *)read_result.contents;
+        u32 *pixels          = (u32 *)((byt *)read_result.contents + header->bitmap_offset);
+        result.width         = header->width;
+        result.height        = header->height;
+        result.pixel_ptr     = pixels;
     }
+    return result;
 }
-
-}  // namespace
 
 void *
 push_size(MemArena *arena_, mem_ind size_)
@@ -191,8 +180,8 @@ GAME_UPDATE_AND_RENDER(game_update_and_render)
     // #Initialization
     // ===============================================================================================
     if (!memory_.is_initialized) {
-        const char *bmp_path = "C:/dev/tomato_game/assets/images/woman.bmp";
-        load_bmp(thread_, memory_.platfrom_read_entire_file, bmp_path);
+        const char *bmp_path = "C:/dev/tomato_game/assets/images/uv_color_square_1280x720.bmp";
+        game_state.bitmap    = load_bmp(thread_, memory_.platfrom_read_entire_file, bmp_path);
 
         init_arena(&game_state.world_arena, memory_.permanent_storage_size - sizeof(game_state),
                    (u8 *)memory_.permanent_storage + sizeof(game_state));
@@ -292,7 +281,7 @@ GAME_UPDATE_AND_RENDER(game_update_and_render)
         game_state.player.pos.off_rel_y  = .5f;
         game_state.player.pos.abs_tile_x = 3;
         game_state.player.pos.abs_tile_y = 3;
-        game_state.player.color          = { 0xFF'FF'FF'00 };
+        game_state.player.color          = { 0xff'00'00'ff };
 
         // TODO: this might be more appropriate in the platform layer
         memory_.is_initialized = true;
@@ -401,6 +390,19 @@ GAME_UPDATE_AND_RENDER(game_update_and_render)
 
     draw_rect(video_buffer_, x, y, x + Player::s_width * global::s_meters_to_pixels,
               y + Player::s_height * global::s_meters_to_pixels, player.color);
+
+    // FIXME: test code
+    u32 *source = game_state.bitmap.pixel_ptr;
+    source += game_state.bitmap.width * game_state.bitmap.height;
+    u32 *dest = (u32 *)video_buffer_.memory;
+    for (i32 y {}; y < game_state.bitmap.height && y < video_buffer_.height; ++y) {
+        source -= game_state.bitmap.width;
+        for (i32 x {}; x < game_state.bitmap.width && x < video_buffer_.width; ++x) {
+            *dest++ = *source++;
+        }
+        source -= game_state.bitmap.width;
+        dest += video_buffer_.width - game_state.bitmap.width;
+    }
 }
 
 #if 0
@@ -408,7 +410,7 @@ GAME_UPDATE_AND_RENDER(game_update_and_render)
 namespace win32
 {
         #ifndef WIN32_LEAN_AND_MEAN
-            #define WIN32_LEAN_AND_MEAN  // Exclude rarely-used stuff from Windows headerfs
+            #define WIN32_LEAN_AND_MEAN  // Exclude rarely-used stuff from Windows headers
         #endif
         #include <windows.h>
 BOOL APIENTRY DllMain(HMODULE hModule, DWORD ul_reason_for_call, LPVOID lpReserved)

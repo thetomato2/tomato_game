@@ -16,7 +16,7 @@ using f64 = double;
 
 using szt     = size_t;
 using mem_ind = size_t;
-using byt     = unsigned char;
+using byt     = u8;
 
 #ifdef _WIN32
 using wchar = wchar_t;
