@@ -447,8 +447,8 @@ void
 display_buffer_in_window(HDC hdc_, OffscreenBuffer &buffer_, i32 x_, i32 y_, i32 width_,
                          i32 height_)
 {
-    i32 offset_x = 10;
-    i32 offset_y = 10;
+    i32 offset_x = 0;
+    i32 offset_y = 0;
 
 #if 0
     // NOTE: this causes screen flickering - out of sync with screen refersh rate?
@@ -753,6 +753,7 @@ process_pending_messages(win32_State &state_, GameInput &input_)
 }
 
 }  // namespace
+
 //==================================================================================
 
 LRESULT CALLBACK
@@ -1047,7 +1048,8 @@ Main(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLine, i32 nShowCm
                     ::Sleep(sleepMs);
                 }
             }
-            f32 testSecondsElapsedForFrame = get_seconds_elapsed(last_counter, get_wall_clock());
+            f32 test_seconds_elapsed_for_frame =
+                get_seconds_elapsed(last_counter, get_wall_clock());
             while (seconds_elapsed_for_frame < target_frames_per_second) {
                 seconds_elapsed_for_frame = get_seconds_elapsed(last_counter, get_wall_clock());
             }

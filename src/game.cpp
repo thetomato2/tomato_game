@@ -7,13 +7,10 @@ namespace global
 {
 static constexpr u32 s_tile_size_pixels = 60;
 static constexpr f32 s_meters_to_pixels = s_tile_size_pixels / TileMap::s_tile_size_meters;
+#include "rng_nums.h"
 }  // namespace global
 
-namespace
-{
-#include "rng_nums.h"
-
-void
+internal void
 clear_buffer(GameOffscreenBuffer &buffer_, u32_Color color_ = { 0xff'ff'00'ff })
 {
     i32 width  = buffer_.width;
@@ -29,7 +26,7 @@ clear_buffer(GameOffscreenBuffer &buffer_, u32_Color color_ = { 0xff'ff'00'ff })
     }
 }
 
-void
+internal void
 draw_rect(GameOffscreenBuffer &buffer_, f32 f32_min_x_, f32 f_min_y_, f32 f32_max_x_,
           f32 f32_max_y_, u32_Color color_ = { 0xffffffff })
 {
@@ -54,7 +51,7 @@ draw_rect(GameOffscreenBuffer &buffer_, f32 f32_min_x_, f32 f_min_y_, f32 f32_ma
     }
 }
 
-inline bool
+inline static bool
 check_player_collision(TileMap &tile_map_, Player player_, TileMapPos test_pos_)
 {
     bool result                = false;
@@ -83,7 +80,7 @@ check_player_collision(TileMap &tile_map_, Player player_, TileMapPos test_pos_)
     return result;
 }
 
-inline TileMapPos
+inline internal TileMapPos
 get_player_center_pos(TileMap &tile_map_, Player &player_)
 {
     auto center_pos = player_.pos;
@@ -95,7 +92,7 @@ get_player_center_pos(TileMap &tile_map_, Player &player_)
     return center_pos;
 }
 
-void
+internal void
 player_check_tile_map(TileMap &tile_map_, Player &player_)
 {
     // NOTE: this function gets the center of the player,
@@ -108,7 +105,7 @@ player_check_tile_map(TileMap &tile_map_, Player &player_)
         tile_map_.cur_tile_chunk = tile_map;
 }
 
-void
+internal void
 game_ouput_sound(GameSoundOutputBuffer &sound_buffer_)
 {
     // NOTE: outputs nothing atm
@@ -120,7 +117,7 @@ game_ouput_sound(GameSoundOutputBuffer &sound_buffer_)
     }
 }
 
-void
+internal void
 init_arena(MemArena *arena_, mem_ind size_, byt *base_)
 {
     arena_->size = size_;
@@ -128,9 +125,7 @@ init_arena(MemArena *arena_, mem_ind size_, byt *base_)
     arena_->used = 0;
 }
 
-}  // namespace
-
-Bitmap
+internal Bitmap
 load_bmp(ThreadContext *thread_, debug_platform_read_entire_file *read_entire_file_,
          const char *file_name_)
 {
@@ -195,7 +190,7 @@ GAME_UPDATE_AND_RENDER(game_update_and_render)
             &game_state.world_arena,
             TileMap::s_chunk_count * TileMap::s_chunk_count * TileMap::s_chunk_count_z, TileChunk);
 
-        u32 constexpr num_screens { 50 };
+        u32 constexpr num_screens { 100 };
         u32 constexpr num_tiles_per_screen_x { 16 };
         u32 constexpr num_tiles_per_screen_y { 9 };
 
@@ -212,7 +207,7 @@ GAME_UPDATE_AND_RENDER(game_update_and_render)
         bool stairs_back = false;
 
         for (u32 screen_ind {}; screen_ind < num_screens; ++screen_ind) {
-            u32 rng_choice = rng_table[rng_ind++] % 3;
+            u32 rng_choice = global::rng_table[rng_ind++] % 3;
 
             switch (rng_choice) {
                 case 0: {
@@ -386,6 +381,7 @@ GAME_UPDATE_AND_RENDER(game_update_and_render)
             } else if (tile == 2) {
                 tile_color.argb = 0xff'dd'dd'dd;
             } else if (tile == 1) {
+                continue;
                 tile_color.argb = 0xff'88'88'88;
             } else {
                 continue;

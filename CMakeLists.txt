@@ -10,6 +10,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
 set(Source_Dir ${CMAKE_CURRENT_LIST_DIR}/src)
+set(Extern_Dir ${CMAKE_CURRENT_LIST_DIR}/external)
 set(Build_Dir ${CMAKE_CURRENT_LIST_DIR}/build)
 
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${Build_Dir})
@@ -17,6 +18,7 @@ set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${Build_Dir})
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${Build_Dir})
 
 option(Emacs "Emacs" OFF)
+option(Image_Converter "Image_Converter" OFF)
 
 if (MSVC)
     list(APPEND Common_Compile_Flags
@@ -127,6 +129,30 @@ if (MSVC)
         VS_STARTUP_PROJECT Win32_Tomato_Game)
 endif()
 
+add_executable(Image_Converter
+    ${Source_Dir}/image_converter.cpp
+    ${Extern_Dir}/stb_image.h
+    )
+
+target_include_directories(Image_Converter PRIVATE ${Source_Dir}/src)
+
+
+if (MSVC)
+    target_compile_options(Image_Converter PRIVATE
+        ${Comman_Compile_FLags}
+        # -MTd
+        )
+
+    set_target_properties( Image_Converter PROPERTIES
+        VS_DEBUGGER_WORKING_DIRECTORY "$(TargetDir)")
+
+    target_compile_definitions(Image_Converter PRIVATE ${Common_Compile_Defs})
+
+    target_link_libraries(Image_Converter PRIVATE
+        ${Common_Linker_Libs}
+        )
+
+endif()
 
 if (Emacs)
     set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
