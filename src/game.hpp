@@ -159,10 +159,10 @@ struct GameMem
 #endif
 };
 
-struct u32_Color
+struct Color_u32
 {
-    u32_Color() : argb(0xffffffff) {}
-    u32_Color(u32 color) : argb(color) {}
+    Color_u32() : argb(0xffffffff) {}
+    Color_u32(u32 color) : argb(color) {}
 
     union
     {
@@ -202,7 +202,36 @@ struct f32_Vector2
     f32 x;
     f32 y;
 };
+#pragma pack(push, 1)
+struct BitmapHeader
+{
+    u16 file_type;
+    u32 file_size;
+    u16 reserved_1;
+    u16 reserved_2;
+    u32 bitmap_offset;
+    u32 size;
+    i32 width;
+    i32 height;
+    u16 planes;
+    u16 bits_per_pixel;
+};
 
+struct ARGB_header
+{
+    u32 width;
+    u32 height;
+    u32 size;
+};
+#pragma pack(pop)
+
+struct ARGB_img
+{
+    u32 width;
+    u32 height;
+    u32 size;
+    u32 *pixel_ptr;
+};
 struct ColorDebug
 {
     f32_Vector2 pos;
@@ -231,7 +260,7 @@ struct Player
     static constexpr f32 s_width  = 0.75f * s_height;
 
     TileMapPos pos;
-    u32_Color color;
+    Color_u32 color;
 };
 
 struct World
@@ -253,6 +282,7 @@ struct GameState
     Player player;
 
     Bitmap bitmap;
+    ARGB_img argb_img;
 };
 
 void *
@@ -260,21 +290,5 @@ push_size(MemArena *arena_, mem_ind size_);
 
 #define PushStruct(arena, type)       (type *)push_size(arena, sizeof(type))
 #define PushArray(arena, count, type) (type *)push_size(arena, (count * sizeof(type)))
-
-#pragma pack(push, 1)
-struct BitmapHeader
-{
-    u16 file_type;
-    u32 file_size;
-    u16 reserved_1;
-    u16 reserved_2;
-    u32 bitmap_offset;
-    u32 size;
-    i32 width;
-    i32 height;
-    u16 planes;
-    u16 bits_per_pixel;
-};
-#pragma pack(pop)
 
 }  // namespace tomato

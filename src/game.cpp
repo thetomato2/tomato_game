@@ -11,7 +11,7 @@ static constexpr f32 s_meters_to_pixels = s_tile_size_pixels / TileMap::s_tile_s
 }  // namespace global
 
 internal void
-clear_buffer(GameOffscreenBuffer &buffer_, u32_Color color_ = { 0xff'ff'00'ff })
+clear_buffer(GameOffscreenBuffer &buffer_, Color_u32 color_ = { 0xff'ff'00'ff })
 {
     i32 width  = buffer_.width;
     i32 height = buffer_.height;
@@ -28,7 +28,7 @@ clear_buffer(GameOffscreenBuffer &buffer_, u32_Color color_ = { 0xff'ff'00'ff })
 
 internal void
 draw_rect(GameOffscreenBuffer &buffer_, f32 f32_min_x_, f32 f_min_y_, f32 f32_max_x_,
-          f32 f32_max_y_, u32_Color color_ = { 0xffffffff })
+          f32 f32_max_y_, Color_u32 color_ = { 0xffffffff })
 {
     i32 min_x = math::round_f32_to_i32(f32_min_x_);
     i32 min_y = math::round_f32_to_i32(f_min_y_);
@@ -133,11 +133,28 @@ load_bmp(ThreadContext *thread_, debug_platform_read_entire_file *read_entire_fi
     Bitmap result;
 
     if (read_result.content_size != 0) {
-        BitmapHeader *header = (BitmapHeader *)read_result.contents;
-        u32 *pixels          = (u32 *)((byt *)read_result.contents + header->bitmap_offset);
-        result.width         = header->width;
-        result.height        = header->height;
-        result.pixel_ptr     = pixels;
+        auto *header     = (BitmapHeader *)read_result.contents;
+        u32 *pixels      = (u32 *)((byt *)read_result.contents + header->bitmap_offset);
+        result.width     = header->width;
+        result.height    = header->height;
+        result.pixel_ptr = pixels;
+    }
+    return result;
+}
+
+internal ARGB_img
+load_ARGB(ThreadContext *thread_, debug_platform_read_entire_file *read_entire_file_,
+          const char *file_name_)
+{
+    debug_ReadFileResult read_result = read_entire_file_(thread_, file_name_);
+    ARGB_img result;
+
+    if (read_result.content_size != 0) {
+        auto *file_ptr   = (u32 *)read_result.contents;
+        result.width     = *file_ptr++;
+        result.height    = *file_ptr++;
+        result.size      = *file_ptr++;
+        result.pixel_ptr = file_ptr;
     }
     return result;
 }
@@ -177,6 +194,14 @@ GAME_UPDATE_AND_RENDER(game_update_and_render)
     if (!memory_.is_initialized) {
         const char *bmp_path = "C:/dev/tomato_game/assets/images/uv_color_square_1280x720.bmp";
         game_state.bitmap    = load_bmp(thread_, memory_.platfrom_read_entire_file, bmp_path);
+
+        char img_path_buf[512];
+        const char *argb_dir  = "T:/assets/argbs/";
+        const char *argb_path = "bunny_girl_front.argb";
+        tomato::util::cat_str(argb_dir, argb_path, &img_path_buf[0]);
+
+        game_state.bitmap   = load_bmp(thread_, memory_.platfrom_read_entire_file, bmp_path);
+        game_state.argb_img = load_ARGB(thread_, memory_.platfrom_read_entire_file, img_path_buf);
 
         init_arena(&game_state.world_arena, memory_.permanent_storage_size - sizeof(game_state),
                    (u8 *)memory_.permanent_storage + sizeof(game_state));
@@ -346,7 +371,7 @@ GAME_UPDATE_AND_RENDER(game_update_and_render)
     // ===============================================================================================
 
     // NOTE: *not* using PatBlt in the win32 layer
-    u32_Color clear_color { 0xff'00'00'00 };
+    Color_u32 clear_color { 0xff'00'00'00 };
     clear_buffer(video_buffer_, clear_color);
 
     // FIXME: test code
@@ -362,6 +387,15 @@ GAME_UPDATE_AND_RENDER(game_update_and_render)
         dest += video_buffer_.width - game_state.bitmap.width;
     }
 
+    source = game_state.argb_img.pixel_ptr;
+    dest   = (u32 *)video_buffer_.memory;
+    for (u32 y {}; y < game_state.argb_img.height; ++y) {
+        for (u32 x {}; x < game_state.argb_img.width; ++x) {
+            *dest++ = *source++;
+        }
+        dest += video_buffer_.width - game_state.argb_img.width;
+    }
+
     // NOTE: caching for clarity, not perf
     auto player_center_pos = get_player_center_pos(*world->tile_map, player);
 
@@ -375,7 +409,7 @@ GAME_UPDATE_AND_RENDER(game_update_and_render)
             u32 y = player.pos.abs_tile_y + rel_y;
 
             u32 tile = get_tile_value(*world->tile_map, x, y, player.pos.abs_tile_z);
-            u32_Color tile_color;
+            Color_u32 tile_color;
             if (tile == 3) {
                 tile_color.argb = 0xff'1e'1e'1e;
             } else if (tile == 2) {
