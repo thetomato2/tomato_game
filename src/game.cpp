@@ -51,6 +51,40 @@ draw_rect(GameOffscreenBuffer &buffer_, f32 f32_min_x_, f32 f_min_y_, f32 f32_ma
     }
 }
 
+internal void
+draw_ARGB(GameOffscreenBuffer &buffer_, ARGB_img &img_, f32 x_, f32 y_)
+{
+    i32 min_y = i32(y_ - (img_.height / 2));
+    i32 min_x = i32(x_ - (img_.width / 2));
+    i32 max_y = i32(y_ + (img_.height / 2));
+    i32 max_x = i32(x_ + (img_.width / 2));
+
+    i32 x_offset {}, y_offset {};
+
+    if (min_y < 0) {
+        y_offset = min_y * -1;
+        min_y    = 0;
+    }
+    if (min_x < 0) {
+        x_offset = min_x * -1;
+        min_x    = 0;
+    }
+    if (max_x > buffer_.width) max_x = buffer_.width;
+    if (max_y > buffer_.height) max_y = buffer_.height;
+
+    u32 *source = img_.pixel_ptr + (y_offset * img_.width);
+    byt *row    = ((byt *)buffer_.memory + min_x * buffer_.bytes_per_pixel + min_y * buffer_.pitch);
+
+    for (i32 y = min_y; y < max_y; ++y) {
+        u32 *pixel = (u32 *)row;
+        source += x_offset;
+        for (i32 x = min_x; x < max_x; ++x) {
+            *pixel++ = *source++;
+        }
+        row += buffer_.pitch;
+    }
+}
+
 inline static bool
 check_player_collision(TileMap &tile_map_, Player player_, TileMapPos test_pos_)
 {
@@ -146,7 +180,11 @@ internal ARGB_img
 load_ARGB(ThreadContext *thread_, debug_platform_read_entire_file *read_entire_file_,
           const char *file_name_)
 {
-    debug_ReadFileResult read_result = read_entire_file_(thread_, file_name_);
+    const char *argb_dir = "T:/assets/argbs/";
+    char img_path_buf[512];
+    tomato::util::cat_str(argb_dir, file_name_, &img_path_buf[0]);
+
+    debug_ReadFileResult read_result = read_entire_file_(thread_, img_path_buf);
     ARGB_img result;
 
     if (read_result.content_size != 0) {
@@ -192,16 +230,37 @@ GAME_UPDATE_AND_RENDER(game_update_and_render)
     // #Initialization
     // ===============================================================================================
     if (!memory_.is_initialized) {
-        const char *bmp_path = "C:/dev/tomato_game/assets/images/uv_color_square_1280x720.bmp";
-        game_state.bitmap    = load_bmp(thread_, memory_.platfrom_read_entire_file, bmp_path);
+        const char *bg = "uv_color_squares_1280x720.argb";
 
-        char img_path_buf[512];
-        const char *argb_dir  = "T:/assets/argbs/";
-        const char *argb_path = "bunny_girl_front.argb";
-        tomato::util::cat_str(argb_dir, argb_path, &img_path_buf[0]);
+        const char *player_front = "link_front.argb";
+        const char *player_back  = "link_back.argb";
+        const char *player_left  = "link_left.argb";
+        const char *player_right = "link_right.argb";
 
-        game_state.bitmap   = load_bmp(thread_, memory_.platfrom_read_entire_file, bmp_path);
-        game_state.argb_img = load_ARGB(thread_, memory_.platfrom_read_entire_file, img_path_buf);
+        const char *bunny_girl_front = "bunny_girl_front.argb";
+        const char *bunny_girl_back  = "bunny_girl_back.argb";
+        const char *bunny_girl_left  = "bunny_girl_left.argb";
+        const char *bunny_girl_right = "bunny_girl_right.argb";
+
+        // game_state.bitmap   = load_bmp(thread_, memory_.platfrom_read_entire_file, bmp_path);
+        game_state.bg_img = load_ARGB(thread_, memory_.platfrom_read_entire_file, bg);
+        game_state.player_img[0] =
+            load_ARGB(thread_, memory_.platfrom_read_entire_file, player_front);
+        game_state.player_img[1] =
+            load_ARGB(thread_, memory_.platfrom_read_entire_file, player_right);
+        game_state.player_img[2] =
+            load_ARGB(thread_, memory_.platfrom_read_entire_file, player_back);
+        game_state.player_img[3] =
+            load_ARGB(thread_, memory_.platfrom_read_entire_file, player_left);
+
+        game_state.bunny_girl_img[0] =
+            load_ARGB(thread_, memory_.platfrom_read_entire_file, bunny_girl_front);
+        game_state.bunny_girl_img[1] =
+            load_ARGB(thread_, memory_.platfrom_read_entire_file, bunny_girl_right);
+        game_state.bunny_girl_img[2] =
+            load_ARGB(thread_, memory_.platfrom_read_entire_file, bunny_girl_back);
+        game_state.bunny_girl_img[3] =
+            load_ARGB(thread_, memory_.platfrom_read_entire_file, bunny_girl_left);
 
         init_arena(&game_state.world_arena, memory_.permanent_storage_size - sizeof(game_state),
                    (u8 *)memory_.permanent_storage + sizeof(game_state));
@@ -310,6 +369,7 @@ GAME_UPDATE_AND_RENDER(game_update_and_render)
         game_state.player.pos.abs_tile_x = 3;
         game_state.player.pos.abs_tile_y = 3;
         game_state.player.color          = { 0xff'00'00'ff };
+        game_state.player.direction      = 0;
 
         // TODO: this might be more appropriate in the platform layer
         memory_.is_initialized = true;
@@ -344,14 +404,18 @@ GAME_UPDATE_AND_RENDER(game_update_and_render)
 
     if (input_.keyboard.w.ended_down) {
         new_player_pos.off_rel_y += player_speed * input_.deltaTime;
+        player.direction = 2;
     } else if (input_.keyboard.s.ended_down) {
         new_player_pos.off_rel_y -= player_speed * input_.deltaTime;
+        player.direction = 0;
     }
 
     if (input_.keyboard.d.ended_down) {
         new_player_pos.off_rel_x += player_speed * input_.deltaTime;
+        player.direction = 1;
     } else if (input_.keyboard.a.ended_down) {
         new_player_pos.off_rel_x -= player_speed * input_.deltaTime;
+        player.direction = 3;
     }
 
     if (check_player_collision(*world->tile_map, player, new_player_pos)) {
@@ -375,29 +439,16 @@ GAME_UPDATE_AND_RENDER(game_update_and_render)
     clear_buffer(video_buffer_, clear_color);
 
     // FIXME: test code
-    u32 *source = game_state.bitmap.pixel_ptr;
-    source += game_state.bitmap.width * game_state.bitmap.height;
-    u32 *dest = (u32 *)video_buffer_.memory;
-    for (i32 y {}; y < game_state.bitmap.height && y < video_buffer_.height; ++y) {
-        source -= game_state.bitmap.width;
-        for (i32 x {}; x < game_state.bitmap.width && x < video_buffer_.width; ++x) {
-            *dest++ = *source++;
-        }
-        source -= game_state.bitmap.width;
-        dest += video_buffer_.width - game_state.bitmap.width;
-    }
+    u32 *source = game_state.bg_img.pixel_ptr;
+    u32 *dest   = (u32 *)video_buffer_.memory;
 
-    source = game_state.argb_img.pixel_ptr;
-    dest   = (u32 *)video_buffer_.memory;
-    for (u32 y {}; y < game_state.argb_img.height; ++y) {
-        for (u32 x {}; x < game_state.argb_img.width; ++x) {
+    for (u32 y {}; y < game_state.bg_img.height; ++y) {
+        for (u32 x {}; x < game_state.bg_img.width; ++x) {
             *dest++ = *source++;
         }
-        dest += video_buffer_.width - game_state.argb_img.width;
     }
 
     // NOTE: caching for clarity, not perf
-    auto player_center_pos = get_player_center_pos(*world->tile_map, player);
 
     i32 num_draw_tiles  = 12;
     f32 screen_center_x = .5f * (f32)video_buffer_.width;
@@ -440,6 +491,21 @@ GAME_UPDATE_AND_RENDER(game_update_and_render)
 
     draw_rect(video_buffer_, x, y, x + Player::s_width * global::s_meters_to_pixels,
               y + Player::s_height * global::s_meters_to_pixels, player.color);
+
+    u32 bunny_x { game_state.bunny_girl_img[0].width / 2 };
+    u32 bunny_y { game_state.bunny_girl_img[0].height / 2 };
+
+    for (u32 cur_img {}; cur_img < 4; ++cur_img) {
+        draw_ARGB(video_buffer_, game_state.bunny_girl_img[cur_img], bunny_x, bunny_y);
+        bunny_x += game_state.bunny_girl_img[0].width;
+    }
+
+    f32 argb_mid_x = x + (((f32)Player::s_width / 2.f) * global::s_meters_to_pixels);
+    f32 argb_mid_y = y + (((f32)Player::s_height / 2.f) * global::s_meters_to_pixels);
+
+    draw_ARGB(video_buffer_, game_state.player_img[player.direction], argb_mid_x, argb_mid_y);
+
+    // auto res = math::find_least_signifcant_set_bit(31322);
 }
 
 #if 0

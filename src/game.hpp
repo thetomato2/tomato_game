@@ -261,6 +261,8 @@ struct Player
 
     TileMapPos pos;
     Color_u32 color;
+
+    u32 direction;
 };
 
 struct World
@@ -282,7 +284,11 @@ struct GameState
     Player player;
 
     Bitmap bitmap;
-    ARGB_img argb_img;
+
+    ARGB_img bg_img;
+    ARGB_img player_img[4];
+
+    ARGB_img bunny_girl_img[4];
 };
 
 void *

@@ -68,8 +68,8 @@ add_library(Tomato_Game_Lib SHARED
     ${Source_Dir}/framework.hpp
     ${Source_Dir}/game.cpp
     ${Source_Dir}/game.hpp
-    ${Source_Dir}/intrinsics.hpp
     ${Source_Dir}/macros.hpp
+    ${Source_Dir}/math.cpp
     ${Source_Dir}/math.hpp
     ${Source_Dir}/rng_nums.h
     ${Source_Dir}/tile.cpp
@@ -80,6 +80,7 @@ add_library(Tomato_Game_Lib SHARED
 
 set_target_properties(Tomato_Game_Lib PROPERTIES OUTPUT_NAME tomato_game)
 target_include_directories(Tomato_Game_Lib PUBLIC ${Source_Dir})
+
 if (MSVC)
     target_compile_options(Tomato_Game_Lib PRIVATE
         ${Comman_Compile_FLags}
@@ -89,7 +90,10 @@ if (MSVC)
     set_target_properties( Tomato_Game_Lib PROPERTIES
         VS_DEBUGGER_WORKING_DIRECTORY "$(TargetDir)")
 
-    target_compile_definitions(Tomato_Game_Lib PRIVATE ${Common_Compile_Defs})
+    target_compile_definitions(Tomato_Game_Lib PRIVATE
+        ${Common_Compile_Defs}
+        _MSVC
+        )
 
     target_link_options(Tomato_Game_Lib PRIVATE
         ${Common_Linker_Flags}

@@ -1,4 +1,18 @@
 #pragma once
+
+#ifdef _MSVC
+    #define MSVC 1
+#endif
+
+#ifdef _LLVM
+    #define LLVM 1
+#endif
+
+#if MSVC
+    #include <intrin.h>
+    #pragma intrinsic(_BitScanForward)
+#endif
+
 // C
 #include <tchar.h>
 

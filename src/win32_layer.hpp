@@ -71,10 +71,4 @@ struct debug_SoundTimeMarker
 };
 #endif
 
-template<typename T>
-consteval T
-debug_calculate_time_marker_count(const T size_)
-{
-    return size_ / 2;
-}
 }  // namespace tomato::win32

@@ -20,6 +20,8 @@ using byt     = u8;
 
 #ifdef _WIN32
 using wchar = wchar_t;
+using ul    = unsigned long;
+using ull   = unsigned long long;
 #endif
 
 using bool32 = i32;
