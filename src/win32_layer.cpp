@@ -823,7 +823,7 @@ Main(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLine, i32 nShowCm
     resize_DIB_section(g_back_buffer, win_width, win_height);
 
     // TODO: install assets eventuallly
-    const TCHAR *icon_path = _T("C:\\dev\\tomato_game\\assets\\icon\\tomato.ico");
+    const TCHAR *icon_path = _T("..\\data\\tomato.ico");
     auto icon_big          = (HICON)(LoadImage(NULL, icon_path, IMAGE_ICON, 0, 0,
                                                LR_LOADFROMFILE | LR_DEFAULTSIZE | LR_SHARED));
 
