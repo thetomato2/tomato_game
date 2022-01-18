@@ -81,7 +81,7 @@ draw_ARGB(GameOffscreenBuffer &buffer_, ARGB_img &img_, f32 x_, f32 y_)
 
     for (i32 y = min_y; y < max_y; ++y) {
         u32 *dest = (u32 *)row;
-        source += x_offset;
+        source += x_offset_left;
         for (i32 x = min_x; x < max_x; ++x) {
             Color_u32 dest_col { *dest };
             Color_u32 source_col { *source };
@@ -98,6 +98,7 @@ draw_ARGB(GameOffscreenBuffer &buffer_, ARGB_img &img_, f32 x_, f32 y_)
 
             ++dest, ++source;
         }
+        source += x_offset_right;
         row += buffer_.pitch;
     }
 }
@@ -218,6 +219,22 @@ load_ARGB(ThreadContext *thread_, debug_platform_read_entire_file *read_entire_f
         result.size      = *file_ptr++;
         result.pixel_ptr = file_ptr;
     }
+    return result;
+}
+
+internal TileMapDif
+subtract(TileMapPos pos_a, TileMapPos pos_b)
+{
+    TileMapDif result;
+
+    f32 dif_tile_x = (f32)pos_a.abs_tile_x - (f32)pos_b.abs_tile_x;
+    f32 dif_tile_y = (f32)pos_a.abs_tile_y - (f32)pos_b.abs_tile_y;
+    f32 dif_tile_z = (f32)pos_a.abs_tile_z - (f32)pos_b.abs_tile_z;
+
+    result.dif_x = TileMap::s_tile_size_meters * dif_tile_x + (pos_a.off_rel_x - pos_b.off_rel_x);
+    result.dif_y = TileMap::s_tile_size_meters * dif_tile_y + (pos_a.off_rel_y - pos_b.off_rel_y);
+    result.dif_z = 0.f;
+
     return result;
 }
 
@@ -386,6 +403,12 @@ GAME_UPDATE_AND_RENDER(game_update_and_render)
             stairs     = false;
         }
 
+        game_state.camera.pos.abs_tile_x = num_tiles_per_screen_x / 2;
+        game_state.camera.pos.abs_tile_y = num_tiles_per_screen_y / 2;
+
+        game_state.camera.pos.abs_tile_x += 5;
+        game_state.camera.pos.abs_tile_y += 5;
+
         game_state.player.pos.off_rel_x  = .5f;
         game_state.player.pos.off_rel_y  = .5f;
         game_state.player.pos.abs_tile_x = 3;
@@ -417,6 +440,7 @@ GAME_UPDATE_AND_RENDER(game_update_and_render)
     }
 
     auto &player = game_state.player;
+    auto &camera = game_state.camera;
     // TODO: temp
     player.pos          = recanonicalize_pos(*world->tile_map, player.pos);
     auto new_player_pos = player.pos;
@@ -440,17 +464,27 @@ GAME_UPDATE_AND_RENDER(game_update_and_render)
         player.direction = 3;
     }
 
-    if (check_player_collision(*world->tile_map, player, new_player_pos)) {
-        player.pos = recanonicalize_pos(*world->tile_map, new_player_pos);
-        player_check_tile_map(*world->tile_map, player);
+    player.pos = recanonicalize_pos(*world->tile_map, new_player_pos);
+    player_check_tile_map(*world->tile_map, player);
 
-        if (get_tile_value(*world->tile_map, player.pos.abs_tile_x, player.pos.abs_tile_y,
-                           player.pos.abs_tile_z) == 3) {
-            player.pos.abs_tile_z == 0 ? player.pos.abs_tile_z = 1 : player.pos.abs_tile_z = 0;
-            player.pos.abs_tile_x += 1;
-            player.pos.abs_tile_y += 1;
-        }
+    if (get_tile_value(*world->tile_map, player.pos.abs_tile_x, player.pos.abs_tile_y,
+                       player.pos.abs_tile_z) == 3) {
+        player.pos.abs_tile_z == 0 ? player.pos.abs_tile_z = 1 : player.pos.abs_tile_z = 0;
+        player.pos.abs_tile_x += 1;
+        player.pos.abs_tile_y += 1;
     }
+
+    // if (check_player_collision(*world->tile_map, player, new_player_pos)) {
+    //     player.pos = recanonicalize_pos(*world->tile_map, new_player_pos);
+    //     player_check_tile_map(*world->tile_map, player);
+
+    //     if (get_tile_value(*world->tile_map, player.pos.abs_tile_x, player.pos.abs_tile_y,
+    //                        player.pos.abs_tile_z) == 3) {
+    //         player.pos.abs_tile_z == 0 ? player.pos.abs_tile_z = 1 : player.pos.abs_tile_z = 0;
+    //         player.pos.abs_tile_x += 1;
+    //         player.pos.abs_tile_y += 1;
+    //     }
+    // }
 
     // ===============================================================================================
     // #Draw
@@ -478,26 +512,26 @@ GAME_UPDATE_AND_RENDER(game_update_and_render)
 
     for (i32 rel_y = -1 * num_draw_tiles; rel_y < num_draw_tiles; ++rel_y) {
         for (i32 rel_x = -1 * num_draw_tiles; rel_x < num_draw_tiles; ++rel_x) {
-            u32 x = player.pos.abs_tile_x + rel_x;
-            u32 y = player.pos.abs_tile_y + rel_y;
+            u32 x = camera.pos.abs_tile_x + rel_x;
+            u32 y = camera.pos.abs_tile_y + rel_y;
 
-            u32 tile = get_tile_value(*world->tile_map, x, y, player.pos.abs_tile_z);
+            u32 tile = get_tile_value(*world->tile_map, x, y, camera.pos.abs_tile_z);
             Color_u32 tile_color;
             if (tile == 3) {
                 tile_color.argb = 0xff'1e'1e'1e;
             } else if (tile == 2) {
                 tile_color.argb = 0xff'dd'dd'dd;
             } else if (tile == 1) {
-                continue;
+                // continue;
                 tile_color.argb = 0xff'88'88'88;
             } else {
                 continue;
                 tile_color.argb = 0xff'ff'00'00;
             }
 
-            f32 cen_x = screen_center_x - (player.pos.off_rel_x * global::s_meters_to_pixels) +
+            f32 cen_x = screen_center_x - (camera.pos.off_rel_x * global::s_meters_to_pixels) +
                         (f32)rel_x * global::s_tile_size_pixels;
-            f32 cen_y = screen_center_y + (player.pos.off_rel_y * global::s_meters_to_pixels) -
+            f32 cen_y = screen_center_y + (camera.pos.off_rel_y * global::s_meters_to_pixels) -
                         (f32)rel_y * global::s_tile_size_pixels;
             f32 min_x = cen_x - .5f * global::s_tile_size_pixels;
             f32 min_y = cen_y - .5f * global::s_tile_size_pixels;
@@ -508,8 +542,11 @@ GAME_UPDATE_AND_RENDER(game_update_and_render)
         }
     }
 
-    f32 x = screen_center_x;
-    f32 y = screen_center_y - (player.s_height * global::s_meters_to_pixels);
+    TileMapDif player_dif = subtract(player.pos, camera.pos);
+
+    f32 x = screen_center_x + (player_dif.dif_x * global::s_meters_to_pixels);
+    f32 y = screen_center_y - (player_dif.dif_y * global::s_meters_to_pixels) -
+            (player.s_height * global::s_meters_to_pixels);
 
     // draw_rect(video_buffer_, x, y, x + Player::s_width * global::s_meters_to_pixels,
     //           y + Player::s_height * global::s_meters_to_pixels, player.color);
@@ -522,19 +559,6 @@ GAME_UPDATE_AND_RENDER(game_update_and_render)
     f32 argb_mid_y = y + (((f32)Player::s_height / 2.f) * global::s_meters_to_pixels) - 40;
 
     draw_ARGB(video_buffer_, game_state.player_img[player.direction], argb_mid_x, argb_mid_y);
-
-    f32 player_top_left_x = player.pos.abs_tile_x * global::s_tile_size_pixels +
-                            player.pos.off_rel_x * global::s_meters_to_pixels;
-
-    f32 player_top_left_y = player.pos.abs_tile_y * global::s_tile_size_pixels +
-                            player.pos.off_rel_y * global::s_meters_to_pixels;
-
-    f32 x1 = player_top_left_x - 2.f;
-    f32 x2 = player_top_left_x + 2.f;
-    f32 y1 = player_top_left_y - 2.f;
-    f32 y2 = player_top_left_y + 2.f;
-
-    draw_rect(video_buffer_, x1, y1, x2, y2, 0xff'ff'00'ff);
 }
 
 #if 0

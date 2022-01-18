@@ -6,6 +6,13 @@ namespace tomato
 
 struct MemArena;
 
+struct TileMapDif
+{
+    f32 dif_x;
+    f32 dif_y;
+    f32 dif_z;
+};
+
 struct TileMapPos
 {
     // NOTE: these are fixed point positioins. The high bits are the tile

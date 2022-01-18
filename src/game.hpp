@@ -277,10 +277,16 @@ struct Bitmap
     u32 *pixel_ptr;
 };
 
+struct Camera
+{
+    TileMapPos pos;
+};
+
 struct GameState
 {
     MemArena world_arena;
     World *world;
+    Camera camera;
     Player player;
 
     Bitmap bitmap;
