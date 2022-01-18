@@ -110,6 +110,8 @@ add_executable(Win32_Tomato_Game WIN32
 target_include_directories(Win32_Tomato_Game PRIVATE ${Source_Dir})
 
 if (MSVC)
+    add_dependencies(Win32_Tomato_Game Tomato_Game_Lib)
+
     target_compile_options(Win32_Tomato_Game PRIVATE
         ${Common_Compile_FLags}
         # -MTd
