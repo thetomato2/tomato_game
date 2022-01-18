@@ -54,22 +54,26 @@ draw_rect(GameOffscreenBuffer &buffer_, f32 f32_min_x_, f32 f_min_y_, f32 f32_ma
 internal void
 draw_ARGB(GameOffscreenBuffer &buffer_, ARGB_img &img_, f32 x_, f32 y_)
 {
-    i32 min_y = i32(y_ - (img_.height / 2));
-    i32 min_x = i32(x_ - (img_.width / 2));
-    i32 max_y = i32(y_ + (img_.height / 2));
-    i32 max_x = i32(x_ + (img_.width / 2));
+    i32 min_y = math::round_f32_to_i32(y_ - ((f32)img_.height / 2.f));
+    i32 min_x = math::round_f32_to_i32(x_ - ((f32)img_.width / 2.f));
+    i32 max_y = math::round_f32_to_i32(y_ + ((f32)img_.height / 2.f));
+    i32 max_x = math::round_f32_to_i32(x_ + ((f32)img_.width / 2.f));
 
-    i32 x_offset {}, y_offset {};
+    i32 x_offset_left {}, x_offset_right {}, y_offset {};
 
     if (min_y < 0) {
         y_offset = min_y * -1;
         min_y    = 0;
     }
     if (min_x < 0) {
-        x_offset = min_x * -1;
-        min_x    = 0;
+        // x_offset_left = (min_x * -1) + 1;
+        x_offset_left = min_x * -1;
+        min_x         = 0;
     }
-    if (max_x > buffer_.width) max_x = buffer_.width;
+    if (max_x > buffer_.width) {
+        x_offset_right = max_x - buffer_.width;
+        max_x          = buffer_.width;
+    }
     if (max_y > buffer_.height) max_y = buffer_.height;
 
     u32 *source = img_.pixel_ptr + (y_offset * img_.width);
