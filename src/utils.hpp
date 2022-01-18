@@ -98,6 +98,28 @@ cat_str(const char *left_, const char *right_, char *out_)
     *out_ = '\0';
 }
 
+// calcs the string lengths also
+inline void
+cat_str(const char *left_, const char *right_, char *out_, szt *len_out_)
+{
+    auto left_len  = get_str_len(left_);
+    auto right_len = get_str_len(right_);
+
+    if (!left_len || !right_len) {
+        printf("Empty strings passed in!");
+        return;
+    }
+
+    for (szt i {}; i < left_len; ++i) {
+        *out_++ = *left_++;
+    }
+    for (szt i {}; i < right_len; ++i) {
+        *out_++ = *right_++;
+    }
+    *len_out_ = left_len + right_len;
+    *out_     = '\0';
+}
+
 namespace win32
 {
 
