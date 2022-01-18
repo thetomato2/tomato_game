@@ -76,10 +76,23 @@ draw_ARGB(GameOffscreenBuffer &buffer_, ARGB_img &img_, f32 x_, f32 y_)
     byt *row    = ((byt *)buffer_.memory + min_x * buffer_.bytes_per_pixel + min_y * buffer_.pitch);
 
     for (i32 y = min_y; y < max_y; ++y) {
-        u32 *pixel = (u32 *)row;
+        u32 *dest = (u32 *)row;
         source += x_offset;
         for (i32 x = min_x; x < max_x; ++x) {
-            *pixel++ = *source++;
+            Color_u32 dest_col { *dest };
+            Color_u32 source_col { *source };
+            Color_u32 blended_col;
+            blended_col.a = 0xff;
+
+            f32 alpha = (f32)source_col.a / 255.f;
+
+            blended_col.r = u8((1.f - alpha) * (f32)dest_col.r + alpha * (f32)source_col.r);
+            blended_col.g = u8((1.f - alpha) * (f32)dest_col.g + alpha * (f32)source_col.g);
+            blended_col.b = u8((1.f - alpha) * (f32)dest_col.b + alpha * (f32)source_col.b);
+
+            *dest = blended_col.argb;
+
+            ++dest, ++source;
         }
         row += buffer_.pitch;
     }
@@ -182,7 +195,14 @@ load_ARGB(ThreadContext *thread_, debug_platform_read_entire_file *read_entire_f
 {
     const char *argb_dir = "T:/assets/argbs/";
     char img_path_buf[512];
-    tomato::util::cat_str(argb_dir, file_name_, &img_path_buf[0]);
+    szt img_buf_len;
+    tomato::util::cat_str(argb_dir, file_name_, &img_path_buf[0], &img_buf_len);
+    img_path_buf[img_buf_len++] = '.';
+    img_path_buf[img_buf_len++] = 'a';
+    img_path_buf[img_buf_len++] = 'r';
+    img_path_buf[img_buf_len++] = 'g';
+    img_path_buf[img_buf_len++] = 'b';
+    img_path_buf[img_buf_len++] = '\0';
 
     debug_ReadFileResult read_result = read_entire_file_(thread_, img_path_buf);
     ARGB_img result;
@@ -230,20 +250,27 @@ GAME_UPDATE_AND_RENDER(game_update_and_render)
     // #Initialization
     // ===============================================================================================
     if (!memory_.is_initialized) {
-        const char *bg = "uv_color_squares_1280x720.argb";
+        const char *bg = "uv_color_squares_1280x720";
 
-        const char *player_front = "link_front.argb";
-        const char *player_back  = "link_back.argb";
-        const char *player_left  = "link_left.argb";
-        const char *player_right = "link_right.argb";
+        const char *red_square   = "red_square";
+        const char *green_square = "green_square";
+        const char *blue_square  = "blue_square";
 
-        const char *bunny_girl_front = "bunny_girl_front.argb";
-        const char *bunny_girl_back  = "bunny_girl_back.argb";
-        const char *bunny_girl_left  = "bunny_girl_left.argb";
-        const char *bunny_girl_right = "bunny_girl_right.argb";
+        const char *player_front = "girl_chibi_front";
+        const char *player_back  = "girl_chibi_back";
+        const char *player_left  = "girl_chibi_left";
+        const char *player_right = "girl_chibi_right";
 
         // game_state.bitmap   = load_bmp(thread_, memory_.platfrom_read_entire_file, bmp_path);
         game_state.bg_img = load_ARGB(thread_, memory_.platfrom_read_entire_file, bg);
+
+        game_state.red_square_img =
+            load_ARGB(thread_, memory_.platfrom_read_entire_file, red_square);
+        game_state.green_square_img =
+            load_ARGB(thread_, memory_.platfrom_read_entire_file, green_square);
+        game_state.blue_square_img =
+            load_ARGB(thread_, memory_.platfrom_read_entire_file, blue_square);
+
         game_state.player_img[0] =
             load_ARGB(thread_, memory_.platfrom_read_entire_file, player_front);
         game_state.player_img[1] =
@@ -252,15 +279,6 @@ GAME_UPDATE_AND_RENDER(game_update_and_render)
             load_ARGB(thread_, memory_.platfrom_read_entire_file, player_back);
         game_state.player_img[3] =
             load_ARGB(thread_, memory_.platfrom_read_entire_file, player_left);
-
-        game_state.bunny_girl_img[0] =
-            load_ARGB(thread_, memory_.platfrom_read_entire_file, bunny_girl_front);
-        game_state.bunny_girl_img[1] =
-            load_ARGB(thread_, memory_.platfrom_read_entire_file, bunny_girl_right);
-        game_state.bunny_girl_img[2] =
-            load_ARGB(thread_, memory_.platfrom_read_entire_file, bunny_girl_back);
-        game_state.bunny_girl_img[3] =
-            load_ARGB(thread_, memory_.platfrom_read_entire_file, bunny_girl_left);
 
         init_arena(&game_state.world_arena, memory_.permanent_storage_size - sizeof(game_state),
                    (u8 *)memory_.permanent_storage + sizeof(game_state));
@@ -489,23 +507,30 @@ GAME_UPDATE_AND_RENDER(game_update_and_render)
     f32 x = screen_center_x;
     f32 y = screen_center_y - (player.s_height * global::s_meters_to_pixels);
 
-    draw_rect(video_buffer_, x, y, x + Player::s_width * global::s_meters_to_pixels,
-              y + Player::s_height * global::s_meters_to_pixels, player.color);
+    // draw_rect(video_buffer_, x, y, x + Player::s_width * global::s_meters_to_pixels,
+    //           y + Player::s_height * global::s_meters_to_pixels, player.color);
 
-    u32 bunny_x { game_state.bunny_girl_img[0].width / 2 };
-    u32 bunny_y { game_state.bunny_girl_img[0].height / 2 };
-
-    for (u32 cur_img {}; cur_img < 4; ++cur_img) {
-        draw_ARGB(video_buffer_, game_state.bunny_girl_img[cur_img], bunny_x, bunny_y);
-        bunny_x += game_state.bunny_girl_img[0].width;
-    }
+    draw_ARGB(video_buffer_, game_state.red_square_img, 64, video_buffer_.height - 64);
+    draw_ARGB(video_buffer_, game_state.green_square_img, 64, video_buffer_.height - 192);
+    draw_ARGB(video_buffer_, game_state.blue_square_img, 64, video_buffer_.height - 320);
 
     f32 argb_mid_x = x + (((f32)Player::s_width / 2.f) * global::s_meters_to_pixels);
-    f32 argb_mid_y = y + (((f32)Player::s_height / 2.f) * global::s_meters_to_pixels);
+    f32 argb_mid_y = y + (((f32)Player::s_height / 2.f) * global::s_meters_to_pixels) - 40;
 
     draw_ARGB(video_buffer_, game_state.player_img[player.direction], argb_mid_x, argb_mid_y);
 
-    // auto res = math::find_least_signifcant_set_bit(31322);
+    f32 player_top_left_x = player.pos.abs_tile_x * global::s_tile_size_pixels +
+                            player.pos.off_rel_x * global::s_meters_to_pixels;
+
+    f32 player_top_left_y = player.pos.abs_tile_y * global::s_tile_size_pixels +
+                            player.pos.off_rel_y * global::s_meters_to_pixels;
+
+    f32 x1 = player_top_left_x - 2.f;
+    f32 x2 = player_top_left_x + 2.f;
+    f32 y1 = player_top_left_y - 2.f;
+    f32 y2 = player_top_left_y + 2.f;
+
+    draw_rect(video_buffer_, x1, y1, x2, y2, 0xff'ff'00'ff);
 }
 
 #if 0

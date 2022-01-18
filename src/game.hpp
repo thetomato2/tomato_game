@@ -256,8 +256,8 @@ struct MemArena
 
 struct Player
 {
-    static constexpr f32 s_height = .75f;
-    static constexpr f32 s_width  = 0.75f * s_height;
+    static constexpr f32 s_height = .6f;
+    static constexpr f32 s_width  = 0.6f * s_height;
 
     TileMapPos pos;
     Color_u32 color;
@@ -288,7 +288,9 @@ struct GameState
     ARGB_img bg_img;
     ARGB_img player_img[4];
 
-    ARGB_img bunny_girl_img[4];
+    ARGB_img red_square_img;
+    ARGB_img green_square_img;
+    ARGB_img blue_square_img;
 };
 
 void *
