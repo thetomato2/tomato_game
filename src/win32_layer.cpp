@@ -231,11 +231,12 @@ constexpr f32 target_frames_per_second = 1.f / (f32)game_update_hertz;
 bool running;
 bool pause;
 
+WINDOWPLACEMENT win_pos    = { sizeof(win_pos) };
 const TCHAR *game_DLL_name = _T("tomato_game.dll");
 bool debut_show_cursor;
 
 OffscreenBuffer back_buffer;
-WinDim window_dimensions;
+WinDim win_dim;
 i64 performance_counter_frequency;
 
 // TODO: the sleep precision issue is keeping this above 1 frame... I think
@@ -244,6 +245,28 @@ IAudioClient *audio_client;
 IAudioRenderClient *audio_render_client;
 IAudioClock *audio_clock;
 }  // namespace global
+
+void
+toggle_fullscreen(HWND hWnd_)
+{
+    DWORD dwStyle = GetWindowLong(hWnd_, GWL_STYLE);
+    if (dwStyle & WS_OVERLAPPEDWINDOW) {
+        MONITORINFO mi = { sizeof(mi) };
+        if (GetWindowPlacement(hWnd_, &global::win_pos) &&
+            GetMonitorInfo(MonitorFromWindow(hWnd_, MONITOR_DEFAULTTOPRIMARY), &mi)) {
+            SetWindowLong(hWnd_, GWL_STYLE, dwStyle & ~WS_OVERLAPPEDWINDOW);
+            SetWindowPos(hWnd_, HWND_TOP, mi.rcMonitor.left, mi.rcMonitor.top,
+                         mi.rcMonitor.right - mi.rcMonitor.left,
+                         mi.rcMonitor.bottom - mi.rcMonitor.top,
+                         SWP_NOOWNERZORDER | SWP_FRAMECHANGED);
+        }
+    } else {
+        SetWindowLong(hWnd_, GWL_STYLE, dwStyle | WS_OVERLAPPEDWINDOW);
+        SetWindowPlacement(hWnd_, &global::win_pos);
+        SetWindowPos(hWnd_, NULL, 0, 0, 0, 0,
+                     SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER | SWP_NOOWNERZORDER | SWP_FRAMECHANGED);
+    }
+}
 
 inline FILETIME
 get_last_write_time(const TCHAR *file_name_)
@@ -468,9 +491,8 @@ display_buffer_in_window(HDC hdc_, OffscreenBuffer &buffer_, i32 x_, i32 y_, i32
     // s32 y_offset = 0;
 
     // NOTE: this is matches the windows dimensions
-    ::StretchDIBits(hdc_, offset_x, offset_y, width_, height_, 0, 0,
-                    global::window_dimensions.width, global::window_dimensions.height,
-                    buffer_.memory, &buffer_.info, DIB_RGB_COLORS, SRCCOPY);
+    ::StretchDIBits(hdc_, offset_x, offset_y, width_, height_, 0, 0, global::win_dim.width,
+                    global::win_dim.height, buffer_.memory, &buffer_.info, DIB_RGB_COLORS, SRCCOPY);
 }
 
 void
@@ -719,15 +741,27 @@ process_pending_messages(win32_State &state_, GameInput &input_)
             case WM_SYSKEYUP:
             case WM_KEYDOWN:
             case WM_KEYUP: {
-                u32 VKCode    = (u32)msg.wParam;
-                bool was_down = ((msg.lParam & (1 << 30)) != 0);
-                bool is_down  = ((msg.lParam & (1 << 29)) == 0);
+                u32 VKCode        = (u32)msg.wParam;
+                bool was_down     = ((msg.lParam & (1 << 30)) != 0);
+                bool is_down      = ((msg.lParam & (1 << 29)) == 0);
+                bool alt_key_down = (msg.lParam & (1 << 29));
                 if (was_down != is_down) {
                     switch (VKCode) {
                         case VK_ESCAPE: global::running = false; break;
                         case 'P': {
                             if (is_down) {
                                 global::pause = !global::pause;
+                            }
+                        } break;
+
+                        case (VK_RETURN): {
+                            if (alt_key_down) {
+                                toggle_fullscreen(msg.hwnd);
+                            }
+                        } break;
+                        case (VK_F4): {
+                            if (alt_key_down) {
+                                global::running = false;
                             }
                         } break;
 #if REPLAY_BUFFERS
@@ -763,19 +797,19 @@ process_pending_messages(win32_State &state_, GameInput &input_)
 //==================================================================================
 
 LRESULT CALLBACK
-WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
+WndProc(HWND hWnd, UINT msg_, WPARAM wParam_, LPARAM lParam_)
 {
     LRESULT result = 0;
-    switch (msg) {
+    switch (msg_) {
         case WM_SETCURSOR: {
             if (global::debut_show_cursor) {
-                result = DefWindowProcA(hWnd, msg, wParam, lParam);
+                result = DefWindowProcA(hWnd, msg_, wParam_, lParam_);
             } else {
                 SetCursor(0);
             }
         } break;
         case WM_SIZE: {
-            global::window_dimensions = Get_window_dimensions(hWnd);
+            global::win_dim = Get_window_dimensions(hWnd);
             // ResizeDIBSection(g_backBuffer, g_winDims.width, g_winDims.height);
         } break;
         case WM_DESTROY: {
@@ -798,7 +832,7 @@ WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
         } break;
         default:
             //            OutPutDebugStringA("default\n");
-            result = DefWindowProc(hWnd, msg, wParam, lParam);
+            result = DefWindowProc(hWnd, msg_, wParam_, lParam_);
             break;
     }
     return result;
@@ -1085,8 +1119,8 @@ Main(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLine, i32 nShowCm
         last_counter = end_counter;
 
         // NOTE: this is debug code
-        display_buffer_in_window(device_context, global::back_buffer, 0, 0,
-                                 global::window_dimensions.width, global::window_dimensions.height);
+        display_buffer_in_window(device_context, global::back_buffer, 0, 0, global::win_dim.width,
+                                 global::win_dim.height);
 
         DWORD play_cursor;
         DWORD write_cursor;
