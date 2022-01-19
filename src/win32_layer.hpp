@@ -25,7 +25,6 @@ struct SoundOutput
     u32 running_sample_index;
     i32 bytes_per_sample;
     DWORD secondary_buf_size;
-    f32 tSine;
     i32 latency_sample_count;
 };
 

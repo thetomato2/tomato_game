@@ -223,23 +223,27 @@ enum Keys : byt
     process_key    = 0xe5,
 };
 
-// #Globals
+namespace global
+{
 constexpr u32 game_update_hertz        = 60;
 constexpr f32 target_frames_per_second = 1.f / (f32)game_update_hertz;
 
-bool g_is_running;
-bool g_pause;
-const TCHAR *g_game_DLL_name = _T("tomato_game.dll");
+bool running;
+bool pause;
 
-OffscreenBuffer g_back_buffer;
-WinDim g_window_dimensions;
-i64 g_performance_counter_frequency;
+const TCHAR *game_DLL_name = _T("tomato_game.dll");
+bool debut_show_cursor;
+
+OffscreenBuffer back_buffer;
+WinDim window_dimensions;
+i64 performance_counter_frequency;
 
 // TODO: the sleep precision issue is keeping this above 1 frame... I think
 constexpr f32 frames_of_audio_latency = (1.1f / 30) * game_update_hertz;
-IAudioClient *g_audio_client;
-IAudioRenderClient *g_audio_render_client;
-IAudioClock *g_audio_clock;
+IAudioClient *audio_client;
+IAudioRenderClient *audio_render_client;
+IAudioClock *audio_clock;
+}  // namespace global
 
 inline FILETIME
 get_last_write_time(const TCHAR *file_name_)
@@ -341,7 +345,7 @@ init_WASAPI(i32 samples_per_second_, i32 buffer_size_in_samples_)
     }
 
     if (FAILED(device->Activate(__uuidof(IAudioClient), CLSCTX_ALL, NULL,
-                                (LPVOID *)&g_audio_client))) {
+                                (LPVOID *)&global::audio_client))) {
         assert(false);
     }
 
@@ -362,21 +366,22 @@ init_WASAPI(i32 samples_per_second_, i32 buffer_size_in_samples_)
 
     REFERENCE_TIME buffer_duration = 10000000ULL * buffer_size_in_samples_ /
                                      samples_per_second_;  // buffer size in 100 nanoseconds
-    if (FAILED(g_audio_client->Initialize(AUDCLNT_SHAREMODE_SHARED, AUDCLNT_STREAMFLAGS_NOPERSIST,
-                                          buffer_duration, 0, &wave_format.Format, nullptr))) {
+    if (FAILED(global::audio_client->Initialize(AUDCLNT_SHAREMODE_SHARED,
+                                                AUDCLNT_STREAMFLAGS_NOPERSIST, buffer_duration, 0,
+                                                &wave_format.Format, nullptr))) {
         assert(false);
     }
 
-    if (FAILED(g_audio_client->GetService(IID_PPV_ARGS(&g_audio_render_client)))) {
+    if (FAILED(global::audio_client->GetService(IID_PPV_ARGS(&global::audio_render_client)))) {
         assert(false);
     }
 
     UINT32 soundFrmCnt;
-    if (FAILED(g_audio_client->GetBufferSize(&soundFrmCnt))) {
+    if (FAILED(global::audio_client->GetBufferSize(&soundFrmCnt))) {
         assert(false);
     }
 
-    if (FAILED(g_audio_client->GetService(IID_PPV_ARGS(&g_audio_clock)))) {
+    if (FAILED(global::audio_client->GetService(IID_PPV_ARGS(&global::audio_clock)))) {
         assert(false);
     }
 
@@ -391,7 +396,8 @@ fill_sound_buffer(SoundOutput &sound_output_, i32 samples_to_write_,
 {
     {
         BYTE *soundBufDat;
-        if (SUCCEEDED(g_audio_render_client->GetBuffer((UINT32)samples_to_write_, &soundBufDat))) {
+        if (SUCCEEDED(
+                global::audio_render_client->GetBuffer((UINT32)samples_to_write_, &soundBufDat))) {
             i16 *sourceSample = source_buffer.samples;
             i16 *destSample   = (i16 *)soundBufDat;
             for (szt i = 0; i < samples_to_write_; ++i) {
@@ -400,7 +406,7 @@ fill_sound_buffer(SoundOutput &sound_output_, i32 samples_to_write_,
                 ++sound_output_.running_sample_index;
             }
 
-            g_audio_render_client->ReleaseBuffer((UINT32)samples_to_write_, 0);
+            global::audio_render_client->ReleaseBuffer((UINT32)samples_to_write_, 0);
         }
     }
 }
@@ -462,9 +468,9 @@ display_buffer_in_window(HDC hdc_, OffscreenBuffer &buffer_, i32 x_, i32 y_, i32
     // s32 y_offset = 0;
 
     // NOTE: this is matches the windows dimensions
-    ::StretchDIBits(hdc_, offset_x, offset_y, width_, height_, 0, 0, g_window_dimensions.width,
-                    g_window_dimensions.height, buffer_.memory, &buffer_.info, DIB_RGB_COLORS,
-                    SRCCOPY);
+    ::StretchDIBits(hdc_, offset_x, offset_y, width_, height_, 0, 0,
+                    global::window_dimensions.width, global::window_dimensions.height,
+                    buffer_.memory, &buffer_.info, DIB_RGB_COLORS, SRCCOPY);
 }
 
 void
@@ -606,7 +612,7 @@ get_wall_clock()
 inline f32
 get_seconds_elapsed(LARGE_INTEGER start_, LARGE_INTEGER end_)
 {
-    f32 seconds = f32(end_.QuadPart - start_.QuadPart) / f32(g_performance_counter_frequency);
+    f32 seconds = f32(end_.QuadPart - start_.QuadPart) / f32(global::performance_counter_frequency);
     return seconds;
 }
 
@@ -708,7 +714,7 @@ process_pending_messages(win32_State &state_, GameInput &input_)
     MSG msg;
     while (PeekMessage(&msg, 0, 0, 0, PM_REMOVE)) {
         switch (msg.message) {
-            case WM_QUIT: g_is_running = false; break;
+            case WM_QUIT: global::running = false; break;
             case WM_SYSKEYDOWN:
             case WM_SYSKEYUP:
             case WM_KEYDOWN:
@@ -718,10 +724,10 @@ process_pending_messages(win32_State &state_, GameInput &input_)
                 bool is_down  = ((msg.lParam & (1 << 29)) == 0);
                 if (was_down != is_down) {
                     switch (VKCode) {
-                        case VK_ESCAPE: g_is_running = false; break;
+                        case VK_ESCAPE: global::running = false; break;
                         case 'P': {
                             if (is_down) {
-                                g_pause = !g_pause;
+                                global::pause = !global::pause;
                             }
                         } break;
 #if REPLAY_BUFFERS
@@ -761,15 +767,22 @@ WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
 {
     LRESULT result = 0;
     switch (msg) {
+        case WM_SETCURSOR: {
+            if (global::debut_show_cursor) {
+                result = DefWindowProcA(hWnd, msg, wParam, lParam);
+            } else {
+                SetCursor(0);
+            }
+        } break;
         case WM_SIZE: {
-            g_window_dimensions = Get_window_dimensions(hWnd);
+            global::window_dimensions = Get_window_dimensions(hWnd);
             // ResizeDIBSection(g_backBuffer, g_winDims.width, g_winDims.height);
         } break;
         case WM_DESTROY: {
-            g_is_running = false;
+            global::running = false;
         } break;
         case WM_CLOSE: {
-            g_is_running = false;
+            global::running = false;
             PostQuitMessage(0);
         } break;
         case WM_ACTIVATEAPP: break;
@@ -780,7 +793,7 @@ WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
             i32 y              = paint.rcPaint.right;
             i32 height         = paint.rcPaint.bottom - paint.rcPaint.top;
             i32 width          = paint.rcPaint.right - paint.rcPaint.left;
-            display_buffer_in_window(device_context, g_back_buffer, x, y, width, height);
+            display_buffer_in_window(device_context, global::back_buffer, x, y, width, height);
             EndPaint(hWnd, &paint);
         } break;
         default:
@@ -810,28 +823,34 @@ Main(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLine, i32 nShowCm
 
     LARGE_INTEGER performance_query_result;
     QueryPerformanceFrequency(&performance_query_result);
-    g_performance_counter_frequency = performance_query_result.QuadPart;
+    global::performance_counter_frequency = performance_query_result.QuadPart;
 
-    auto code = load_game_code(g_game_DLL_name);
+    auto code = load_game_code(global::game_DLL_name);
     load_Xinput();
+
+#ifdef TOM_INTERNAL
+    global::debut_show_cursor = true;
+#else
+    global::debut_show_cursor = false;
+#endif
 
     WNDCLASS window_class = {};  // should init to 0n
 
     static constexpr i32 win_width  = 1280;
     static constexpr i32 win_height = 720;
 
-    resize_DIB_section(g_back_buffer, win_width, win_height);
+    resize_DIB_section(global::back_buffer, win_width, win_height);
 
     // TODO: install assets eventuallly
     const TCHAR *icon_path = _T("T:\\data\\tomato.ico");
     auto icon_big          = (HICON)(LoadImage(NULL, icon_path, IMAGE_ICON, 0, 0,
                                                LR_LOADFROMFILE | LR_DEFAULTSIZE | LR_SHARED));
-
     // console->setIcon(iconBg);
 
     window_class.style         = CS_HREDRAW | CS_VREDRAW | CS_OWNDC;
     window_class.lpfnWndProc   = WndProc;
     window_class.hInstance     = hInstance;
+    window_class.hCursor       = LoadCursor(NULL, IDC_ARROW);
     window_class.hIcon         = icon_big;
     window_class.lpszClassName = _T("TomatoWinCls");
 
@@ -885,10 +904,10 @@ Main(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLine, i32 nShowCm
     bool32 is_sleep_granular  = (timeBeginPeriod(desired_scheduler_MS) == TIMERR_NOERROR);
     is_sleep_granular         = false;
 
-    HDC device_context            = GetDC(hWnd);
-    g_is_running                  = true;
-    g_pause                       = false;
-    g_back_buffer.bytes_per_pixel = 4;
+    HDC device_context                  = GetDC(hWnd);
+    global::running                     = true;
+    global::pause                       = false;
+    global::back_buffer.bytes_per_pixel = 4;
 
     i32 monitor_refresh_rate = GetDeviceCaps(device_context, VREFRESH);
     printf("Monitor Refresh Rate: %d\n", monitor_refresh_rate);
@@ -898,10 +917,11 @@ Main(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLine, i32 nShowCm
     sound_output.bytes_per_sample   = sizeof(i16) * 2;
     sound_output.secondary_buf_size = sound_output.samples_per_sec;
     sound_output.latency_sample_count =
-        i32(frames_of_audio_latency * f32(sound_output.samples_per_sec / (f32)game_update_hertz));
+        i32(global::frames_of_audio_latency *
+            f32(sound_output.samples_per_sec / (f32)global::game_update_hertz));
 
     init_WASAPI(sound_output.samples_per_sec, sound_output.secondary_buf_size);
-    g_audio_client->Start();
+    global::audio_client->Start();
 
     // TODO: Pool with bitmap VirtualAlloc
     i16 *samples = (i16 *)VirtualAlloc(0, sound_output.secondary_buf_size, MEM_RESERVE | MEM_COMMIT,
@@ -910,7 +930,7 @@ Main(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLine, i32 nShowCm
 #ifdef TOM_INTERNAL
     LPVOID base_address = (LPVOID)TERABYTES((u64)2);
 #else
-    LPVOID base_address = 0;
+    LPVOID base_address       = 0;
 #endif
 
     GameMem memory                    = {};
@@ -966,35 +986,35 @@ Main(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLine, i32 nShowCm
     // =============================================================================================
     // #MAIN LOOP
     // =============================================================================================
-    while (g_is_running) {
+    while (global::running) {
         do_controller_input(old_input, new_input, hWnd);
         process_pending_messages(state, new_input);
         // NOTE: this isn't calculated and needs to be for a varaible framerate
-        new_input.deltaTime = target_frames_per_second;
+        new_input.deltaTime = global::target_frames_per_second;
 
-        auto dllWriteTime = get_last_write_time(g_game_DLL_name);
+        auto dllWriteTime = get_last_write_time(global::game_DLL_name);
         if (CompareFileTime(&dllWriteTime, &code.last_write_time_DLL)) {
             unload_game_code(code);
-            code = load_game_code(g_game_DLL_name);
+            code = load_game_code(global::game_DLL_name);
             printf("New Game Code loaded!\n");
         }
 
         // NOTE: temp program exit from controller
         if (new_input.controllers->button_back.ended_down) {
-            g_is_running = false;
+            global::running = false;
         }
 
         // #Sound
 
         REFERENCE_TIME latency {};
-        if (SUCCEEDED(g_audio_client->GetStreamLatency(&latency))) {
+        if (SUCCEEDED(global::audio_client->GetStreamLatency(&latency))) {
         } else {
             printf("ERROR--> Failed to get audio latency\n");
         }
 
         i32 samples_to_write = 0;
         UINT32 sound_pad_size;
-        if (SUCCEEDED(g_audio_client->GetCurrentPadding(&sound_pad_size))) {
+        if (SUCCEEDED(global::audio_client->GetCurrentPadding(&sound_pad_size))) {
             i32 maxSampleCnt = i32(sound_output.secondary_buf_size - sound_pad_size);
             samples_to_write = i32(sound_output.latency_sample_count - sound_pad_size);
             if (samples_to_write < 0) samples_to_write = 0;
@@ -1008,11 +1028,11 @@ Main(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLine, i32 nShowCm
 
         // video
         GameOffscreenBuffer buffer = {};
-        buffer.memory              = g_back_buffer.memory;
-        buffer.width               = g_back_buffer.width;
-        buffer.height              = g_back_buffer.height;
+        buffer.memory              = global::back_buffer.memory;
+        buffer.width               = global::back_buffer.width;
+        buffer.height              = global::back_buffer.height;
         buffer.bytes_per_pixel     = 4;
-        buffer.pitch               = g_back_buffer.pitch;
+        buffer.pitch               = global::back_buffer.pitch;
 
 #if REPLAY_BUFFERS
         if (state.input_recording_index) {
@@ -1041,17 +1061,17 @@ Main(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLine, i32 nShowCm
         f32 work_seconds_elapsed = get_seconds_elapsed(last_counter, work_counter);
 
         f32 seconds_elapsed_for_frame = work_seconds_elapsed;
-        if (seconds_elapsed_for_frame < target_frames_per_second) {
+        if (seconds_elapsed_for_frame < global::target_frames_per_second) {
             if (is_sleep_granular) {
                 auto sleepMs =
-                    DWORD(1000.f * (target_frames_per_second - seconds_elapsed_for_frame));
+                    DWORD(1000.f * (global::target_frames_per_second - seconds_elapsed_for_frame));
                 if (sleepMs > 0) {
                     ::Sleep(sleepMs);
                 }
             }
             f32 test_seconds_elapsed_for_frame =
                 get_seconds_elapsed(last_counter, get_wall_clock());
-            while (seconds_elapsed_for_frame < target_frames_per_second) {
+            while (seconds_elapsed_for_frame < global::target_frames_per_second) {
                 seconds_elapsed_for_frame = get_seconds_elapsed(last_counter, get_wall_clock());
             }
         } else {
@@ -1060,13 +1080,13 @@ Main(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLine, i32 nShowCm
 
         auto end_counter = get_wall_clock();
         f32 ms_per_frame = 1000.f * get_seconds_elapsed(last_counter, end_counter);
-        printf("%f\n", ms_per_frame);
+        // printf("%f\n", ms_per_frame);
 
         last_counter = end_counter;
 
         // NOTE: this is debug code
-        display_buffer_in_window(device_context, g_back_buffer, 0, 0, g_window_dimensions.width,
-                                 g_window_dimensions.height);
+        display_buffer_in_window(device_context, global::back_buffer, 0, 0,
+                                 global::window_dimensions.width, global::window_dimensions.height);
 
         DWORD play_cursor;
         DWORD write_cursor;
@@ -1074,8 +1094,8 @@ Main(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLine, i32 nShowCm
         UINT64 frequency_position;
         UINT64 units_posisition;
 
-        g_audio_clock->GetFrequency(&frequency_position);
-        g_audio_clock->GetPosition(&units_posisition, 0);
+        global::audio_clock->GetFrequency(&frequency_position);
+        global::audio_clock->GetPosition(&units_posisition, 0);
 
         play_cursor =
             (DWORD)(sound_output.samples_per_sec * units_posisition / frequency_position) %
