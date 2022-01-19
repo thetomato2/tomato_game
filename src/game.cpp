@@ -267,6 +267,10 @@ GAME_UPDATE_AND_RENDER(game_update_and_render)
     // NOTE: cast to GameState ptr, dereference and cast to GameState reference
     auto &game_state = (GameState &)(*(GameState *)memory_.permanent_storage);
 
+    u32 constexpr num_screens { 100 };
+    u32 constexpr num_tiles_per_screen_x { 16 };
+    u32 constexpr num_tiles_per_screen_y { 9 };
+
     // ===============================================================================================
     // #Initialization
     // ===============================================================================================
@@ -312,10 +316,6 @@ GAME_UPDATE_AND_RENDER(game_update_and_render)
         tile_map->tile_chunks = PushArray(
             &game_state.world_arena,
             TileMap::s_chunk_count * TileMap::s_chunk_count * TileMap::s_chunk_count_z, TileChunk);
-
-        u32 constexpr num_screens { 100 };
-        u32 constexpr num_tiles_per_screen_x { 16 };
-        u32 constexpr num_tiles_per_screen_y { 9 };
 
         u32 screen_y {};
         u32 screen_x {};
@@ -406,9 +406,6 @@ GAME_UPDATE_AND_RENDER(game_update_and_render)
         game_state.camera.pos.abs_tile_x = num_tiles_per_screen_x / 2;
         game_state.camera.pos.abs_tile_y = num_tiles_per_screen_y / 2;
 
-        game_state.camera.pos.abs_tile_x += 5;
-        game_state.camera.pos.abs_tile_y += 5;
-
         game_state.player.pos.off_rel_x  = .5f;
         game_state.player.pos.off_rel_y  = .5f;
         game_state.player.pos.abs_tile_x = 3;
@@ -464,27 +461,32 @@ GAME_UPDATE_AND_RENDER(game_update_and_render)
         player.direction = 3;
     }
 
-    player.pos = recanonicalize_pos(*world->tile_map, new_player_pos);
-    player_check_tile_map(*world->tile_map, player);
+    if (check_player_collision(*world->tile_map, player, new_player_pos)) {
+        player.pos = recanonicalize_pos(*world->tile_map, new_player_pos);
+        player_check_tile_map(*world->tile_map, player);
 
-    if (get_tile_value(*world->tile_map, player.pos.abs_tile_x, player.pos.abs_tile_y,
-                       player.pos.abs_tile_z) == 3) {
-        player.pos.abs_tile_z == 0 ? player.pos.abs_tile_z = 1 : player.pos.abs_tile_z = 0;
-        player.pos.abs_tile_x += 1;
-        player.pos.abs_tile_y += 1;
+        if (get_tile_value(*world->tile_map, player.pos.abs_tile_x, player.pos.abs_tile_y,
+                           player.pos.abs_tile_z) == 3) {
+            player.pos.abs_tile_z == 0 ? player.pos.abs_tile_z = 1 : player.pos.abs_tile_z = 0;
+            player.pos.abs_tile_x += 1;
+            player.pos.abs_tile_y += 1;
+        }
+        camera.pos.abs_tile_z = player.pos.abs_tile_z;
+
+        TileMapDif player_dif = subtract(player.pos, camera.pos);
+        if (player_dif.dif_x > (num_tiles_per_screen_x * TileMap::s_tile_size_meters) / 2) {
+            camera.pos.abs_tile_x += num_tiles_per_screen_x / 2;
+        }
+        if (player_dif.dif_x < (num_tiles_per_screen_x * TileMap::s_tile_size_meters) / -2) {
+            camera.pos.abs_tile_x -= num_tiles_per_screen_x / 2;
+        }
+        if (player_dif.dif_y > (num_tiles_per_screen_y * TileMap::s_tile_size_meters) / 2) {
+            camera.pos.abs_tile_y += num_tiles_per_screen_y / 2;
+        }
+        if (player_dif.dif_y < (num_tiles_per_screen_y * TileMap::s_tile_size_meters) / -2) {
+            camera.pos.abs_tile_y -= num_tiles_per_screen_y / 2;
+        }
     }
-
-    // if (check_player_collision(*world->tile_map, player, new_player_pos)) {
-    //     player.pos = recanonicalize_pos(*world->tile_map, new_player_pos);
-    //     player_check_tile_map(*world->tile_map, player);
-
-    //     if (get_tile_value(*world->tile_map, player.pos.abs_tile_x, player.pos.abs_tile_y,
-    //                        player.pos.abs_tile_z) == 3) {
-    //         player.pos.abs_tile_z == 0 ? player.pos.abs_tile_z = 1 : player.pos.abs_tile_z = 0;
-    //         player.pos.abs_tile_x += 1;
-    //         player.pos.abs_tile_y += 1;
-    //     }
-    // }
 
     // ===============================================================================================
     // #Draw
