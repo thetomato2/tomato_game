@@ -476,8 +476,12 @@ void
 display_buffer_in_window(HDC hdc_, OffscreenBuffer &buffer_, i32 x_, i32 y_, i32 width_,
                          i32 height_)
 {
-    i32 offset_x = 0;
-    i32 offset_y = 0;
+    if (width_ == buffer_.width * 2 && height_ == buffer_.height * 2) {
+        ::StretchDIBits(hdc_, 0, 0, width_, height_, 0, 0, buffer_.width, buffer_.height,
+                        buffer_.memory, &buffer_.info, DIB_RGB_COLORS, SRCCOPY);
+    } else {
+        i32 offset_x = 0;
+        i32 offset_y = 0;
 
 #if 0
     // NOTE: this causes screen flickering - out of sync with screen refersh rate?
@@ -487,12 +491,14 @@ display_buffer_in_window(HDC hdc_, OffscreenBuffer &buffer_, i32 x_, i32 y_, i32
     ::PatBlt(hdc_, offset_x + buffer_.width, 0, width_, height_, BLACKNESS);
 
 #endif
-    // s32 x_offset = 0;
-    // s32 y_offset = 0;
+        // s32 x_offset = 0;
+        // s32 y_offset = 0;
 
-    // NOTE: this is matches the windows dimensions
-    ::StretchDIBits(hdc_, offset_x, offset_y, width_, height_, 0, 0, global::win_dim.width,
-                    global::win_dim.height, buffer_.memory, &buffer_.info, DIB_RGB_COLORS, SRCCOPY);
+        // NOTE: this is matches the windows dimensions
+        ::StretchDIBits(hdc_, offset_x, offset_y, buffer_.width, buffer_.height, 0, 0,
+                        buffer_.width, buffer_.height, buffer_.memory, &buffer_.info,
+                        DIB_RGB_COLORS, SRCCOPY);
+    }
 }
 
 void
@@ -870,8 +876,8 @@ Main(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLine, i32 nShowCm
 
     WNDCLASS window_class = {};  // should init to 0n
 
-    static constexpr i32 win_width  = 1280;
-    static constexpr i32 win_height = 720;
+    static constexpr i32 win_width  = 960;
+    static constexpr i32 win_height = 540;
 
     resize_DIB_section(global::back_buffer, win_width, win_height);
 

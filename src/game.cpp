@@ -5,7 +5,7 @@ namespace tomato
 
 namespace global
 {
-static constexpr u32 s_tile_size_pixels = 60;
+static constexpr u32 s_tile_size_pixels = 40;
 static constexpr f32 s_meters_to_pixels = s_tile_size_pixels / TileMap::s_tile_size_meters;
 #include "rng_nums.h"
 }  // namespace global
@@ -268,15 +268,14 @@ GAME_UPDATE_AND_RENDER(game_update_and_render)
     auto &game_state = (GameState &)(*(GameState *)memory_.permanent_storage);
 
     u32 constexpr num_screens { 100 };
-    u32 constexpr num_tiles_per_screen_x { 16 };
-    u32 constexpr num_tiles_per_screen_y { 9 };
+    u32 constexpr num_tiles_per_screen_x { 20 };
+    u32 constexpr num_tiles_per_screen_y { 11 };
 
     // ===============================================================================================
     // #Initialization
     // ===============================================================================================
     if (!memory_.is_initialized) {
-        const char *bg = "uv_color_squares_1280x720";
-
+        const char *bg           = "uv_color_squares_960x540";
         const char *red_square   = "red_square";
         const char *green_square = "green_square";
         const char *blue_square  = "blue_square";
