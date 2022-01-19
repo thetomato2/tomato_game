@@ -823,7 +823,7 @@ Main(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLine, i32 nShowCm
     resize_DIB_section(g_back_buffer, win_width, win_height);
 
     // TODO: install assets eventuallly
-    const TCHAR *icon_path = _T("..\\data\\tomato.ico");
+    const TCHAR *icon_path = _T("T:\\data\\tomato.ico");
     auto icon_big          = (HICON)(LoadImage(NULL, icon_path, IMAGE_ICON, 0, 0,
                                                LR_LOADFROMFILE | LR_DEFAULTSIZE | LR_SHARED));
 
@@ -883,6 +883,7 @@ Main(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLine, i32 nShowCm
     // so sleep will be more granular
     UINT desired_scheduler_MS = 1;
     bool32 is_sleep_granular  = (timeBeginPeriod(desired_scheduler_MS) == TIMERR_NOERROR);
+    is_sleep_granular         = false;
 
     HDC device_context            = GetDC(hWnd);
     g_is_running                  = true;
@@ -1059,6 +1060,7 @@ Main(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLine, i32 nShowCm
 
         auto end_counter = get_wall_clock();
         f32 ms_per_frame = 1000.f * get_seconds_elapsed(last_counter, end_counter);
+        printf("%f\n", ms_per_frame);
 
         last_counter = end_counter;
 
@@ -1085,8 +1087,6 @@ Main(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLine, i32 nShowCm
         if (write_cursor > sound_output.secondary_buf_size) {
             write_cursor -= sound_output.secondary_buf_size;
         }
-        // f64 FPS	 = (f64)gs_perfCountFrequency / (f64)counterElapsed;
-        // f64 MCPF = (f64)(cyclesElapsed / (1000.f * 1000.f));
 
         GameInput &temp_input = new_input;
         new_input             = old_input;
