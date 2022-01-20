@@ -883,15 +883,15 @@ Main(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLine, i32 nShowCm
 
     // TODO: install assets eventuallly
     const TCHAR *icon_path = _T("T:\\data\\tomato.ico");
-    auto icon_big          = (HICON)(LoadImage(NULL, icon_path, IMAGE_ICON, 0, 0,
+    auto icon              = (HICON)(LoadImage(NULL, icon_path, IMAGE_ICON, 0, 0,
                                                LR_LOADFROMFILE | LR_DEFAULTSIZE | LR_SHARED));
-    // console->setIcon(iconBg);
+    console->set_icon(icon);
 
     window_class.style         = CS_HREDRAW | CS_VREDRAW | CS_OWNDC;
     window_class.lpfnWndProc   = WndProc;
     window_class.hInstance     = hInstance;
     window_class.hCursor       = LoadCursor(NULL, IDC_ARROW);
-    window_class.hIcon         = icon_big;
+    window_class.hIcon         = icon;
     window_class.lpszClassName = _T("TomatoWinCls");
 
     if (!RegisterClass(&window_class)) {

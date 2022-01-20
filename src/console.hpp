@@ -10,7 +10,7 @@ public:
     {
         _is_initialized = AllocConsole();
 
-        FILE* fDummy;
+        FILE *fDummy;
         freopen_s(&fDummy, "CONOUT$", "w", stdout);
         freopen_s(&fDummy, "CONOUT$", "w", stderr);
         freopen_s(&fDummy, "CONIN$", "r", stdin);
@@ -24,37 +24,34 @@ public:
         SetStdHandle(STD_OUTPUT_HANDLE, hConOut);
         SetStdHandle(STD_ERROR_HANDLE, hConOut);
         SetStdHandle(STD_INPUT_HANDLE, hConIn);
+
+        _hWnd = GetConsoleWindow();
     }
 
-// NOTE: you shouldn't try to make more than one console window
+// NOTE: you shouldn't try to make more than one console window (unless you want to)
 #ifndef MULTI_CONSOLE
-    Console(const Console&) = delete;
-    Console(Console&&)      = delete;
-    Console&
-    operator=(Console&&) = delete;
-    Console&
-    operator=(const Console&) = delete;
+    Console(const Console &) = delete;
+    Console(Console &&)      = delete;
+    Console &
+    operator=(Console &&) = delete;
+    Console &
+    operator=(const Console &) = delete;
 #endif
 
     explicit operator bool() const { return _is_initialized; }
 
     // FIXME: this should set the console window icon, but it doesn't
     void
-    setIcon(HICON& icon_)
+    set_icon(const HICON &icon_)
     {
-        if (icon_ != NULL) _icon = icon_;
-        HMODULE hKernel32 = ::LoadLibrary(_T("kernel32.dll"));
-        typedef BOOL(_stdcall * SetConsoleIconFunc)(HICON);
-        SetConsoleIconFunc setConsoleIcon =
-            (SetConsoleIconFunc)::GetProcAddress(hKernel32, "SetConsoleIcon");
-        if (setConsoleIcon != NULL) setConsoleIcon(_icon);
-        ::FreeLibrary(hKernel32);
+        if (_hWnd && icon_) SendMessage(_hWnd, WM_SETICON, NULL, (LPARAM)icon_);
     }
 
     ~Console() {}
 
 private:
     bool _is_initialized = false;
+    HWND _hWnd           = nullptr;
     HICON _icon          = nullptr;
 };
 
