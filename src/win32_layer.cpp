@@ -233,7 +233,7 @@ bool pause;
 
 WINDOWPLACEMENT win_pos    = { sizeof(win_pos) };
 const TCHAR *game_DLL_name = _T("tomato_game.dll");
-bool debut_show_cursor;
+bool debug_show_cursor;
 
 OffscreenBuffer back_buffer;
 WinDim win_dim;
@@ -808,7 +808,7 @@ WndProc(HWND hWnd, UINT msg_, WPARAM wParam_, LPARAM lParam_)
     LRESULT result = 0;
     switch (msg_) {
         case WM_SETCURSOR: {
-            if (global::debut_show_cursor) {
+            if (global::debug_show_cursor) {
                 result = DefWindowProcA(hWnd, msg_, wParam_, lParam_);
             } else {
                 SetCursor(0);
@@ -869,9 +869,9 @@ Main(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLine, i32 nShowCm
     load_Xinput();
 
 #ifdef TOM_INTERNAL
-    global::debut_show_cursor = true;
+    global::debug_show_cursor = true;
 #else
-    global::debut_show_cursor = false;
+    global::debug_show_cursor = false;
 #endif
 
     WNDCLASS window_class = {};  // should init to 0n

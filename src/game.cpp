@@ -102,8 +102,7 @@ draw_ARGB(GameOffscreenBuffer &buffer_, ARGB_img &img_, f32 x_, f32 y_)
         row += buffer_.pitch;
     }
 }
-
-inline static bool
+inline internal bool
 check_player_collision(TileMap &tile_map_, Player player_, TileMapPos test_pos_)
 {
     bool result                = false;
@@ -552,14 +551,18 @@ GAME_UPDATE_AND_RENDER(game_update_and_render)
     // draw_rect(video_buffer_, x, y, x + Player::s_width * global::s_meters_to_pixels,
     //           y + Player::s_height * global::s_meters_to_pixels, player.color);
 
-    draw_ARGB(video_buffer_, game_state.red_square_img, 64, video_buffer_.height - 64);
-    draw_ARGB(video_buffer_, game_state.green_square_img, 64, video_buffer_.height - 192);
-    draw_ARGB(video_buffer_, game_state.blue_square_img, 64, video_buffer_.height - 320);
-
     f32 argb_mid_x = x + (((f32)Player::s_width / 2.f) * global::s_meters_to_pixels);
     f32 argb_mid_y = y + (((f32)Player::s_height / 2.f) * global::s_meters_to_pixels) - 40;
 
     draw_ARGB(video_buffer_, game_state.player_img[player.direction], argb_mid_x, argb_mid_y);
+
+    constexpr i32 square_offset = 0;
+    draw_ARGB(video_buffer_, game_state.red_square_img, 64 + square_offset,
+              video_buffer_.height - 64);
+    draw_ARGB(video_buffer_, game_state.green_square_img, 64 + square_offset,
+              video_buffer_.height - 192);
+    draw_ARGB(video_buffer_, game_state.blue_square_img, 64 + square_offset,
+              video_buffer_.height - 320);
 }
 
 #if 0
