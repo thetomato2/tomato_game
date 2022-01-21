@@ -40,7 +40,6 @@ public:
 
     explicit operator bool() const { return _is_initialized; }
 
-    // FIXME: this should set the console window icon, but it doesn't
     void
     set_icon(const HICON &icon_)
     {

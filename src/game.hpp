@@ -20,7 +20,7 @@ namespace tomato
 // TODO: implement this
 struct ThreadContext
 {
-    i32 place_holder;
+    s32 place_holder;
 };
 
 struct debug_ReadFileResult
@@ -48,23 +48,23 @@ typedef DEBUG_PLATFORM_WRITE_ENTIRE_FILE(debug_platform_write_entire_file);
 struct GameOffscreenBuffer
 {
     void *memory;
-    i32 width;
-    i32 height;
-    i32 pitch;
-    i32 bytes_per_pixel;
+    s32 width;
+    s32 height;
+    s32 pitch;
+    s32 bytes_per_pixel;
 };
 
 struct GameSoundOutputBuffer
 {
-    i32 samples_per_second;
-    i32 sample_count;
-    i16 *samples;
-    i32 tone_hertz;
+    s32 samples_per_second;
+    s32 sample_count;
+    s16 *samples;
+    s32 tone_hertz;
 };
 
 struct GameButtonState
 {
-    i32 half_transition_count;
+    s32 half_transition_count;
     bool ended_down;
 };
 
@@ -138,7 +138,7 @@ struct GameInput
 
     static constexpr szt mouse_button_count = 3;
     GameButtonState mouse_buttons[3];
-    i32 mouse_x, mouse_y, mouse_z;
+    s32 mouse_x, mouse_y, mouse_z;
     GameKeyboard keyboard;
     GameControllerInput controllers[4];
 };
@@ -180,14 +180,14 @@ struct Color_u32
 struct s32_Vector2
 {
     s32_Vector2() : x(0), y(0) {}
-    s32_Vector2(i32 x_, i32 y_)
+    s32_Vector2(s32 x_, s32 y_)
     {
         x = x_;
         y = y_;
     }
 
-    i32 x;
-    i32 y;
+    s32 x;
+    s32 y;
 };
 
 struct f32_Vector2
@@ -211,8 +211,8 @@ struct BitmapHeader
     u16 reserved_2;
     u32 bitmap_offset;
     u32 size;
-    i32 width;
-    i32 height;
+    s32 width;
+    s32 height;
     u16 planes;
     u16 bits_per_pixel;
 };
@@ -272,8 +272,8 @@ struct World
 
 struct Bitmap
 {
-    i32 width;
-    i32 height;
+    s32 width;
+    s32 height;
     u32 *pixel_ptr;
 };
 

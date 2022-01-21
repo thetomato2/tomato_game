@@ -13,13 +13,13 @@ static constexpr f32 s_meters_to_pixels = s_tile_size_pixels / TileMap::s_tile_s
 internal void
 clear_buffer(GameOffscreenBuffer &buffer_, Color_u32 color_ = { 0xff'ff'00'ff })
 {
-    i32 width  = buffer_.width;
-    i32 height = buffer_.height;
+    s32 width  = buffer_.width;
+    s32 height = buffer_.height;
 
     byt *row = (byt *)buffer_.memory;
-    for (i32 y = 0; y < height; ++y) {
+    for (s32 y = 0; y < height; ++y) {
         u32 *pixel = (u32 *)row;
-        for (i32 x = 0; x < width; ++x) {
+        for (s32 x = 0; x < width; ++x) {
             *pixel++ = color_.argb;
         }
         row += buffer_.pitch;
@@ -30,10 +30,10 @@ internal void
 draw_rect(GameOffscreenBuffer &buffer_, f32 f32_min_x_, f32 f_min_y_, f32 f32_max_x_,
           f32 f32_max_y_, Color_u32 color_ = { 0xffffffff })
 {
-    i32 min_x = math::round_f32_to_i32(f32_min_x_);
-    i32 min_y = math::round_f32_to_i32(f_min_y_);
-    i32 max_x = math::round_f32_to_i32(f32_max_x_);
-    i32 max_y = math::round_f32_to_i32(f32_max_y_);
+    s32 min_x = math::round_f32_to_s32(f32_min_x_);
+    s32 min_y = math::round_f32_to_s32(f_min_y_);
+    s32 max_x = math::round_f32_to_s32(f32_max_x_);
+    s32 max_y = math::round_f32_to_s32(f32_max_y_);
 
     if (min_x < 0) min_x = 0;
     if (min_y < 0) min_y = 0;
@@ -42,9 +42,9 @@ draw_rect(GameOffscreenBuffer &buffer_, f32 f32_min_x_, f32 f_min_y_, f32 f32_ma
 
     byt *row = ((byt *)buffer_.memory + min_x * buffer_.bytes_per_pixel + min_y * buffer_.pitch);
 
-    for (i32 y = min_y; y < max_y; ++y) {
+    for (s32 y = min_y; y < max_y; ++y) {
         u32 *pixel = (u32 *)row;
-        for (i32 x = min_x; x < max_x; ++x) {
+        for (s32 x = min_x; x < max_x; ++x) {
             *pixel++ = color_.argb;
         }
         row += buffer_.pitch;
@@ -54,12 +54,12 @@ draw_rect(GameOffscreenBuffer &buffer_, f32 f32_min_x_, f32 f_min_y_, f32 f32_ma
 internal void
 draw_ARGB(GameOffscreenBuffer &buffer_, ARGB_img &img_, f32 x_, f32 y_)
 {
-    i32 min_y = math::round_f32_to_i32(y_ - ((f32)img_.height / 2.f));
-    i32 min_x = math::round_f32_to_i32(x_ - ((f32)img_.width / 2.f));
-    i32 max_y = math::round_f32_to_i32(y_ + ((f32)img_.height / 2.f));
-    i32 max_x = math::round_f32_to_i32(x_ + ((f32)img_.width / 2.f));
+    s32 min_y = math::round_f32_to_s32(y_ - ((f32)img_.height / 2.f));
+    s32 min_x = math::round_f32_to_s32(x_ - ((f32)img_.width / 2.f));
+    s32 max_y = math::round_f32_to_s32(y_ + ((f32)img_.height / 2.f));
+    s32 max_x = math::round_f32_to_s32(x_ + ((f32)img_.width / 2.f));
 
-    i32 x_offset_left {}, x_offset_right {}, y_offset {};
+    s32 x_offset_left {}, x_offset_right {}, y_offset {};
 
     if (min_y < 0) {
         y_offset = min_y * -1;
@@ -79,10 +79,10 @@ draw_ARGB(GameOffscreenBuffer &buffer_, ARGB_img &img_, f32 x_, f32 y_)
     u32 *source = img_.pixel_ptr + (y_offset * img_.width);
     byt *row    = ((byt *)buffer_.memory + min_x * buffer_.bytes_per_pixel + min_y * buffer_.pitch);
 
-    for (i32 y = min_y; y < max_y; ++y) {
+    for (s32 y = min_y; y < max_y; ++y) {
         u32 *dest = (u32 *)row;
         source += x_offset_left;
-        for (i32 x = min_x; x < max_x; ++x) {
+        for (s32 x = min_x; x < max_x; ++x) {
             Color_u32 dest_col { *dest };
             Color_u32 source_col { *source };
             Color_u32 blended_col;
@@ -160,8 +160,8 @@ internal void
 game_ouput_sound(GameSoundOutputBuffer &sound_buffer_)
 {
     // NOTE: outputs nothing atm
-    i16 sample_value = 0;
-    i16 *sampleOut   = sound_buffer_.samples;
+    s16 sample_value = 0;
+    s16 *sampleOut   = sound_buffer_.samples;
     for (szt sampleIndex = 0; sampleIndex < sound_buffer_.sample_count; ++sampleIndex) {
         *sampleOut++ = sample_value;
         *sampleOut++ = sample_value;
@@ -427,8 +427,8 @@ GAME_UPDATE_AND_RENDER(game_update_and_render)
 
     GameControllerInput &controller_0 = input_.controllers[0];
     if (controller_0.is_analog) {
-        // gameState.xOffset += i32(speed * (controller0.endLX));
-        // gameState.yOffset += i32(speed * (controller0.endLY));
+        // gameState.xOffset += s32(speed * (controller0.endLX));
+        // gameState.yOffset += s32(speed * (controller0.endLY));
 
     } else {
         // TODO: handle digital input_
@@ -506,12 +506,12 @@ GAME_UPDATE_AND_RENDER(game_update_and_render)
 
     // NOTE: caching for clarity, not perf
 
-    i32 num_draw_tiles  = 12;
+    s32 num_draw_tiles  = 12;
     f32 screen_center_x = .5f * (f32)video_buffer_.width;
     f32 screen_center_y = .5f * (f32)video_buffer_.height;
 
-    for (i32 rel_y = -1 * num_draw_tiles; rel_y < num_draw_tiles; ++rel_y) {
-        for (i32 rel_x = -1 * num_draw_tiles; rel_x < num_draw_tiles; ++rel_x) {
+    for (s32 rel_y = -1 * num_draw_tiles; rel_y < num_draw_tiles; ++rel_y) {
+        for (s32 rel_x = -1 * num_draw_tiles; rel_x < num_draw_tiles; ++rel_x) {
             u32 x = camera.pos.abs_tile_x + rel_x;
             u32 y = camera.pos.abs_tile_y + rel_y;
 
@@ -556,7 +556,7 @@ GAME_UPDATE_AND_RENDER(game_update_and_render)
 
     draw_ARGB(video_buffer_, game_state.player_img[player.direction], argb_mid_x, argb_mid_y);
 
-    constexpr i32 square_offset = 0;
+    constexpr s32 square_offset = 0;
     draw_ARGB(video_buffer_, game_state.red_square_img, 64 + square_offset,
               video_buffer_.height - 64);
     draw_ARGB(video_buffer_, game_state.green_square_img, 64 + square_offset,

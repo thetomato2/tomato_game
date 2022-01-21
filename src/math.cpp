@@ -3,10 +3,10 @@
 namespace tomato::math
 {
 
-i32
-round_f32_to_i32(f32 val_)
+s32
+round_f32_to_s32(f32 val_)
 {
-    i32 val = (i32)roundf(val_);
+    s32 val = (s32)roundf(val_);
     return val;
 }
 
@@ -17,10 +17,10 @@ round_f32_to_u32(f32 val_)
     return val;
 }
 
-i32
-floorf_to_i32(f32 val_)
+s32
+floorf_to_s32(f32 val_)
 {
-    i32 result = (i32)floorf(val_);
+    s32 result = (s32)floorf(val_);
     return result;
 }
 

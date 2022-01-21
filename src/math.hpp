@@ -51,14 +51,14 @@ find_least_signifcant_set_bit(u32 val_)
     return result;
 }
 
-i32
-round_f32_to_i32(f32 val_);
+s32
+round_f32_to_s32(f32 val_);
 
 u32
 round_f32_to_u32(f32 val_);
 
-i32
-floorf_to_i32(f32 value_);
+s32
+floorf_to_s32(f32 value_);
 
 f32
 sin(f32 angle_);

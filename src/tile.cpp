@@ -10,7 +10,7 @@ recanonicalize_coord(const TileMap &tile_map_, u32 &tile_, f32 &tile_rel_)
 {
     // NOTE: world is assumed to be toroidal (torus shaped world),
     // if you step off one end where you wrap around
-    i32 offset = math::round_f32_to_i32(tile_rel_ / (f32)TileMap::s_tile_size_meters);
+    s32 offset = math::round_f32_to_s32(tile_rel_ / (f32)TileMap::s_tile_size_meters);
 
     tile_ += offset;
     tile_rel_ -= offset * (f32)TileMap::s_tile_size_meters;
