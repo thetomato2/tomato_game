@@ -8,7 +8,7 @@
 namespace tomato::math
 {
 
-struct BitScanResult
+struct Bit_Scan_Result
 {
     bool found;
     u32 index;
@@ -31,10 +31,10 @@ safe_truncate_u32_to_u64(u64 val_)
     return result;
 }
 
-inline BitScanResult
+inline Bit_Scan_Result
 find_least_signifcant_set_bit(u32 val_)
 {
-    BitScanResult result {};
+    Bit_Scan_Result result {};
 
 #if MSVC
     result.found = _BitScanForward((ul *)&result.index, val_);

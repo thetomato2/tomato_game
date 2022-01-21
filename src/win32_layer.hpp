@@ -3,13 +3,13 @@
 
 namespace tomato::win32
 {
-struct WinDim
+struct Win_Dim
 {
     s32 width;
     s32 height;
 };
 
-struct OffscreenBuffer
+struct Offscreen_Buffer
 {
     BITMAPINFO info;
     void *memory;
@@ -19,7 +19,7 @@ struct OffscreenBuffer
     s32 bytes_per_pixel;
 };
 
-struct SoundOutput
+struct Sound_Output
 {
     s32 samples_per_sec;
     u32 running_sample_index;
@@ -28,7 +28,7 @@ struct SoundOutput
     s32 latency_sample_count;
 };
 
-struct ReplayBuffer
+struct Replay_Buffer
 {
     _TCHAR file_name[512];
     HANDLE file_handle;
@@ -36,7 +36,7 @@ struct ReplayBuffer
     void *memory_block;
 };
 
-struct win32_State
+struct Win32_State
 {
     szt total_size;
 
@@ -53,7 +53,7 @@ struct win32_State
 #endif
 };
 
-struct GameCode
+struct Game_Code
 {
     HMODULE game_code_DLL;
     FILETIME last_write_time_DLL;
@@ -63,7 +63,7 @@ struct GameCode
 };
 
 #ifdef TOM_INTERNAL
-struct debug_SoundTimeMarker
+struct debug_Sound_Time_Marker
 {
     DWORD play_cursor;
     DWORD write_cursor;

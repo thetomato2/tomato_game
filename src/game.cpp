@@ -6,12 +6,12 @@ namespace tomato
 namespace global
 {
 static constexpr u32 s_tile_size_pixels = 40;
-static constexpr f32 s_meters_to_pixels = s_tile_size_pixels / TileMap::s_tile_size_meters;
+static constexpr f32 s_meters_to_pixels = s_tile_size_pixels / Tile_Map::s_tile_size_meters;
 #include "rng_nums.h"
 }  // namespace global
 
 internal void
-clear_buffer(GameOffscreenBuffer &buffer_, Color_u32 color_ = { 0xff'ff'00'ff })
+clear_buffer(Game_Offscreen_Buffer &buffer_, Color_u32 color_ = { 0xff'ff'00'ff })
 {
     s32 width  = buffer_.width;
     s32 height = buffer_.height;
@@ -27,7 +27,7 @@ clear_buffer(GameOffscreenBuffer &buffer_, Color_u32 color_ = { 0xff'ff'00'ff })
 }
 
 internal void
-draw_rect(GameOffscreenBuffer &buffer_, f32 f32_min_x_, f32 f_min_y_, f32 f32_max_x_,
+draw_rect(Game_Offscreen_Buffer &buffer_, f32 f32_min_x_, f32 f_min_y_, f32 f32_max_x_,
           f32 f32_max_y_, Color_u32 color_ = { 0xffffffff })
 {
     s32 min_x = math::round_f32_to_s32(f32_min_x_);
@@ -52,7 +52,7 @@ draw_rect(GameOffscreenBuffer &buffer_, f32 f32_min_x_, f32 f_min_y_, f32 f32_ma
 }
 
 internal void
-draw_ARGB(GameOffscreenBuffer &buffer_, ARGB_img &img_, f32 x_, f32 y_)
+draw_ARGB(Game_Offscreen_Buffer &buffer_, ARGB_Img &img_, f32 x_, f32 y_)
 {
     s32 min_y = math::round_f32_to_s32(y_ - ((f32)img_.height / 2.f));
     s32 min_x = math::round_f32_to_s32(x_ - ((f32)img_.width / 2.f));
@@ -103,7 +103,7 @@ draw_ARGB(GameOffscreenBuffer &buffer_, ARGB_img &img_, f32 x_, f32 y_)
     }
 }
 inline internal bool
-check_player_collision(TileMap &tile_map_, Player player_, TileMapPos test_pos_)
+check_player_collision(Tile_Map &tile_map_, Player player_, Tile_Map_Pos test_pos_)
 {
     bool result                = false;
     auto test_pos_top_left     = test_pos_;
@@ -131,8 +131,8 @@ check_player_collision(TileMap &tile_map_, Player player_, TileMapPos test_pos_)
     return result;
 }
 
-inline internal TileMapPos
-get_player_center_pos(TileMap &tile_map_, Player &player_)
+inline internal Tile_Map_Pos
+get_player_center_pos(Tile_Map &tile_map_, Player &player_)
 {
     auto center_pos = player_.pos;
 
@@ -144,7 +144,7 @@ get_player_center_pos(TileMap &tile_map_, Player &player_)
 }
 
 internal void
-player_check_tile_map(TileMap &tile_map_, Player &player_)
+player_check_tile_map(Tile_Map &tile_map_, Player &player_)
 {
     // NOTE: this function gets the center of the player,
     // then check if the player is out of the tile map,
@@ -157,7 +157,7 @@ player_check_tile_map(TileMap &tile_map_, Player &player_)
 }
 
 internal void
-game_ouput_sound(GameSoundOutputBuffer &sound_buffer_)
+game_ouput_sound(Game_Sound_Output_Buffer &sound_buffer_)
 {
     // NOTE: outputs nothing atm
     s16 sample_value = 0;
@@ -169,7 +169,7 @@ game_ouput_sound(GameSoundOutputBuffer &sound_buffer_)
 }
 
 internal void
-init_arena(MemArena *arena_, mem_ind size_, byt *base_)
+init_arena(Mem_Arena *arena_, mem_ind size_, byt *base_)
 {
     arena_->size = size_;
     arena_->base = base_;
@@ -177,14 +177,14 @@ init_arena(MemArena *arena_, mem_ind size_, byt *base_)
 }
 
 internal Bitmap
-load_bmp(ThreadContext *thread_, debug_platform_read_entire_file *read_entire_file_,
+load_bmp(Thread_Context *thread_, debug_platform_read_entire_file *read_entire_file_,
          const char *file_name_)
 {
     debug_ReadFileResult read_result = read_entire_file_(thread_, file_name_);
     Bitmap result;
 
     if (read_result.content_size != 0) {
-        auto *header     = (BitmapHeader *)read_result.contents;
+        auto *header     = (Bitmap_Header *)read_result.contents;
         u32 *pixels      = (u32 *)((byt *)read_result.contents + header->bitmap_offset);
         result.width     = header->width;
         result.height    = header->height;
@@ -193,8 +193,8 @@ load_bmp(ThreadContext *thread_, debug_platform_read_entire_file *read_entire_fi
     return result;
 }
 
-internal ARGB_img
-load_ARGB(ThreadContext *thread_, debug_platform_read_entire_file *read_entire_file_,
+internal ARGB_Img
+load_ARGB(Thread_Context *thread_, debug_platform_read_entire_file *read_entire_file_,
           const char *file_name_)
 {
     const char *argb_dir = "T:/assets/argbs/";
@@ -209,7 +209,7 @@ load_ARGB(ThreadContext *thread_, debug_platform_read_entire_file *read_entire_f
     img_path_buf[img_buf_len++] = '\0';
 
     debug_ReadFileResult read_result = read_entire_file_(thread_, img_path_buf);
-    ARGB_img result;
+    ARGB_Img result;
 
     if (read_result.content_size != 0) {
         auto *file_ptr   = (u32 *)read_result.contents;
@@ -221,24 +221,24 @@ load_ARGB(ThreadContext *thread_, debug_platform_read_entire_file *read_entire_f
     return result;
 }
 
-internal TileMapDif
-subtract(TileMapPos pos_a, TileMapPos pos_b)
+internal Tile_Map_Dif
+subtract(Tile_Map_Pos pos_a, Tile_Map_Pos pos_b)
 {
-    TileMapDif result;
+    Tile_Map_Dif result;
 
     f32 dif_tile_x = (f32)pos_a.abs_tile_x - (f32)pos_b.abs_tile_x;
     f32 dif_tile_y = (f32)pos_a.abs_tile_y - (f32)pos_b.abs_tile_y;
     f32 dif_tile_z = (f32)pos_a.abs_tile_z - (f32)pos_b.abs_tile_z;
 
-    result.dif_x = TileMap::s_tile_size_meters * dif_tile_x + (pos_a.off_rel_x - pos_b.off_rel_x);
-    result.dif_y = TileMap::s_tile_size_meters * dif_tile_y + (pos_a.off_rel_y - pos_b.off_rel_y);
+    result.dif_x = Tile_Map::s_tile_size_meters * dif_tile_x + (pos_a.off_rel_x - pos_b.off_rel_x);
+    result.dif_y = Tile_Map::s_tile_size_meters * dif_tile_y + (pos_a.off_rel_y - pos_b.off_rel_y);
     result.dif_z = 0.f;
 
     return result;
 }
 
 void *
-push_size(MemArena *arena_, mem_ind size_)
+push_size(Mem_Arena *arena_, mem_ind size_)
 {
     assert((arena_->used + size_) <= arena_->size);
     void *result = arena_->base + arena_->used;
@@ -254,17 +254,17 @@ push_size(MemArena *arena_, mem_ind size_)
 extern "C" TOM_DLL_EXPORT
 GAME_GET_SOUND_SAMPLES(game_get_sound_samples)
 {
-    auto *state = (GameState *)memory_.permanent_storage;
+    auto *state = (Game_State *)memory_.permanent_storage;
     game_ouput_sound(sound_buffer_);
 }
 
 extern "C" TOM_DLL_EXPORT
 GAME_UPDATE_AND_RENDER(game_update_and_render)
 {
-    assert(sizeof(GameState) <= memory_.permanent_storage_size);
+    assert(sizeof(Game_State) <= memory_.permanent_storage_size);
 
     // NOTE: cast to GameState ptr, dereference and cast to GameState reference
-    auto &game_state = (GameState &)(*(GameState *)memory_.permanent_storage);
+    auto &game_state = (Game_State &)(*(Game_State *)memory_.permanent_storage);
 
     u32 constexpr num_screens { 100 };
     u32 constexpr num_tiles_per_screen_x { 20 };
@@ -308,12 +308,13 @@ GAME_UPDATE_AND_RENDER(game_update_and_render)
 
         game_state.world = PushStruct(&game_state.world_arena, World);
 
-        World *world          = game_state.world;
-        world->tile_map       = PushStruct(&game_state.world_arena, TileMap);
-        TileMap *tile_map     = world->tile_map;
-        tile_map->tile_chunks = PushArray(
-            &game_state.world_arena,
-            TileMap::s_chunk_count * TileMap::s_chunk_count * TileMap::s_chunk_count_z, TileChunk);
+        World *world       = game_state.world;
+        world->tile_map    = PushStruct(&game_state.world_arena, Tile_Map);
+        Tile_Map *tile_map = world->tile_map;
+        tile_map->tile_chunks =
+            PushArray(&game_state.world_arena,
+                      Tile_Map::s_chunk_count * Tile_Map::s_chunk_count * Tile_Map::s_chunk_count_z,
+                      Tile_Chunk);
 
         u32 screen_y {};
         u32 screen_x {};
@@ -425,7 +426,7 @@ GAME_UPDATE_AND_RENDER(game_update_and_render)
         get_tile_chunk(*world->tile_map, game_state.player.pos.abs_tile_x,
                        game_state.player.pos.abs_tile_y, game_state.player.pos.abs_tile_z);
 
-    GameControllerInput &controller_0 = input_.controllers[0];
+    Game_Controller_Input &controller_0 = input_.controllers[0];
     if (controller_0.is_analog) {
         // gameState.xOffset += s32(speed * (controller0.endLX));
         // gameState.yOffset += s32(speed * (controller0.endLY));
@@ -471,17 +472,17 @@ GAME_UPDATE_AND_RENDER(game_update_and_render)
         }
         camera.pos.abs_tile_z = player.pos.abs_tile_z;
 
-        TileMapDif player_dif = subtract(player.pos, camera.pos);
-        if (player_dif.dif_x > (num_tiles_per_screen_x * TileMap::s_tile_size_meters) / 2) {
+        Tile_Map_Dif player_dif = subtract(player.pos, camera.pos);
+        if (player_dif.dif_x > (num_tiles_per_screen_x * Tile_Map::s_tile_size_meters) / 2) {
             camera.pos.abs_tile_x += num_tiles_per_screen_x / 2;
         }
-        if (player_dif.dif_x < (num_tiles_per_screen_x * TileMap::s_tile_size_meters) / -2) {
+        if (player_dif.dif_x < (num_tiles_per_screen_x * Tile_Map::s_tile_size_meters) / -2) {
             camera.pos.abs_tile_x -= num_tiles_per_screen_x / 2;
         }
-        if (player_dif.dif_y > (num_tiles_per_screen_y * TileMap::s_tile_size_meters) / 2) {
+        if (player_dif.dif_y > (num_tiles_per_screen_y * Tile_Map::s_tile_size_meters) / 2) {
             camera.pos.abs_tile_y += num_tiles_per_screen_y / 2;
         }
-        if (player_dif.dif_y < (num_tiles_per_screen_y * TileMap::s_tile_size_meters) / -2) {
+        if (player_dif.dif_y < (num_tiles_per_screen_y * Tile_Map::s_tile_size_meters) / -2) {
             camera.pos.abs_tile_y -= num_tiles_per_screen_y / 2;
         }
     }
@@ -542,7 +543,7 @@ GAME_UPDATE_AND_RENDER(game_update_and_render)
         }
     }
 
-    TileMapDif player_dif = subtract(player.pos, camera.pos);
+    Tile_Map_Dif player_dif = subtract(player.pos, camera.pos);
 
     f32 x = screen_center_x + (player_dif.dif_x * global::s_meters_to_pixels);
     f32 y = screen_center_y - (player_dif.dif_y * global::s_meters_to_pixels) -

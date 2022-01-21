@@ -235,8 +235,8 @@ WINDOWPLACEMENT win_pos    = { sizeof(win_pos) };
 const TCHAR *game_DLL_name = _T("tomato_game.dll");
 bool debug_show_cursor;
 
-OffscreenBuffer back_buffer;
-WinDim win_dim;
+Offscreen_Buffer back_buffer;
+Win_Dim win_dim;
 s64 performance_counter_frequency;
 
 // TODO: the sleep precision issue is keeping this above 1 frame... I think
@@ -292,10 +292,10 @@ get_last_write_time(const TCHAR *file_name_)
     return last_write_time;
 }
 
-GameCode
+Game_Code
 load_game_code(const TCHAR *DLL_name_)
 {
-    GameCode code {};
+    Game_Code code {};
     const TCHAR *DLL_copy = _T("loaded_gamecode_copy.dll");
 
     code.last_write_time_DLL = get_last_write_time(DLL_name_);
@@ -323,7 +323,7 @@ load_game_code(const TCHAR *DLL_name_)
 }
 
 void
-unload_game_code(GameCode &game_code_)
+unload_game_code(Game_Code &game_code_)
 {
     if (game_code_.game_code_DLL) {
         FreeLibrary(game_code_.game_code_DLL);
@@ -414,8 +414,8 @@ init_WASAPI(s32 samples_per_second_, s32 buffer_size_in_samples_)
 }
 
 void
-fill_sound_buffer(SoundOutput &sound_output_, s32 samples_to_write_,
-                  GameSoundOutputBuffer &source_buffer)
+fill_sound_buffer(Sound_Output &sound_output_, s32 samples_to_write_,
+                  Game_Sound_Output_Buffer &source_buffer)
 {
     {
         BYTE *soundBufDat;
@@ -434,11 +434,11 @@ fill_sound_buffer(SoundOutput &sound_output_, s32 samples_to_write_,
     }
 }
 
-WinDim
+Win_Dim
 Get_window_dimensions(HWND hWnd_)
 {
     RECT client_rect;
-    WinDim WinDim;
+    Win_Dim WinDim;
     GetClientRect(hWnd_, &client_rect);
     WinDim.width  = client_rect.right - client_rect.left;
     WinDim.height = client_rect.bottom - client_rect.top;
@@ -446,7 +446,7 @@ Get_window_dimensions(HWND hWnd_)
 }
 
 void
-resize_DIB_section(OffscreenBuffer &buffer_, s32 width_, s32 height_)
+resize_DIB_section(Offscreen_Buffer &buffer_, s32 width_, s32 height_)
 {
     // TODO: bulletproof this
     // maybe don't free first, free after, then free first if that fails
@@ -473,7 +473,7 @@ resize_DIB_section(OffscreenBuffer &buffer_, s32 width_, s32 height_)
 }
 
 void
-display_buffer_in_window(HDC hdc_, OffscreenBuffer &buffer_, s32 x_, s32 y_, s32 width_,
+display_buffer_in_window(HDC hdc_, Offscreen_Buffer &buffer_, s32 x_, s32 y_, s32 width_,
                          s32 height_)
 {
     if (width_ == buffer_.width * 2 && height_ == buffer_.height * 2) {
@@ -502,7 +502,7 @@ display_buffer_in_window(HDC hdc_, OffscreenBuffer &buffer_, s32 x_, s32 y_, s32
 }
 
 void
-process_keyboard_message(GameButtonState &new_state_, bool32 is_down_)
+process_keyboard_message(Game_Button_State &new_state_, bool32 is_down_)
 {
     if (new_state_.ended_down != (is_down_ != 0)) {
         new_state_.ended_down = is_down_;
@@ -511,15 +511,15 @@ process_keyboard_message(GameButtonState &new_state_, bool32 is_down_)
 }
 
 void
-process_Xinput_digital_button(DWORD Xinput_button_state_, GameButtonState &old_state_,
-                              DWORD button_bit_, GameButtonState &new_state_)
+process_Xinput_digital_button(DWORD Xinput_button_state_, Game_Button_State &old_state_,
+                              DWORD button_bit_, Game_Button_State &new_state_)
 {
     new_state_.ended_down            = ((Xinput_button_state_ & button_bit_) == button_bit_);
     new_state_.half_transition_count = (old_state_.ended_down != new_state_.ended_down) ? 1 : 0;
 }
 
 void
-do_controller_input(GameInput &old_input_, GameInput &new_input_, HWND hWnd_)
+do_controller_input(Game_Input &old_input_, Game_Input &new_input_, HWND hWnd_)
 {
     // mouse cursor
     POINT mouse_point;
@@ -557,8 +557,8 @@ do_controller_input(GameInput &old_input_, GameInput &new_input_, HWND hWnd_)
     }
 
     for (DWORD controller_index = 0; controller_index < XUSER_MAX_COUNT; controller_index++) {
-        GameControllerInput &old_controller = old_input_.controllers[controller_index];
-        GameControllerInput &new_controller = new_input_.controllers[controller_index];
+        Game_Controller_Input &old_controller = old_input_.controllers[controller_index];
+        Game_Controller_Input &new_controller = new_input_.controllers[controller_index];
 
         XINPUT_STATE controller_state;
         if (XInputGetState(controller_index, &controller_state) == ERROR_SUCCESS) {
@@ -737,7 +737,7 @@ playback_input(win32_State &state_, GameInput &new_input_)
 #endif
 
 void
-process_pending_messages(win32_State &state_, GameInput &input_)
+process_pending_messages(Win32_State &state_, Game_Input &input_)
 {
     MSG msg;
     while (PeekMessage(&msg, 0, 0, 0, PM_REMOVE)) {
@@ -856,7 +856,7 @@ Main(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLine, s32 nShowCm
     assert(console);
     printf("Starting...\n");
 
-    win32_State state {};
+    Win32_State state {};
 
     DWORD exe_path_len = GetModuleFileNameA(NULL, state.exe_path, sizeof(state.exe_path));
     printf("exe path %s\n", state.exe_path);
@@ -952,7 +952,7 @@ Main(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLine, s32 nShowCm
     s32 monitor_refresh_rate = GetDeviceCaps(device_context, VREFRESH);
     printf("Monitor Refresh Rate: %d\n", monitor_refresh_rate);
 
-    SoundOutput sound_output        = {};
+    Sound_Output sound_output       = {};
     sound_output.samples_per_sec    = 48000;
     sound_output.bytes_per_sample   = sizeof(s16) * 2;
     sound_output.secondary_buf_size = sound_output.samples_per_sec;
@@ -973,7 +973,7 @@ Main(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLine, s32 nShowCm
     LPVOID base_address       = 0;
 #endif
 
-    GameMem memory                    = {};
+    Game_Mem memory                   = {};
     memory.permanent_storage_size     = MEGABYTES(64);
     memory.transient_storage_size     = GIGABYTES(1);
     memory.platform_free_file_memory  = _debug_platform_free_file_memory;
@@ -1011,9 +1011,9 @@ Main(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLine, s32 nShowCm
     }
 #endif
 
-    GameInput input[2]   = {};
-    GameInput &new_input = input[0];
-    GameInput &old_input = input[1];
+    Game_Input input[2]   = {};
+    Game_Input &new_input = input[0];
+    Game_Input &old_input = input[1];
 
     LARGE_INTEGER last_counter = get_wall_clock();
     u64 last_cycle_count       = __rdtsc();
@@ -1061,18 +1061,18 @@ Main(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLine, s32 nShowCm
             // assert(samplesToWrite < maxSampleCnt);
         }
 
-        GameSoundOutputBuffer sound_buffer {};
+        Game_Sound_Output_Buffer sound_buffer {};
         sound_buffer.samples_per_second = sound_output.samples_per_sec;
         sound_buffer.sample_count       = samples_to_write;
         sound_buffer.samples            = samples;
 
         // video
-        GameOffscreenBuffer buffer = {};
-        buffer.memory              = global::back_buffer.memory;
-        buffer.width               = global::back_buffer.width;
-        buffer.height              = global::back_buffer.height;
-        buffer.bytes_per_pixel     = 4;
-        buffer.pitch               = global::back_buffer.pitch;
+        Game_Offscreen_Buffer buffer = {};
+        buffer.memory                = global::back_buffer.memory;
+        buffer.width                 = global::back_buffer.width;
+        buffer.height                = global::back_buffer.height;
+        buffer.bytes_per_pixel       = 4;
+        buffer.pitch                 = global::back_buffer.pitch;
 
 #if REPLAY_BUFFERS
         if (state.input_recording_index) {
@@ -1087,7 +1087,7 @@ Main(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLine, s32 nShowCm
         // isGameCodeLoaded = false;
 
         // NOTE: dummy thread context, for now
-        ThreadContext thread {};
+        Thread_Context thread {};
 
         if (is_game_code_loaded) {
             code.update_and_render(&thread, memory, *input, buffer, sound_buffer);
@@ -1148,9 +1148,9 @@ Main(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLine, s32 nShowCm
             write_cursor -= sound_output.secondary_buf_size;
         }
 
-        GameInput &temp_input = new_input;
-        new_input             = old_input;
-        old_input             = temp_input;
+        Game_Input &temp_input = new_input;
+        new_input              = old_input;
+        old_input              = temp_input;
 
         u64 end_cycle_count = __rdtsc();
         u64 cycles_elapsed  = end_cycle_count - last_cycle_count;

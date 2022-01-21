@@ -18,7 +18,7 @@ namespace tomato
 #ifdef TOM_INTERNAL
 
 // TODO: implement this
-struct ThreadContext
+struct Thread_Context
 {
     s32 place_holder;
 };
@@ -31,21 +31,22 @@ struct debug_ReadFileResult
 
     //! all these C shenanigans...
     // TODO:  C++-ify this
-    #define DEBUG_PLATFORM_FREE_FILE_MEMORY(name) void name(ThreadContext *thread_, void *memory_)
+    #define DEBUG_PLATFORM_FREE_FILE_MEMORY(name) void name(Thread_Context *thread_, void *memory_)
 typedef DEBUG_PLATFORM_FREE_FILE_MEMORY(debug_platform_free_file_memory);
 
     #define DEBUG_PLATFORM_READ_ENTIRE_FILE(name) \
-        debug_ReadFileResult name(ThreadContext *thread_, const char *file_name_)
+        debug_ReadFileResult name(Thread_Context *thread_, const char *file_name_)
 typedef DEBUG_PLATFORM_READ_ENTIRE_FILE(debug_platform_read_entire_file);
 
-    #define DEBUG_PLATFORM_WRITE_ENTIRE_FILE(name) \
-        bool32 name(ThreadContext *thread_, const char *file_name_, u64 memory_size_, void *memory_)
+    #define DEBUG_PLATFORM_WRITE_ENTIRE_FILE(name)                                     \
+        bool32 name(Thread_Context *thread_, const char *file_name_, u64 memory_size_, \
+                    void *memory_)
 typedef DEBUG_PLATFORM_WRITE_ENTIRE_FILE(debug_platform_write_entire_file);
 #endif
 
 #define ArrayCount(Array) (sizeof((Array)) / sizeof((Array)[0]))
 
-struct GameOffscreenBuffer
+struct Game_Offscreen_Buffer
 {
     void *memory;
     s32 width;
@@ -54,7 +55,7 @@ struct GameOffscreenBuffer
     s32 bytes_per_pixel;
 };
 
-struct GameSoundOutputBuffer
+struct Game_Sound_Output_Buffer
 {
     s32 samples_per_second;
     s32 sample_count;
@@ -62,13 +63,13 @@ struct GameSoundOutputBuffer
     s32 tone_hertz;
 };
 
-struct GameButtonState
+struct Game_Button_State
 {
     s32 half_transition_count;
     bool ended_down;
 };
 
-struct GameControllerInput
+struct Game_Controller_Input
 {
     bool is_connected;
     bool is_analog;
@@ -91,59 +92,59 @@ struct GameControllerInput
 
     union
     {
-        GameButtonState buttons[12];
+        Game_Button_State buttons[12];
         struct
         {
-            GameButtonState dpad_up;
-            GameButtonState dpad_right;
-            GameButtonState dpad_down;
-            GameButtonState dpad_left;
-            GameButtonState button_A;
-            GameButtonState button_B;
-            GameButtonState button_X;
-            GameButtonState button_Y;
-            GameButtonState button_RB;
-            GameButtonState button_LB;
-            GameButtonState button_back;
-            GameButtonState button_start;
+            Game_Button_State dpad_up;
+            Game_Button_State dpad_right;
+            Game_Button_State dpad_down;
+            Game_Button_State dpad_left;
+            Game_Button_State button_A;
+            Game_Button_State button_B;
+            Game_Button_State button_X;
+            Game_Button_State button_Y;
+            Game_Button_State button_RB;
+            Game_Button_State button_LB;
+            Game_Button_State button_back;
+            Game_Button_State button_start;
         };
     };
 };
 
-struct GameKeyboard
+struct Game_Keyboard
 {
     union
     {
-        GameButtonState keys[11];
+        Game_Button_State keys[11];
         struct
         {
-            GameButtonState w;
-            GameButtonState s;
-            GameButtonState a;
-            GameButtonState d;
-            GameButtonState space;
-            GameButtonState left_shift;
-            GameButtonState p;
-            GameButtonState d1;
-            GameButtonState d2;
-            GameButtonState d3;
-            GameButtonState d4;
+            Game_Button_State w;
+            Game_Button_State s;
+            Game_Button_State a;
+            Game_Button_State d;
+            Game_Button_State space;
+            Game_Button_State left_shift;
+            Game_Button_State p;
+            Game_Button_State d1;
+            Game_Button_State d2;
+            Game_Button_State d3;
+            Game_Button_State d4;
         };
     };
 };
 
-struct GameInput
+struct Game_Input
 {
     f32 deltaTime;
 
     static constexpr szt mouse_button_count = 3;
-    GameButtonState mouse_buttons[3];
+    Game_Button_State mouse_buttons[3];
     s32 mouse_x, mouse_y, mouse_z;
-    GameKeyboard keyboard;
-    GameControllerInput controllers[4];
+    Game_Keyboard keyboard;
+    Game_Controller_Input controllers[4];
 };
 
-struct GameMem
+struct Game_Mem
 {
     bool is_initialized;
     u64 permanent_storage_size;
@@ -203,7 +204,7 @@ struct f32_Vector2
     f32 y;
 };
 #pragma pack(push, 1)
-struct BitmapHeader
+struct Bitmap_Header
 {
     u16 file_type;
     u32 file_size;
@@ -217,7 +218,7 @@ struct BitmapHeader
     u16 bits_per_pixel;
 };
 
-struct ARGB_header
+struct ARGB_Header
 {
     u32 width;
     u32 height;
@@ -225,29 +226,29 @@ struct ARGB_header
 };
 #pragma pack(pop)
 
-struct ARGB_img
+struct ARGB_Img
 {
     u32 width;
     u32 height;
     u32 size;
     u32 *pixel_ptr;
 };
-struct ColorDebug
+struct Color_Debug
 {
     f32_Vector2 pos;
     bool is_valid;
 };
 
-#define GAME_UPDATE_AND_RENDER(name)                                       \
-    void name(ThreadContext *thread_, GameMem &memory_, GameInput &input_, \
-              GameOffscreenBuffer &video_buffer_, GameSoundOutputBuffer &sound_buffer_)
+#define GAME_UPDATE_AND_RENDER(name)                                          \
+    void name(Thread_Context *thread_, Game_Mem &memory_, Game_Input &input_, \
+              Game_Offscreen_Buffer &video_buffer_, Game_Sound_Output_Buffer &sound_buffer_)
 typedef GAME_UPDATE_AND_RENDER(game_update_and_render_stub);
 
 #define GAME_GET_SOUND_SAMPLES(name) \
-    void name(ThreadContext *thread_, GameMem &memory_, GameSoundOutputBuffer &sound_buffer_)
+    void name(Thread_Context *thread_, Game_Mem &memory_, Game_Sound_Output_Buffer &sound_buffer_)
 typedef GAME_GET_SOUND_SAMPLES(game_get_sound_samples_stub);
 
-struct MemArena
+struct Mem_Arena
 {
     mem_ind size;
     u8 *base;
@@ -259,7 +260,7 @@ struct Player
     static constexpr f32 s_height = .6f;
     static constexpr f32 s_width  = 0.6f * s_height;
 
-    TileMapPos pos;
+    Tile_Map_Pos pos;
     Color_u32 color;
 
     u32 direction;
@@ -267,7 +268,7 @@ struct Player
 
 struct World
 {
-    TileMap *tile_map;
+    Tile_Map *tile_map;
 };
 
 struct Bitmap
@@ -279,28 +280,28 @@ struct Bitmap
 
 struct Camera
 {
-    TileMapPos pos;
+    Tile_Map_Pos pos;
 };
 
-struct GameState
+struct Game_State
 {
-    MemArena world_arena;
+    Mem_Arena world_arena;
     World *world;
     Camera camera;
     Player player;
 
     Bitmap bitmap;
 
-    ARGB_img bg_img;
-    ARGB_img player_img[4];
+    ARGB_Img bg_img;
+    ARGB_Img player_img[4];
 
-    ARGB_img red_square_img;
-    ARGB_img green_square_img;
-    ARGB_img blue_square_img;
+    ARGB_Img red_square_img;
+    ARGB_Img green_square_img;
+    ARGB_Img blue_square_img;
 };
 
 void *
-push_size(MemArena *arena_, mem_ind size_);
+push_size(Mem_Arena *arena_, mem_ind size_);
 
 #define PushStruct(arena, type)       (type *)push_size(arena, sizeof(type))
 #define PushArray(arena, count, type) (type *)push_size(arena, (count * sizeof(type)))
