@@ -135,7 +135,6 @@ if (MSVC)
         VS_STARTUP_PROJECT Win32_Tomato_Game)
 endif()
 
-if (argb_converter)
 add_executable(argb_converter
     ${Source_Dir}/image_converter.cpp
     ${Extern_Dir}/stb_image.h
@@ -143,22 +142,21 @@ add_executable(argb_converter
 
 target_include_directories(argb_converter PRIVATE ${Source_Dir})
 
-    if (MSVC)
-        target_compile_options(Image_Converter PRIVATE
-            ${Common_Compile_FLags}
-            # -MTd
-            )
+if (MSVC)
+    target_compile_options(argb_converter PRIVATE
+        ${Common_Compile_FLags}
+        # -MTd
+        )
 
-        set_target_properties( Image_Converter PROPERTIES
-            VS_DEBUGGER_WORKING_DIRECTORY "$(TargetDir)")
+    set_target_properties(argb_converter PROPERTIES
+        VS_DEBUGGER_WORKING_DIRECTORY "$(TargetDir)")
 
-        target_compile_definitions(Image_Converter PRIVATE ${Common_Compile_Defs})
+    target_compile_definitions(argb_converter PRIVATE ${Common_Compile_Defs})
 
-        target_link_libraries(Image_Converter PRIVATE
-            ${Common_Linker_Libs}
-            )
+    target_link_libraries(argb_converter PRIVATE
+        ${Common_Linker_Libs}
+        )
 
-    endif()
 endif()
 
 
