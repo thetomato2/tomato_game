@@ -74,5 +74,6 @@ using wchar_t = uint16_t;
 #include "base_types.hpp"
 #include "macros.hpp"
 #include "math.hpp"
+#include "intrinsic.hpp"
 #include "utils.hpp"
 #include "console.hpp"

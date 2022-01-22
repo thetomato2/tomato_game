@@ -68,6 +68,8 @@ add_library(Tomato_Game_Lib SHARED
     ${Source_Dir}/framework.hpp
     ${Source_Dir}/game.cpp
     ${Source_Dir}/game.hpp
+    ${Source_Dir}/intrinsic.cpp
+    ${Source_Dir}/intrinsic.hpp
     ${Source_Dir}/macros.hpp
     ${Source_Dir}/math.cpp
     ${Source_Dir}/math.hpp

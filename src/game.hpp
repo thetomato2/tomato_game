@@ -47,6 +47,7 @@ typedef DEBUG_PLATFORM_WRITE_ENTIRE_FILE(debug_platform_write_entire_file);
 #define ArrayCount(Array) (sizeof((Array)) / sizeof((Array)[0]))
 
 struct Game_Offscreen_Buffer
+
 {
     void *memory;
     s32 width;
@@ -203,6 +204,7 @@ struct f32_Vector2
     f32 x;
     f32 y;
 };
+
 #pragma pack(push, 1)
 struct Bitmap_Header
 {

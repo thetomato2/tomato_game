@@ -1,5 +1,6 @@
 #pragma once
 #include "base_types.hpp"
+#include "math.hpp"
 
 namespace tomato
 {
@@ -8,8 +9,7 @@ struct Mem_Arena;
 
 struct Tile_Map_Dif
 {
-    f32 dif_x;
-    f32 dif_y;
+    v2 dif_xy;
     f32 dif_z;
 };
 
@@ -21,8 +21,7 @@ struct Tile_Map_Pos
     u32 abs_tile_y;
     u32 abs_tile_z;
 
-    f32 off_rel_x;
-    f32 off_rel_y;
+    v2 offset;
 };
 
 struct Tile_Chunk_Pos

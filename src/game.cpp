@@ -52,12 +52,12 @@ draw_rect(Game_Offscreen_Buffer &buffer_, f32 f32_min_x_, f32 f_min_y_, f32 f32_
 }
 
 internal void
-draw_ARGB(Game_Offscreen_Buffer &buffer_, ARGB_Img &img_, f32 x_, f32 y_)
+draw_ARGB(Game_Offscreen_Buffer &buffer_, ARGB_Img &img_, v2 pos_)
 {
-    s32 min_y = math::round_f32_to_s32(y_ - ((f32)img_.height / 2.f));
-    s32 min_x = math::round_f32_to_s32(x_ - ((f32)img_.width / 2.f));
-    s32 max_y = math::round_f32_to_s32(y_ + ((f32)img_.height / 2.f));
-    s32 max_x = math::round_f32_to_s32(x_ + ((f32)img_.width / 2.f));
+    s32 min_y = math::round_f32_to_s32(pos_.y - ((f32)img_.height / 2.f));
+    s32 min_x = math::round_f32_to_s32(pos_.x - ((f32)img_.width / 2.f));
+    s32 max_y = math::round_f32_to_s32(pos_.y + ((f32)img_.height / 2.f));
+    s32 max_x = math::round_f32_to_s32(pos_.x + ((f32)img_.width / 2.f));
 
     s32 x_offset_left {}, x_offset_right {}, y_offset {};
 
@@ -111,10 +111,10 @@ check_player_collision(Tile_Map &tile_map_, Player player_, Tile_Map_Pos test_po
     auto test_pos_bottom_left  = test_pos_;
     auto test_pos_bottom_right = test_pos_;
 
-    test_pos_top_right.off_rel_x += Player::s_width;
-    test_pos_bottom_left.off_rel_y += Player::s_height;
-    test_pos_bottom_right.off_rel_x += Player::s_width;
-    test_pos_bottom_right.off_rel_y += Player::s_height;
+    test_pos_top_right.offset.x += Player::s_width;
+    test_pos_bottom_left.offset.y += Player::s_height;
+    test_pos_bottom_right.offset.x += Player::s_width;
+    test_pos_bottom_right.offset.y += Player::s_height;
 
     test_pos_top_left     = recanonicalize_pos(tile_map_, test_pos_top_left);
     test_pos_top_right    = recanonicalize_pos(tile_map_, test_pos_top_right);
@@ -136,8 +136,8 @@ get_player_center_pos(Tile_Map &tile_map_, Player &player_)
 {
     auto center_pos = player_.pos;
 
-    center_pos.off_rel_x += Player::s_width / 2;
-    center_pos.off_rel_y += Player::s_height / 2;
+    center_pos.offset.x += Player::s_width / 2;
+    center_pos.offset.y += Player::s_height / 2;
     center_pos = recanonicalize_pos(tile_map_, center_pos);
 
     return center_pos;
@@ -222,17 +222,16 @@ load_ARGB(Thread_Context *thread_, debug_platform_read_entire_file *read_entire_
 }
 
 internal Tile_Map_Dif
-subtract(Tile_Map_Pos pos_a, Tile_Map_Pos pos_b)
+get_dif(Tile_Map_Pos pos_a, Tile_Map_Pos pos_b)
 {
     Tile_Map_Dif result;
-
-    f32 dif_tile_x = (f32)pos_a.abs_tile_x - (f32)pos_b.abs_tile_x;
-    f32 dif_tile_y = (f32)pos_a.abs_tile_y - (f32)pos_b.abs_tile_y;
+    v2 dif_tile_xy;
+    dif_tile_xy.x  = (f32)pos_a.abs_tile_x - (f32)pos_b.abs_tile_x;
+    dif_tile_xy.y  = (f32)pos_a.abs_tile_y - (f32)pos_b.abs_tile_y;
     f32 dif_tile_z = (f32)pos_a.abs_tile_z - (f32)pos_b.abs_tile_z;
 
-    result.dif_x = Tile_Map::s_tile_size_meters * dif_tile_x + (pos_a.off_rel_x - pos_b.off_rel_x);
-    result.dif_y = Tile_Map::s_tile_size_meters * dif_tile_y + (pos_a.off_rel_y - pos_b.off_rel_y);
-    result.dif_z = 0.f;
+    result.dif_xy = Tile_Map::s_tile_size_meters * dif_tile_xy + (pos_a.offset - pos_b.offset);
+    result.dif_z  = 0.f;
 
     return result;
 }
@@ -405,8 +404,8 @@ GAME_UPDATE_AND_RENDER(game_update_and_render)
         game_state.camera.pos.abs_tile_x = num_tiles_per_screen_x / 2;
         game_state.camera.pos.abs_tile_y = num_tiles_per_screen_y / 2;
 
-        game_state.player.pos.off_rel_x  = .5f;
-        game_state.player.pos.off_rel_y  = .5f;
+        game_state.player.pos.offset.x   = .5f;
+        game_state.player.pos.offset.y   = .5f;
         game_state.player.pos.abs_tile_x = 3;
         game_state.player.pos.abs_tile_y = 3;
         game_state.player.color          = { 0xff'00'00'ff };
@@ -445,18 +444,18 @@ GAME_UPDATE_AND_RENDER(game_update_and_render)
     player_speed = input_.keyboard.left_shift.ended_down ? 20.f : 5.f;
 
     if (input_.keyboard.w.ended_down) {
-        new_player_pos.off_rel_y += player_speed * input_.deltaTime;
+        new_player_pos.offset.y += player_speed * input_.deltaTime;
         player.direction = 2;
     } else if (input_.keyboard.s.ended_down) {
-        new_player_pos.off_rel_y -= player_speed * input_.deltaTime;
+        new_player_pos.offset.y -= player_speed * input_.deltaTime;
         player.direction = 0;
     }
 
     if (input_.keyboard.d.ended_down) {
-        new_player_pos.off_rel_x += player_speed * input_.deltaTime;
+        new_player_pos.offset.x += player_speed * input_.deltaTime;
         player.direction = 1;
     } else if (input_.keyboard.a.ended_down) {
-        new_player_pos.off_rel_x -= player_speed * input_.deltaTime;
+        new_player_pos.offset.x -= player_speed * input_.deltaTime;
         player.direction = 3;
     }
 
@@ -472,17 +471,17 @@ GAME_UPDATE_AND_RENDER(game_update_and_render)
         }
         camera.pos.abs_tile_z = player.pos.abs_tile_z;
 
-        Tile_Map_Dif player_dif = subtract(player.pos, camera.pos);
-        if (player_dif.dif_x > (num_tiles_per_screen_x * Tile_Map::s_tile_size_meters) / 2) {
+        Tile_Map_Dif player_dif = get_dif(player.pos, camera.pos);
+        if (player_dif.dif_xy.x > (num_tiles_per_screen_x * Tile_Map::s_tile_size_meters) / 2) {
             camera.pos.abs_tile_x += num_tiles_per_screen_x / 2;
         }
-        if (player_dif.dif_x < (num_tiles_per_screen_x * Tile_Map::s_tile_size_meters) / -2) {
+        if (player_dif.dif_xy.x < (num_tiles_per_screen_x * Tile_Map::s_tile_size_meters) / -2) {
             camera.pos.abs_tile_x -= num_tiles_per_screen_x / 2;
         }
-        if (player_dif.dif_y > (num_tiles_per_screen_y * Tile_Map::s_tile_size_meters) / 2) {
+        if (player_dif.dif_xy.y > (num_tiles_per_screen_y * Tile_Map::s_tile_size_meters) / 2) {
             camera.pos.abs_tile_y += num_tiles_per_screen_y / 2;
         }
-        if (player_dif.dif_y < (num_tiles_per_screen_y * Tile_Map::s_tile_size_meters) / -2) {
+        if (player_dif.dif_xy.y < (num_tiles_per_screen_y * Tile_Map::s_tile_size_meters) / -2) {
             camera.pos.abs_tile_y -= num_tiles_per_screen_y / 2;
         }
     }
@@ -507,9 +506,8 @@ GAME_UPDATE_AND_RENDER(game_update_and_render)
 
     // NOTE: caching for clarity, not perf
 
-    s32 num_draw_tiles  = 12;
-    f32 screen_center_x = .5f * (f32)video_buffer_.width;
-    f32 screen_center_y = .5f * (f32)video_buffer_.height;
+    s32 num_draw_tiles = 12;
+    v2 screen_center { .5f * (f32)video_buffer_.width, .5f * (f32)video_buffer_.height };
 
     for (s32 rel_y = -1 * num_draw_tiles; rel_y < num_draw_tiles; ++rel_y) {
         for (s32 rel_x = -1 * num_draw_tiles; rel_x < num_draw_tiles; ++rel_x) {
@@ -530,40 +528,43 @@ GAME_UPDATE_AND_RENDER(game_update_and_render)
                 tile_color.argb = 0xff'ff'00'00;
             }
 
-            f32 cen_x = screen_center_x - (camera.pos.off_rel_x * global::s_meters_to_pixels) +
-                        (f32)rel_x * global::s_tile_size_pixels;
-            f32 cen_y = screen_center_y + (camera.pos.off_rel_y * global::s_meters_to_pixels) -
-                        (f32)rel_y * global::s_tile_size_pixels;
-            f32 min_x = cen_x - .5f * global::s_tile_size_pixels;
-            f32 min_y = cen_y - .5f * global::s_tile_size_pixels;
-            f32 max_x = cen_x + .5f * global::s_tile_size_pixels;
-            f32 max_y = cen_y + .5f * global::s_tile_size_pixels;
+            v2 center { (screen_center.x - (camera.pos.offset.x * global::s_meters_to_pixels) +
+                         (f32)rel_x * global::s_tile_size_pixels),
+                        (screen_center.y + (camera.pos.offset.y * global::s_meters_to_pixels) -
+                         (f32)rel_y * global::s_tile_size_pixels) };
 
-            draw_rect(video_buffer_, min_x, min_y, max_x, max_y, tile_color);
+            v2 min { (center.x - .5f * global::s_tile_size_pixels),
+                     (center.y - .5f * global::s_tile_size_pixels) };
+
+            v2 max { (center.x + .5f * global::s_tile_size_pixels),
+                     (center.y + .5f * global::s_tile_size_pixels) };
+
+            draw_rect(video_buffer_, min.x, min.y, max.x, max.y, tile_color);
         }
     }
 
-    Tile_Map_Dif player_dif = subtract(player.pos, camera.pos);
+    Tile_Map_Dif player_dif = get_dif(player.pos, camera.pos);
 
-    f32 x = screen_center_x + (player_dif.dif_x * global::s_meters_to_pixels);
-    f32 y = screen_center_y - (player_dif.dif_y * global::s_meters_to_pixels) -
-            (player.s_height * global::s_meters_to_pixels);
+    v2 player_mid { (screen_center.x + (player_dif.dif_xy.x * global::s_meters_to_pixels)),
+                    (screen_center.y - (player_dif.dif_xy.y * global::s_meters_to_pixels) -
+                     (player.s_height * global::s_meters_to_pixels)) };
 
     // draw_rect(video_buffer_, x, y, x + Player::s_width * global::s_meters_to_pixels,
     //           y + Player::s_height * global::s_meters_to_pixels, player.color);
 
-    f32 argb_mid_x = x + (((f32)Player::s_width / 2.f) * global::s_meters_to_pixels);
-    f32 argb_mid_y = y + (((f32)Player::s_height / 2.f) * global::s_meters_to_pixels) - 40;
+    v2 argb_mid { player_mid.x + (((f32)Player::s_width / 2.f) * global::s_meters_to_pixels),
+                  player_mid.y + (((f32)Player::s_height / 2.f) * global::s_meters_to_pixels) -
+                      40 };
 
-    draw_ARGB(video_buffer_, game_state.player_img[player.direction], argb_mid_x, argb_mid_y);
+    draw_ARGB(video_buffer_, game_state.player_img[player.direction], argb_mid);
 
     constexpr s32 square_offset = 0;
-    draw_ARGB(video_buffer_, game_state.red_square_img, 64 + square_offset,
-              video_buffer_.height - 64);
-    draw_ARGB(video_buffer_, game_state.green_square_img, 64 + square_offset,
-              video_buffer_.height - 192);
-    draw_ARGB(video_buffer_, game_state.blue_square_img, 64 + square_offset,
-              video_buffer_.height - 320);
+    draw_ARGB(video_buffer_, game_state.red_square_img,
+              { f32(64 + square_offset), f32(video_buffer_.height - 64) });
+    draw_ARGB(video_buffer_, game_state.green_square_img,
+              { f32(64 + square_offset), f32(video_buffer_.height - 192) });
+    draw_ARGB(video_buffer_, game_state.blue_square_img,
+              { f32(64 + square_offset), f32(video_buffer_.height - 320) });
 }
 
 #if 0

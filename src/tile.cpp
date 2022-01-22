@@ -24,8 +24,8 @@ recanonicalize_pos(Tile_Map &tile_map_, Tile_Map_Pos pos_)
 {
     auto new_pos = pos_;
 
-    recanonicalize_coord(tile_map_, new_pos.abs_tile_x, new_pos.off_rel_x);
-    recanonicalize_coord(tile_map_, new_pos.abs_tile_y, new_pos.off_rel_y);
+    recanonicalize_coord(tile_map_, new_pos.abs_tile_x, new_pos.offset.x);
+    recanonicalize_coord(tile_map_, new_pos.abs_tile_y, new_pos.offset.y);
 
     return new_pos;
 }
