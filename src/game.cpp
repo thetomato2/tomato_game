@@ -7,6 +7,8 @@ namespace global
 {
 static constexpr u32 s_tile_size_pixels = 40;
 static constexpr f32 s_meters_to_pixels = s_tile_size_pixels / Tile_Map::s_tile_size_meters;
+static constexpr f32 s_player_max_vel   = 50.f;
+
 #include "rng_nums.h"
 }  // namespace global
 
@@ -273,10 +275,11 @@ GAME_UPDATE_AND_RENDER(game_update_and_render)
     // #Initialization
     // ===============================================================================================
     if (!memory_.is_initialized) {
-        const char *bg           = "uv_color_squares_960x540";
-        const char *red_square   = "red_square";
-        const char *green_square = "green_square";
-        const char *blue_square  = "blue_square";
+        const char *bg            = "uv_color_squares_960x540";
+        const char *seaside_cliff = "bg_seaside_cliff";
+        const char *red_square    = "red_square";
+        const char *green_square  = "green_square";
+        const char *blue_square   = "blue_square";
 
         const char *player_front = "girl_chibi_front";
         const char *player_back  = "girl_chibi_back";
@@ -285,6 +288,8 @@ GAME_UPDATE_AND_RENDER(game_update_and_render)
 
         // game_state.bitmap   = load_bmp(thread_, memory_.platfrom_read_entire_file, bmp_path);
         game_state.bg_img = load_ARGB(thread_, memory_.platfrom_read_entire_file, bg);
+        game_state.seaside_cliff =
+            load_ARGB(thread_, memory_.platfrom_read_entire_file, seaside_cliff);
 
         game_state.red_square_img =
             load_ARGB(thread_, memory_.platfrom_read_entire_file, red_square);
@@ -410,6 +415,7 @@ GAME_UPDATE_AND_RENDER(game_update_and_render)
         game_state.player.pos.abs_tile_y = 3;
         game_state.player.color          = { 0xff'00'00'ff };
         game_state.player.direction      = 0;
+        game_state.player.vel            = {};
 
         // TODO: this might be more appropriate in the platform layer
         memory_.is_initialized = true;
@@ -436,31 +442,37 @@ GAME_UPDATE_AND_RENDER(game_update_and_render)
 
     auto &player = game_state.player;
     auto &camera = game_state.camera;
-    // TODO: temp
-    player.pos          = recanonicalize_pos(*world->tile_map, player.pos);
-    auto new_player_pos = player.pos;
+
+    v2 player_acc {};
 
     f32 player_speed {};
-    player_speed = input_.keyboard.left_shift.ended_down ? 20.f : 5.f;
+    player_speed = input_.keyboard.left_shift.ended_down ? 50.f : 10.f;
 
     if (input_.keyboard.w.ended_down) {
-        new_player_pos.offset.y += player_speed * input_.deltaTime;
+        player_acc.y     = player_speed;
         player.direction = 2;
     } else if (input_.keyboard.s.ended_down) {
-        new_player_pos.offset.y -= player_speed * input_.deltaTime;
+        player_acc.y     = -player_speed;
         player.direction = 0;
     }
 
     if (input_.keyboard.d.ended_down) {
-        new_player_pos.offset.x += player_speed * input_.deltaTime;
+        player_acc.x     = player_speed;
         player.direction = 1;
     } else if (input_.keyboard.a.ended_down) {
-        new_player_pos.offset.x -= player_speed * input_.deltaTime;
+        player_acc.x     = -player_speed;
         player.direction = 3;
     }
+    player_acc -= player.vel * 2.f;
+
+    player.pos          = recanonicalize_pos(*world->tile_map, player.pos);
+    auto new_player_pos = player.pos;
+    new_player_pos.offset +=
+        (.5f * player_acc * math::square(input_.delta_time) + player.vel * input_.delta_time);
 
     if (check_player_collision(*world->tile_map, player, new_player_pos)) {
         player.pos = recanonicalize_pos(*world->tile_map, new_player_pos);
+        player.vel = player_acc * input_.delta_time + player.vel;
         player_check_tile_map(*world->tile_map, player);
 
         if (get_tile_value(*world->tile_map, player.pos.abs_tile_x, player.pos.abs_tile_y,
@@ -484,7 +496,11 @@ GAME_UPDATE_AND_RENDER(game_update_and_render)
         if (player_dif.dif_xy.y < (num_tiles_per_screen_y * Tile_Map::s_tile_size_meters) / -2) {
             camera.pos.abs_tile_y -= num_tiles_per_screen_y / 2;
         }
+    } else {
+        player.vel = { 0.f, 0.f };
     }
+    player.vel.x = check_bounds(player.vel.x, -global::s_player_max_vel, global::s_player_max_vel);
+    player.vel.y = check_bounds(player.vel.y, -global::s_player_max_vel, global::s_player_max_vel);
 
     // ===============================================================================================
     // #Draw
@@ -508,6 +524,8 @@ GAME_UPDATE_AND_RENDER(game_update_and_render)
 
     s32 num_draw_tiles = 12;
     v2 screen_center { .5f * (f32)video_buffer_.width, .5f * (f32)video_buffer_.height };
+
+    // draw_ARGB(video_buffer_, game_state.seaside_cliff, screen_center);
 
     for (s32 rel_y = -1 * num_draw_tiles; rel_y < num_draw_tiles; ++rel_y) {
         for (s32 rel_x = -1 * num_draw_tiles; rel_x < num_draw_tiles; ++rel_x) {

@@ -94,6 +94,17 @@ operator*(f32 a_, v2 b_)
     return result;
 }
 
+inline v2
+operator*(v2 a_, f32 b_)
+{
+    v2 result;
+
+    result.x = a_.x * b_;
+    result.y = a_.y * b_;
+
+    return result;
+}
+
 namespace math
 {
 template<typename T>
@@ -103,4 +114,17 @@ square(T val_)
     return val_ * val_;
 }
 }  // namespace math
+
+// Returns min or max if input is not in between
+template<typename T>
+T
+check_bounds(T in_, T min_, T max_) noexcept
+{
+    if (in_ < min_)
+        in_ = min_;
+    else if (in_ > max_)
+        in_ = max_;
+
+    return in_;
+}
 }  // namespace tomato

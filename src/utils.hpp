@@ -157,16 +157,4 @@ str_to_wstr(const char *str_, wchar *buf_)
 }
 
 }  // namespace win32
-// Returns min or max if input is not in between
-template<typename T>
-T
-bounds(T in_, T min_, T max_) noexcept
-{
-    if (in_ < min_)
-        in_ = min_;
-    else if (in_ > max_)
-        in_ = max_;
-
-    return in_;
-}
 }  // namespace tomato::util

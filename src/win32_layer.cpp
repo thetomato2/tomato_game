@@ -1030,7 +1030,7 @@ Main(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLine, s32 nShowCm
         do_controller_input(old_input, new_input, hWnd);
         process_pending_messages(state, new_input);
         // NOTE: this isn't calculated and needs to be for a varaible framerate
-        new_input.deltaTime = global::target_frames_per_second;
+        new_input.delta_time = global::target_frames_per_second;
 
         auto dllWriteTime = get_last_write_time(global::game_DLL_name);
         if (CompareFileTime(&dllWriteTime, &code.last_write_time_DLL)) {

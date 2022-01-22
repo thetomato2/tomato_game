@@ -136,7 +136,7 @@ struct Game_Keyboard
 
 struct Game_Input
 {
-    f32 deltaTime;
+    f32 delta_time;
 
     static constexpr szt mouse_button_count = 3;
     Game_Button_State mouse_buttons[3];
@@ -232,6 +232,8 @@ struct Player
     Color_u32 color;
 
     u32 direction;
+
+    v2 vel;
 };
 
 struct World
@@ -261,6 +263,8 @@ struct Game_State
     Bitmap bitmap;
 
     ARGB_Img bg_img;
+    ARGB_Img seaside_cliff;
+
     ARGB_Img player_img[4];
 
     ARGB_Img red_square_img;
