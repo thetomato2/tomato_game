@@ -163,9 +163,6 @@ struct Game_Mem
 
 struct Color_u32
 {
-    Color_u32() : argb(0xffffffff) {}
-    Color_u32(u32 color) : argb(color) {}
-
     union
     {
         u32 argb;
@@ -177,32 +174,6 @@ struct Color_u32
             u8 a;
         };
     };
-};
-
-struct s32_Vector2
-{
-    s32_Vector2() : x(0), y(0) {}
-    s32_Vector2(s32 x_, s32 y_)
-    {
-        x = x_;
-        y = y_;
-    }
-
-    s32 x;
-    s32 y;
-};
-
-struct f32_Vector2
-{
-    f32_Vector2() : x(0.f), y(0.f) {}
-    f32_Vector2(f32 x_, f32 y_)
-    {
-        x = x_;
-        y = y_;
-    }
-
-    f32 x;
-    f32 y;
 };
 
 #pragma pack(push, 1)
@@ -234,11 +205,6 @@ struct ARGB_Img
     u32 height;
     u32 size;
     u32 *pixel_ptr;
-};
-struct Color_Debug
-{
-    f32_Vector2 pos;
-    bool is_valid;
 };
 
 #define GAME_UPDATE_AND_RENDER(name)                                          \

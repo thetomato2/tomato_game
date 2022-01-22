@@ -549,9 +549,6 @@ GAME_UPDATE_AND_RENDER(game_update_and_render)
                     (screen_center.y - (player_dif.dif_xy.y * global::s_meters_to_pixels) -
                      (player.s_height * global::s_meters_to_pixels)) };
 
-    // draw_rect(video_buffer_, x, y, x + Player::s_width * global::s_meters_to_pixels,
-    //           y + Player::s_height * global::s_meters_to_pixels, player.color);
-
     v2 argb_mid { player_mid.x + (((f32)Player::s_width / 2.f) * global::s_meters_to_pixels),
                   player_mid.y + (((f32)Player::s_height / 2.f) * global::s_meters_to_pixels) -
                       40 };

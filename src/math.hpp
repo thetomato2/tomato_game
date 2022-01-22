@@ -8,25 +8,13 @@
 namespace tomato
 {
 
-struct v2
+union v2
 {
-    union
+    struct
     {
-        struct
-        {
-            f32 x, y;
-        };
-        f32 e[2];
+        f32 x, y;
     };
-
-    v2
-    operator+=(v2 a_);
-    v2
-    operator+=(f32 a_);
-    v2
-    operator-=(v2 a_);
-    v2
-    operator-=(f32 a_);
+    f32 e[2];
 };
 
 inline v2
@@ -40,21 +28,21 @@ operator+(v2 a_, v2 b_)
     return result;
 }
 
-inline v2
-v2::operator+=(v2 a_)
+inline v2 &
+operator+=(v2 &a_, v2 b_)
 {
-    *this = *this + a_;
+    a_ = a_ + b_;
 
-    return *this;
+    return a_;
 }
 
-inline v2
-v2::operator+=(f32 a_)
+inline v2 &
+operator+=(v2 &a_, f32 b_)
 {
-    this->x += +a_;
-    this->y += +a_;
+    a_.x += b_;
+    a_.y += b_;
 
-    return *this;
+    return a_;
 }
 
 inline v2
@@ -78,21 +66,21 @@ operator-(v2 a_, v2 b_)
     return result;
 }
 
-inline v2
-v2::operator-=(v2 a_)
+inline v2 &
+operator-=(v2 &a_, v2 b_)
 {
-    *this = *this - a_;
+    a_ = a_ - b_;
 
-    return *this;
+    return a_;
 }
 
-inline v2
-v2::operator-=(f32 a_)
+inline v2 &
+operator-=(v2 &a_, f32 b_)
 {
-    this->x = -a_;
-    this->y = -a_;
+    a_.x = b_;
+    a_.y = b_;
 
-    return *this;
+    return a_;
 }
 
 inline v2
