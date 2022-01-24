@@ -107,9 +107,25 @@ operator*(v2 a_, f32 b_)
 
 namespace math
 {
+// NOTE: inner product or dot product
+inline f32
+inner(v2 a_, v2 b_)
+{
+    f32 result = a_.x * b_.x + a_.y * b_.y;
+    return result;
+};
+
+inline f32
+length_sq(const v2 a_)
+{
+    f32 result = inner(a_, a_);
+
+    return result;
+}
+
 template<typename T>
 T
-square(T val_)
+square(const T val_)
 {
     return val_ * val_;
 }
@@ -118,12 +134,14 @@ square(T val_)
 // Returns min or max if input is not in between
 template<typename T>
 T
-check_bounds(T in_, T min_, T max_) noexcept
+check_bounds(const T in_, const T min_, const T max_)
 {
+    T result = in_;
+
     if (in_ < min_)
-        in_ = min_;
+        result = min_;
     else if (in_ > max_)
-        in_ = max_;
+        result = max_;
 
     return in_;
 }

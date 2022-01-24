@@ -10,7 +10,7 @@ AlignTrailingComments: 'true'
 AllowShortBlocksOnASingleLine: 'false'
 AllowShortCaseLabelsOnASingleLine: 'true'
 AllowShortIfStatementsOnASingleLine: 'true'
-AllowShortLoopsOnASingleLine: 'false'
+AllowShortLoopsOnASingleLine: 'true'
 AllowShortFunctionsOnASingleLine: 'InlineOnly'
 AlwaysBreakAfterReturnType: All
 BreakBeforeBraces: Custom

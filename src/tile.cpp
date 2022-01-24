@@ -160,4 +160,32 @@ is_world_tile_empty(const Tile_Map &tile_map_, const Tile_Map_Pos test_pos_)
     return is_empty;
 }
 
+Tile_Map_Dif
+get_tile_diff(const Tile_Map_Pos &pos_a_, const Tile_Map_Pos &pos_b_)
+{
+    Tile_Map_Dif result;
+
+    v2 diff_tile_xy;
+    diff_tile_xy.x = (f32)pos_a_.abs_tile_x - (f32)pos_b_.abs_tile_x;
+    diff_tile_xy.y = (f32)pos_a_.abs_tile_y - (f32)pos_b_.abs_tile_y;
+    f32 dif_tile_z = (f32)pos_a_.abs_tile_z - (f32)pos_b_.abs_tile_z;
+
+    result.dif_xy = Tile_Map::s_tile_size_meters * diff_tile_xy + (pos_a_.offset - pos_b_.offset);
+    result.dif_z  = 0.f;
+
+    return result;
+}
+
+Tile_Map_Pos
+get_centered_tile_point(const u32 abs_tile_x_, const u32 abs_tile_y_, const u32 abs_tile_z_)
+{
+    Tile_Map_Pos result {};
+
+    result.abs_tile_x = abs_tile_x_;
+    result.abs_tile_y = abs_tile_y_;
+    result.abs_tile_z = abs_tile_z_;
+
+    return result;
+}
+
 }  // namespace tomato

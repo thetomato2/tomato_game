@@ -72,6 +72,8 @@ struct Game_Button_State
 
 struct Game_Controller_Input
 {
+    static constexpr u32 s_button_cnt { 12 };
+
     bool is_connected;
     bool is_analog;
 
@@ -93,7 +95,7 @@ struct Game_Controller_Input
 
     union
     {
-        Game_Button_State buttons[12];
+        Game_Button_State buttons[s_button_cnt];
         struct
         {
             Game_Button_State dpad_up;
@@ -112,13 +114,16 @@ struct Game_Controller_Input
     };
 };
 
-struct Game_Keyboard
+struct Game_Keyboard_Input
 {
+    static constexpr szt s_key_cnt { 13 };
+
     union
     {
-        Game_Button_State keys[11];
+        Game_Button_State keys[s_key_cnt];
         struct
         {
+            Game_Button_State enter;
             Game_Button_State w;
             Game_Button_State s;
             Game_Button_State a;
@@ -130,19 +135,34 @@ struct Game_Keyboard
             Game_Button_State d2;
             Game_Button_State d3;
             Game_Button_State d4;
+            Game_Button_State d5;
         };
     };
 };
 
 struct Game_Input
 {
+    static constexpr szt s_input_cnt { 5 };
+    static constexpr szt s_mouse_button_cnt { 3 };
+
     f32 delta_time;
 
-    static constexpr szt mouse_button_count = 3;
     Game_Button_State mouse_buttons[3];
     s32 mouse_x, mouse_y, mouse_z;
-    Game_Keyboard keyboard;
+    Game_Keyboard_Input keyboard;
     Game_Controller_Input controllers[4];
+};
+
+struct Player_Actions
+{
+    bool start;
+
+    bool left;
+    bool right;
+    bool up;
+    bool down;
+
+    bool sprint;
 };
 
 struct Game_Mem
@@ -199,6 +219,13 @@ struct ARGB_Header
 };
 #pragma pack(pop)
 
+struct Bitmap
+{
+    s32 width;
+    s32 height;
+    u32 *pixel_ptr;
+};
+
 struct ARGB_Img
 {
     u32 width;
@@ -223,29 +250,26 @@ struct Mem_Arena
     mem_ind used;
 };
 
-struct Player
+struct Entity
 {
-    static constexpr f32 s_height = .6f;
-    static constexpr f32 s_width  = 0.6f * s_height;
+    bool exists;
+
+    f32 height;
+    f32 width;
 
     Tile_Map_Pos pos;
     Color_u32 color;
 
     u32 direction;
+    ARGB_Img *sprites;
 
+    f32 stair_cd;
     v2 vel;
 };
 
 struct World
 {
     Tile_Map *tile_map;
-};
-
-struct Bitmap
-{
-    s32 width;
-    s32 height;
-    u32 *pixel_ptr;
 };
 
 struct Camera
@@ -255,21 +279,30 @@ struct Camera
 
 struct Game_State
 {
+    static constexpr szt s_max_entities { 256 };
+    szt static constexpr s_num_screens { 100 };
+    szt static constexpr s_num_tiles_per_screen_x { 20 };
+    szt static constexpr s_num_tiles_per_screen_y { 11 };
+
     Mem_Arena world_arena;
     World *world;
+
+    szt entity_camera_follow_ind;
     Camera camera;
-    Player player;
 
     Bitmap bitmap;
+
+    szt player_controller_ind[Game_Input::s_input_cnt];
+    Entity entities[s_max_entities];
 
     ARGB_Img bg_img;
     ARGB_Img seaside_cliff;
 
-    ARGB_Img player_img[4];
-
     ARGB_Img red_square_img;
     ARGB_Img green_square_img;
     ARGB_Img blue_square_img;
+
+    ARGB_Img player_sprites[4];
 };
 
 void *

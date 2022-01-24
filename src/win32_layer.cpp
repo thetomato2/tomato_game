@@ -26,7 +26,6 @@ DEBUG_PLATFORM_READ_ENTIRE_FILE(_debug_platform_read_entire_file)
                 DWORD bytesRead;
                 if (ReadFile(file_handle, file.contents, (DWORD)fileSize.QuadPart, &bytesRead, 0) &&
                     fileSize32 == bytesRead) {
-                    // NOTE: file read successfully
                     file.content_size = fileSize32;
                 } else {
                     _debug_platform_free_file_memory(thread_, file.contents);
@@ -51,7 +50,6 @@ DEBUG_PLATFORM_WRITE_ENTIRE_FILE(_debug_platform_write_entire_file)
     if (file_handle != INVALID_HANDLE_VALUE) {
         DWORD bytes_written;
         if (WriteFile(file_handle, memory_, (DWORD)memory_size_, &bytes_written, 0)) {
-            // NOTE: file wrote successfully
             success = (bytes_written == memory_size_);
         } else {
             printf("ERROR-> Failed to write file contents!\n");
@@ -484,7 +482,7 @@ display_buffer_in_window(HDC hdc_, Offscreen_Buffer &buffer_, s32 x_, s32 y_, s3
         s32 offset_y = 0;
 
 #if 0
-    // NOTE: this causes screen flickering - out of sync with screen refersh rate?
+    // NOTE: this causes screen flickering - out of sync with screen refresh rate?
     ::PatBlt(hdc_, 0, 0, width_, offset_y, BLACKNESS);
     ::PatBlt(hdc_, 0, offset_y + buffer_.height, width_, height_, BLACKNESS);
     ::PatBlt(hdc_, 0, 0, offset_x, height_, BLACKNESS);
@@ -504,6 +502,7 @@ display_buffer_in_window(HDC hdc_, Offscreen_Buffer &buffer_, s32 x_, s32 y_, s3
 void
 process_keyboard_message(Game_Button_State &new_state_, bool32 is_down_)
 {
+    // FIXME: this isn't working right?
     if (new_state_.ended_down != (is_down_ != 0)) {
         new_state_.ended_down = is_down_;
         ++new_state_.half_transition_count;
@@ -536,6 +535,7 @@ do_controller_input(Game_Input &old_input_, Game_Input &new_input_, HWND hWnd_)
 
     // keyboard
     //
+    process_keyboard_message(new_input_.keyboard.enter, ::GetKeyState(Keys::enter) & (1 << 15));
     process_keyboard_message(new_input_.keyboard.w, ::GetKeyState(Keys::w) & (1 << 15));
     process_keyboard_message(new_input_.keyboard.a, ::GetKeyState(Keys::a) & (1 << 15));
     process_keyboard_message(new_input_.keyboard.s, ::GetKeyState(Keys::s) & (1 << 15));
@@ -545,6 +545,7 @@ do_controller_input(Game_Input &old_input_, Game_Input &new_input_, HWND hWnd_)
     process_keyboard_message(new_input_.keyboard.d2, ::GetKeyState(Keys::d2) & (1 << 15));
     process_keyboard_message(new_input_.keyboard.d3, ::GetKeyState(Keys::d3) & (1 << 15));
     process_keyboard_message(new_input_.keyboard.d4, ::GetKeyState(Keys::d4) & (1 << 15));
+    process_keyboard_message(new_input_.keyboard.d5, ::GetKeyState(Keys::d5) & (1 << 15));
     process_keyboard_message(new_input_.keyboard.space, ::GetKeyState(Keys::space) & (1 << 15));
     process_keyboard_message(new_input_.keyboard.left_shift,
                              ::GetKeyState(Keys::left_shift) & (1 << 15));

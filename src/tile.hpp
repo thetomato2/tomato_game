@@ -7,6 +7,7 @@ namespace tomato
 
 struct Mem_Arena;
 
+// TODO: change to V3
 struct Tile_Map_Dif
 {
     v2 dif_xy;
@@ -97,4 +98,9 @@ is_tile_value_empty(const u32 tile_value_);
 bool
 is_world_tile_empty(const Tile_Map &tile_map_, const Tile_Map_Pos test_pos_);
 
+Tile_Map_Dif
+get_tile_diff(const Tile_Map_Pos &pos_a_, const Tile_Map_Pos &pos_b_);
+
+Tile_Map_Pos
+get_centered_tile_point(const u32 abs_tile_x_, const u32 abs_tile_y_, const u32 abs_tile_z_);
 }  // namespace tomato
