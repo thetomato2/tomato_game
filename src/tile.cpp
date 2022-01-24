@@ -20,7 +20,7 @@ recanonicalize_coord(const Tile_Map &tile_map_, u32 &tile_, f32 &tile_rel_)
 }
 
 Tile_Map_Pos
-recanonicalize_pos(Tile_Map &tile_map_, Tile_Map_Pos pos_)
+recanonicalize_pos(const Tile_Map &tile_map_, const Tile_Map_Pos &pos_)
 {
     auto new_pos = pos_;
 
@@ -31,7 +31,7 @@ recanonicalize_pos(Tile_Map &tile_map_, Tile_Map_Pos pos_)
 }
 
 Tile_Chunk_Pos
-get_chunk_pos(u32 abs_tile_x_, u32 abs_tile_y_, u32 abs_tile_z_)
+get_chunk_pos(const u32 abs_tile_x_, const u32 abs_tile_y_, const u32 abs_tile_z_)
 {
     Tile_Chunk_Pos chunk_pos;
 
@@ -45,7 +45,7 @@ get_chunk_pos(u32 abs_tile_x_, u32 abs_tile_y_, u32 abs_tile_z_)
 }
 
 Tile_Chunk_Pos
-get_chunk_pos(Tile_Map_Pos pos_)
+get_chunk_pos(const Tile_Map_Pos &pos_)
 {
     Tile_Chunk_Pos chunk_pos;
 
@@ -55,7 +55,8 @@ get_chunk_pos(Tile_Map_Pos pos_)
 }
 
 Tile_Chunk *
-get_tile_chunk(Tile_Map &tile_map_, u32 tile_chunk_x_, u32 tile_chunk_y_, u32 tile_chunk_z_)
+get_tile_chunk(const Tile_Map &tile_map_, const u32 tile_chunk_x_, const u32 tile_chunk_y_,
+               const u32 tile_chunk_z_)
 {
     Tile_Chunk *TileChunk = nullptr;
 
@@ -70,7 +71,7 @@ get_tile_chunk(Tile_Map &tile_map_, u32 tile_chunk_x_, u32 tile_chunk_y_, u32 ti
 }
 
 u32
-get_tile_value_unchecked(Tile_Chunk &tile_chunk_, u32 tile_x_, u32 tile_y_)
+get_tile_value_unchecked(const Tile_Chunk &tile_chunk_, const u32 tile_x_, const u32 tile_y_)
 {
     assert(tile_chunk_.tiles);
     assert(tile_x_ <= Tile_Map::s_chunk_tile_count && tile_y_ <= Tile_Map::s_chunk_tile_count);
@@ -78,7 +79,7 @@ get_tile_value_unchecked(Tile_Chunk &tile_chunk_, u32 tile_x_, u32 tile_y_)
 }
 
 u32
-get_tile_value(Tile_Chunk *tile_chunk_, u32 tile_x_, u32 tile_y_)
+get_tile_value(Tile_Chunk *const tile_chunk_, const u32 tile_x_, const u32 tile_y_)
 {
     u32 tile_value {};
     if (tile_chunk_ && tile_chunk_->tiles) {
@@ -89,7 +90,8 @@ get_tile_value(Tile_Chunk *tile_chunk_, u32 tile_x_, u32 tile_y_)
 }
 
 u32
-get_tile_value(Tile_Map &tile_map_, u32 abs_tile_x_, u32 abs_tile_y_, u32 abs_tile_z_)
+get_tile_value(const Tile_Map &tile_map_, const u32 abs_tile_x_, const u32 abs_tile_y_,
+               const u32 abs_tile_z_)
 {
     u32 tile_value {};
 
@@ -104,7 +106,8 @@ get_tile_value(Tile_Map &tile_map_, u32 abs_tile_x_, u32 abs_tile_y_, u32 abs_ti
 }
 
 void
-set_tile_value_unchecked(Tile_Chunk &tile_chunk_, u32 tile_x_, u32 tile_y_, u32 tile_value_)
+set_tile_value_unchecked(Tile_Chunk &tile_chunk_, const u32 tile_x_, const u32 tile_y_,
+                         const u32 tile_value_)
 {
     assert(tile_chunk_.tiles);
     assert(tile_x_ <= Tile_Map::s_chunk_tile_count && tile_y_ <= Tile_Map::s_chunk_tile_count);
@@ -112,7 +115,8 @@ set_tile_value_unchecked(Tile_Chunk &tile_chunk_, u32 tile_x_, u32 tile_y_, u32 
 }
 
 void
-set_tile_value(Tile_Chunk *tile_chunk_, u32 abs_tile_x_, u32 abs_tile_y_, u32 tile_value_)
+set_tile_value(Tile_Chunk *tile_chunk_, const u32 abs_tile_x_, const u32 abs_tile_y_,
+               const u32 tile_value_)
 {
     if (tile_chunk_ && tile_chunk_->tiles) {
         set_tile_value_unchecked(*tile_chunk_, abs_tile_x_, abs_tile_y_, tile_value_);
@@ -120,8 +124,8 @@ set_tile_value(Tile_Chunk *tile_chunk_, u32 abs_tile_x_, u32 abs_tile_y_, u32 ti
 }
 
 void
-set_tile_value(Mem_Arena *arena_, Tile_Map &tile_map_, u32 abs_tile_x_, u32 abs_tile_y_,
-               u32 abs_tile_z_, u32 tile_value_)
+set_tile_value(Mem_Arena *arena_, Tile_Map &tile_map_, const u32 abs_tile_x_, const u32 abs_tile_y_,
+               const u32 abs_tile_z_, const u32 tile_value_)
 {
     Tile_Chunk_Pos chunk_pos = get_chunk_pos(abs_tile_x_, abs_tile_y_, abs_tile_z_);
     Tile_Chunk *TileChunk    = get_tile_chunk(tile_map_, chunk_pos.chunk_tile_x,
@@ -139,12 +143,19 @@ set_tile_value(Mem_Arena *arena_, Tile_Map &tile_map_, u32 abs_tile_x_, u32 abs_
 }
 
 bool
-is_world_tile_empty(Tile_Map &tile_map_, Tile_Map_Pos test_pos_)
+is_tile_value_empty(const u32 tile_value_)
+{
+    bool is_empty = tile_value_ == 1 || tile_value_ == 3;
+    return is_empty;
+}
+
+bool
+is_world_tile_empty(const Tile_Map &tile_map_, const Tile_Map_Pos test_pos_)
 {
     u32 tile_value =
         get_tile_value(tile_map_, test_pos_.abs_tile_x, test_pos_.abs_tile_y, test_pos_.abs_tile_z);
 
-    bool is_empty = tile_value == 1 || tile_value == 3;
+    bool is_empty = is_tile_value_empty(tile_value);
 
     return is_empty;
 }
