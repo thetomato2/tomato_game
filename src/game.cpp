@@ -104,54 +104,11 @@ draw_ARGB(Game_Offscreen_Buffer &buffer_, ARGB_Img &img_, v2 pos_)
         row += buffer_.pitch;
     }
 }
-inline bool
-check_player_collision(const Tile_Map &tile_map_, const Entity &entity_,
-                       const Tile_Map_Pos test_pos_, v2 *r_ = nullptr)
-{
-    bool result                = false;
-    auto test_pos_top_left     = test_pos_;
-    auto test_pos_top_right    = test_pos_;
-    auto test_pos_bottom_left  = test_pos_;
-    auto test_pos_bottom_right = test_pos_;
-
-    test_pos_top_right.offset.x += entity_.width;
-    test_pos_bottom_left.offset.y += entity_.height;
-    test_pos_bottom_right.offset.x += entity_.width;
-    test_pos_bottom_right.offset.y += entity_.height;
-
-    test_pos_top_left     = recanonicalize_pos(tile_map_, test_pos_top_left);
-    test_pos_top_right    = recanonicalize_pos(tile_map_, test_pos_top_right);
-    test_pos_bottom_left  = recanonicalize_pos(tile_map_, test_pos_bottom_left);
-    test_pos_bottom_right = recanonicalize_pos(tile_map_, test_pos_bottom_right);
-
-    // NOTE: checking each corner
-    bool top_left  = is_world_tile_empty(tile_map_, test_pos_top_left);
-    bool top_right = is_world_tile_empty(tile_map_, test_pos_top_right);
-    bool bot_left  = is_world_tile_empty(tile_map_, test_pos_bottom_left);
-    bool bot_right = is_world_tile_empty(tile_map_, test_pos_bottom_right);
-
-    if (top_left && top_right && bot_left && bot_right) {
-        result = true;
-    } else {
-        if (!top_left && !top_right) *r_ = { 0.f, -1.f };
-        if (!top_left && !bot_left) *r_ = { 1.f, 0.f };
-        if (!top_right && !bot_right) *r_ = { -1.f, 0.f };
-        if (!bot_left && !bot_right) *r_ = { 0.f, 1.f };
-    }
-
-    return result;
-}
 
 inline Tile_Map_Pos
-get_entity_center_pos(const Tile_Map &tile_map_, const Entity &entity_)
+get_entity_center_pos(const Entity &entity_)
 {
-    auto center_pos = entity_.pos;
-
-    center_pos.offset.x += entity_.width / 2;
-    center_pos.offset.y += entity_.height / 2;
-    center_pos = recanonicalize_pos(tile_map_, center_pos);
-
-    return center_pos;
+    return offset_pos(entity_.pos, { entity_.width / 2.f, entity_.height / 2.f });
 }
 
 void
@@ -160,7 +117,7 @@ entity_check_tile_map(Tile_Map &tile_map_, const Entity &entity_)
     // NOTE: this function gets the center of the player,
     // then check if the player is out of the tile map,
     // and if so moves the player to the correct position on the new tile map
-    auto player_center_pos = get_entity_center_pos(tile_map_, entity_);
+    auto player_center_pos = get_entity_center_pos(entity_);
     auto *tile_map         = get_tile_chunk(tile_map_, player_center_pos.abs_tile_x,
                                             player_center_pos.abs_tile_y, player_center_pos.abs_tile_z);
     if (tile_map != nullptr && tile_map_.cur_tile_chunk != tile_map)
@@ -238,8 +195,8 @@ init_player(Entity &player_, ARGB_Img *sprites = nullptr)
     player_.exists         = false;
     player_.height         = .6f;
     player_.width          = 0.6f * player_.height;
-    player_.pos.offset.x   = .5f;
-    player_.pos.offset.y   = .5f;
+    player_.pos.offset.x   = 0.f;
+    player_.pos.offset.y   = 0.f;
     player_.pos.abs_tile_x = 3;
     player_.pos.abs_tile_y = 3;
     player_.color          = { 0xff'00'00'ff };
@@ -304,12 +261,6 @@ process_controller(const Game_Controller_Input &controller_)
     return result;
 }
 
-// void
-// test_wall()
-// {
-
-// }
-
 void
 update_player(Entity &player_, const Player_Actions &player_actions_, Tile_Map &tile_map_,
               const f32 delta_time_, Game_State *game_state_ = nullptr)
@@ -327,24 +278,26 @@ update_player(Entity &player_, const Player_Actions &player_actions_, Tile_Map &
     auto new_player_pos { player_.pos };
     v2 player_delta { (.5f * player_acc * math::square(delta_time_) + player_.vel * delta_time_) };
     player_.vel += player_acc * delta_time_;
-    new_player_pos.offset += player_delta;
-    new_player_pos = recanonicalize_pos(tile_map_, new_player_pos);
+    new_player_pos = offset_pos(new_player_pos, player_delta);
 
 #if 0
-    if (check_player_collision(tile_map_, player_, new_player_pos, &r)) {
-        player_.pos = recanonicalize_pos(tile_map_, new_player_pos);
-    } else {
-        player_.vel -= 2 * math::inner(player_.vel, r) * r;
-    }
-#else
 
     u32 min_tile_x { math::min(old_player_pos.abs_tile_x, new_player_pos.abs_tile_x) };
     u32 min_tile_y { math::min(old_player_pos.abs_tile_y, new_player_pos.abs_tile_y) };
     u32 one_past_max_tile_x { math::max(old_player_pos.abs_tile_x, new_player_pos.abs_tile_x) + 1 };
     u32 one_past_max_tile_y { math::max(old_player_pos.abs_tile_y, new_player_pos.abs_tile_y) + 1 };
-    u32 abs_tile_z { player_.pos.abs_tile_z };
+#else
+    u32 start_tile_x { old_player_pos.abs_tile_x };
+    u32 start_tile_y { old_player_pos.abs_tile_y };
+    u32 end_tile_x { new_player_pos.abs_tile_x };
+    u32 end_tile_y { new_player_pos.abs_tile_y };
 
-    // f32 t_min { math::length_sq(player_delta) };
+    s32 delta_x = math::sign_of(end_tile_x - start_tile_x);
+    s32 delta_y = math::sign_of(end_tile_y - start_tile_y);
+
+#endif
+
+    u32 abs_tile_z { player_.pos.abs_tile_z };
     f32 t_min { 1.f };
 
     // TODO: maybe pull this out into a real function
@@ -363,8 +316,19 @@ update_player(Entity &player_, const Player_Actions &player_actions_, Tile_Map &
         }
     };
 
-    for (u32 abs_tile_y = min_tile_y; abs_tile_y != one_past_max_tile_y; ++abs_tile_y) {
-        for (u32 abs_tile_x = min_tile_x; abs_tile_x <= one_past_max_tile_x; ++abs_tile_x) {
+    auto loop_check = [](u32 &abs_tile, u32 end_tile, s32 delta) -> bool {
+        if (abs_tile == end_tile)
+            return false;
+        else {
+            abs_tile += delta;
+            return true;
+        }
+    };
+
+    u32 abs_tile_y = start_tile_y;
+    do {
+        u32 abs_tile_x = start_tile_x;
+        do {
             Tile_Map_Pos test_tile_pos { get_centered_tile_point(abs_tile_x, abs_tile_y,
                                                                  abs_tile_z) };
             u32 tile_value { get_tile_value(tile_map_, test_tile_pos) };
@@ -387,13 +351,11 @@ update_player(Entity &player_, const Player_Actions &player_actions_, Tile_Map &
                 test_wall(max_corner.y, rel.y, rel.x, player_delta.y, player_delta.x, min_corner.x,
                           max_corner.x);
             }
-        }
-    }
-    new_player_pos = player_.pos;
-    new_player_pos.offset += t_min * player_delta;
-    player_.pos = recanonicalize_pos(tile_map_, new_player_pos);
+        } while (loop_check(abs_tile_x, end_tile_x, delta_x));
+    } while (loop_check(abs_tile_y, end_tile_y, delta_y));
 
-#endif
+    new_player_pos = player_.pos;
+    player_.pos    = offset_pos(new_player_pos, t_min * player_delta);
 
     player_.vel = player_acc * delta_time_ + player_.vel;
     entity_check_tile_map(tile_map_, player_);
@@ -487,9 +449,15 @@ GAME_UPDATE_AND_RENDER(game_update_and_render)
                       Tile_Map::s_chunk_count * Tile_Map::s_chunk_count * Tile_Map::s_chunk_count_z,
                       Tile_Chunk);
 
-        // NOTE: very basic level generator
+// NOTE: very basic level generator
+#if 0
+        //TODO: sparse storage
+        u32 screen_y {UINT32_MAX / 2};
+        u32 screen_x {UINT32_MAX / 2};
+#else
         u32 screen_y {};
         u32 screen_x {};
+#endif
         u32 screen_z {};
         u32 rng_ind {};
 
@@ -577,6 +545,11 @@ GAME_UPDATE_AND_RENDER(game_update_and_render)
             door_top   = false;
             stairs     = false;
         }
+
+        // set_tile_value(&game_state.world_arena, *tile_map, 4, 0, screen_z, 1);
+        // set_tile_value(&game_state.world_arena, *tile_map, 5, 0, screen_z, 1);
+        // set_tile_value(&game_state.world_arena, *tile_map, 0, 3, screen_z, 1);
+        // set_tile_value(&game_state.world_arena, *tile_map, 0, 4, screen_z, 1);
 
         game_state.camera.pos.abs_tile_x = Game_State::s_num_tiles_per_screen_x / 2;
         game_state.camera.pos.abs_tile_y = Game_State::s_num_tiles_per_screen_y / 2;

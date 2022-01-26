@@ -6,7 +6,7 @@ namespace tomato
 {
 
 void
-recanonicalize_coord(const Tile_Map &tile_map_, u32 &tile_, f32 &tile_rel_)
+recanonicalize_coord(u32 &tile_, f32 &tile_rel_)
 {
     // NOTE: world is assumed to be toroidal (torus shaped world),
     // if you step off one end where you wrap around
@@ -20,12 +20,12 @@ recanonicalize_coord(const Tile_Map &tile_map_, u32 &tile_, f32 &tile_rel_)
 }
 
 Tile_Map_Pos
-recanonicalize_pos(const Tile_Map &tile_map_, const Tile_Map_Pos &pos_)
+recanonicalize_pos(const Tile_Map_Pos &pos_)
 {
     auto new_pos = pos_;
 
-    recanonicalize_coord(tile_map_, new_pos.abs_tile_x, new_pos.offset.x);
-    recanonicalize_coord(tile_map_, new_pos.abs_tile_y, new_pos.offset.y);
+    recanonicalize_coord(new_pos.abs_tile_x, new_pos.offset.x);
+    recanonicalize_coord(new_pos.abs_tile_y, new_pos.offset.y);
 
     return new_pos;
 }
@@ -195,4 +195,14 @@ get_centered_tile_point(const u32 abs_tile_x_, const u32 abs_tile_y_, const u32 
     return result;
 }
 
+Tile_Map_Pos
+offset_pos(const Tile_Map_Pos &pos_, const v2 offset_)
+{
+    auto result = pos_;
+
+    result.offset += offset_;
+    result = recanonicalize_pos(result);
+
+    return result;
+}
 }  // namespace tomato

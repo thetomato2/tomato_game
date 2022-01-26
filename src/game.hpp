@@ -9,7 +9,7 @@
     #define TOM_DLL_EXPORT
 #endif
 
-#define REPLAY_BUFFERS 0
+#define REPLAY_BUFFERS 1
 
 namespace tomato
 {
@@ -279,9 +279,9 @@ struct Camera
 struct Game_State
 {
     static constexpr szt s_max_entities { 256 };
-    szt static constexpr s_num_screens { 100 };
-    szt static constexpr s_num_tiles_per_screen_x { 20 };
-    szt static constexpr s_num_tiles_per_screen_y { 11 };
+    u32 static constexpr s_num_screens { 100 };
+    u32 static constexpr s_num_tiles_per_screen_x { 20 };
+    u32 static constexpr s_num_tiles_per_screen_y { 11 };
 
     Mem_Arena world_arena;
     World *world;

@@ -186,5 +186,12 @@ abs_f32(f32 val_)
     return result;
 }
 
+inline s32
+sign_of(s32 val_)
+{
+    s32 result = (val_ >= 0) ? 1 : -1;
+    return result;
+}
+
 }  // namespace math
 }  // namespace tomato

@@ -57,10 +57,10 @@ struct Tile_Map
 };
 
 void
-recanonicalize_coord(const Tile_Map &tile_map_, u32 &tile_, f32 &tile_rel_);
+recanonicalize_coord(u32 &tile_, f32 &tile_rel_);
 
 Tile_Map_Pos
-recanonicalize_pos(const Tile_Map &tile_map_, const Tile_Map_Pos &pos_);
+recanonicalize_pos(const Tile_Map_Pos &pos_);
 
 Tile_Chunk_Pos
 get_chunk_pos(u32 abs_tile_x_, u32 abs_tile_y_, u32 abs_tile_z_);
@@ -102,4 +102,8 @@ get_tile_diff(const Tile_Map_Pos &pos_a_, const Tile_Map_Pos &pos_b_);
 
 Tile_Map_Pos
 get_centered_tile_point(u32 abs_tile_x_, u32 abs_tile_y_, u32 abs_tile_z_);
+
+Tile_Map_Pos
+offset_pos(const Tile_Map_Pos &pos_, v2 offset_);
+
 }  // namespace tomato
