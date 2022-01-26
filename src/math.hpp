@@ -105,6 +105,15 @@ operator*(v2 a_, f32 b_)
     return result;
 }
 
+inline v2 &
+operator*=(v2 &a_, f32 b_)
+{
+    a_.x *= b_;
+    a_.y *= b_;
+
+    return a_;
+}
+
 namespace math
 {
 // NOTE: inner product or dot product
@@ -129,7 +138,6 @@ square(const T val_)
 {
     return val_ * val_;
 }
-}  // namespace math
 
 // Returns min or max if input is not in between
 template<typename T>
@@ -145,4 +153,38 @@ check_bounds(const T in_, const T min_, const T max_)
 
     return in_;
 }
+
+template<typename T>
+T
+max(const T a_, const T b_)
+{
+    T result;
+    a_ > b_ ? result = a_ : result = b_;
+    return result;
+}
+
+template<typename T>
+T
+min(const T a_, const T b_)
+{
+    T result;
+    a_ < b_ ? result = a_ : result = b_;
+    return result;
+}
+
+inline f32
+sqrt_f32(f32 val_)
+{
+    f32 result = sqrtf(val_);
+    return result;
+}
+
+inline f32
+abs_f32(f32 val_)
+{
+    f32 result = fabsf(val_);
+    return result;
+}
+
+}  // namespace math
 }  // namespace tomato

@@ -105,6 +105,13 @@ get_tile_value(const Tile_Map &tile_map_, const u32 abs_tile_x_, const u32 abs_t
     return tile_value;
 }
 
+u32
+get_tile_value(const Tile_Map &tile_map_, const Tile_Map_Pos &pos_)
+{
+    u32 tile_value { get_tile_value(tile_map_, pos_.abs_tile_x, pos_.abs_tile_y, pos_.abs_tile_z) };
+    return tile_value;
+}
+
 void
 set_tile_value_unchecked(Tile_Chunk &tile_chunk_, const u32 tile_x_, const u32 tile_y_,
                          const u32 tile_value_)
@@ -150,7 +157,7 @@ is_tile_value_empty(const u32 tile_value_)
 }
 
 bool
-is_world_tile_empty(const Tile_Map &tile_map_, const Tile_Map_Pos test_pos_)
+is_world_tile_empty(const Tile_Map &tile_map_, const Tile_Map_Pos &test_pos_)
 {
     u32 tile_value =
         get_tile_value(tile_map_, test_pos_.abs_tile_x, test_pos_.abs_tile_y, test_pos_.abs_tile_z);

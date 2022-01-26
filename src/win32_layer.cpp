@@ -500,9 +500,8 @@ display_buffer_in_window(HDC hdc_, Offscreen_Buffer &buffer_, s32 x_, s32 y_, s3
 }
 
 void
-process_keyboard_message(Game_Button_State &new_state_, bool32 is_down_)
+process_keyboard_message(Game_Button_State &new_state_, const bool32 is_down_)
 {
-    // FIXME: this isn't working right?
     if (new_state_.ended_down != (is_down_ != 0)) {
         new_state_.ended_down = is_down_;
         ++new_state_.half_transition_count;
@@ -513,8 +512,9 @@ void
 process_Xinput_digital_button(DWORD Xinput_button_state_, Game_Button_State &old_state_,
                               DWORD button_bit_, Game_Button_State &new_state_)
 {
-    new_state_.ended_down            = ((Xinput_button_state_ & button_bit_) == button_bit_);
-    new_state_.half_transition_count = (old_state_.ended_down != new_state_.ended_down) ? 1 : 0;
+    new_state_.ended_down = ((Xinput_button_state_ & button_bit_) == button_bit_);
+    if (new_state_.ended_down && old_state_.ended_down)
+        new_state_.half_transition_count = ++old_state_.half_transition_count;
 }
 
 void
@@ -533,14 +533,20 @@ do_controller_input(Game_Input &old_input_, Game_Input &new_input_, HWND hWnd_)
     process_keyboard_message(new_input_.mouse_buttons[1], ::GetKeyState(VK_RBUTTON) & (1 << 15));
     process_keyboard_message(new_input_.mouse_buttons[2], ::GetKeyState(VK_MBUTTON) & (1 << 15));
 
+    for (szt key {}; key < Game_Keyboard_Input::s_key_cnt; ++key) {
+        if (old_input_.keyboard.keys[key].half_transition_count > 0 &&
+            old_input_.keyboard.keys[key].ended_down == 0)
+            old_input_.keyboard.keys[key].half_transition_count = 0;
+    }
+
     // keyboard
-    //
     process_keyboard_message(new_input_.keyboard.enter, ::GetKeyState(Keys::enter) & (1 << 15));
     process_keyboard_message(new_input_.keyboard.w, ::GetKeyState(Keys::w) & (1 << 15));
     process_keyboard_message(new_input_.keyboard.a, ::GetKeyState(Keys::a) & (1 << 15));
     process_keyboard_message(new_input_.keyboard.s, ::GetKeyState(Keys::s) & (1 << 15));
     process_keyboard_message(new_input_.keyboard.d, ::GetKeyState(Keys::d) & (1 << 15));
     process_keyboard_message(new_input_.keyboard.p, ::GetKeyState(Keys::p) & (1 << 15));
+    process_keyboard_message(new_input_.keyboard.t, ::GetKeyState(Keys::t) & (1 << 15));
     process_keyboard_message(new_input_.keyboard.d1, ::GetKeyState(Keys::d1) & (1 << 15));
     process_keyboard_message(new_input_.keyboard.d2, ::GetKeyState(Keys::d2) & (1 << 15));
     process_keyboard_message(new_input_.keyboard.d3, ::GetKeyState(Keys::d3) & (1 << 15));
@@ -550,7 +556,7 @@ do_controller_input(Game_Input &old_input_, Game_Input &new_input_, HWND hWnd_)
     process_keyboard_message(new_input_.keyboard.left_shift,
                              ::GetKeyState(Keys::left_shift) & (1 << 15));
 
-    // Controller
+    // controller
     // poll the input device
     s32 max_controller_count = XUSER_MAX_COUNT;
     if (max_controller_count > 4) {
@@ -569,7 +575,7 @@ do_controller_input(Game_Input &old_input_, Game_Input &new_input_, HWND hWnd_)
             new_controller.is_connected = true;
 
             // NOTE: this is hardcoded for convenience
-            // newController.isAnalog		= oldController->isAnalog;
+            // newController.isAnalog = oldController->isAnalog;
             new_controller.is_analog = true;
 
             //  no rmal stick input
@@ -580,15 +586,22 @@ do_controller_input(Game_Input &old_input_, Game_Input &new_input_, HWND hWnd_)
                     return (f32)val / 32767.0f;
             };
 
-            f32 stick_left_x  = normalize(pad.sThumbLX);
-            f32 stick_left_y  = normalize(pad.sThumbLY) * -1.0f;
-            f32 stick_right_x = normalize(pad.sThumbRX);
-            f32 stick_right_y = normalize(pad.sThumbRY) * -1.0f;
+            v2 stick_left;
+            v2 stick_right;
+            stick_left.x  = normalize(pad.sThumbLX);
+            stick_left.y  = normalize(pad.sThumbLY);
+            stick_right.x = normalize(pad.sThumbRX);
+            stick_right.y = normalize(pad.sThumbRY);
 
-            new_controller.min_x = new_controller.max_x = new_controller.end_left_stick_x =
-                stick_left_x;
-            new_controller.min_y = new_controller.max_y = new_controller.end_left_stick_y =
-                stick_left_y;
+            new_controller.min.x = new_controller.max.x = new_controller.end_left_stick.x =
+                stick_left.x;
+            new_controller.min.y = new_controller.max.y = new_controller.end_left_stick.y =
+                stick_left.y;
+
+            for (szt button {}; button < Game_Controller_Input::s_button_cnt; ++button) {
+                if (!old_controller.buttons[button].ended_down)
+                    old_controller.buttons[button].half_transition_count = 0;
+            }
 
             process_Xinput_digital_button(pad.wButtons, old_controller.dpad_up,
                                           XINPUT_GAMEPAD_DPAD_UP, new_controller.dpad_up);
@@ -1013,13 +1026,13 @@ Main(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLine, s32 nShowCm
 #endif
 
     Game_Input input[2]   = {};
-    Game_Input &new_input = input[0];
-    Game_Input &old_input = input[1];
+    Game_Input *new_input = &input[0];
+    Game_Input *old_input = &input[1];
 
     LARGE_INTEGER last_counter = get_wall_clock();
     u64 last_cycle_count       = __rdtsc();
 
-    bool is_souind_valid     = true;
+    bool is_sound_valid      = true;
     bool is_game_code_loaded = true;
     DWORD last_play_cursor {};
     DWORD last_write_cursor {};
@@ -1028,10 +1041,10 @@ Main(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLine, s32 nShowCm
     // #MAIN LOOP
     // =============================================================================================
     while (global::running) {
-        do_controller_input(old_input, new_input, hWnd);
-        process_pending_messages(state, new_input);
+        do_controller_input(*old_input, *new_input, hWnd);
+        process_pending_messages(state, *new_input);
         // NOTE: this isn't calculated and needs to be for a varaible framerate
-        new_input.delta_time = global::target_frames_per_second;
+        new_input->delta_time = global::target_frames_per_second;
 
         auto dllWriteTime = get_last_write_time(global::game_DLL_name);
         if (CompareFileTime(&dllWriteTime, &code.last_write_time_DLL)) {
@@ -1041,7 +1054,7 @@ Main(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLine, s32 nShowCm
         }
 
         // NOTE: temp program exit from controller
-        if (new_input.controllers->button_back.ended_down) {
+        if (new_input->controllers->button_back.ended_down) {
             global::running = false;
         }
 
@@ -1149,7 +1162,7 @@ Main(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLine, s32 nShowCm
             write_cursor -= sound_output.secondary_buf_size;
         }
 
-        Game_Input &temp_input = new_input;
+        Game_Input *temp_input = new_input;
         new_input              = old_input;
         old_input              = temp_input;
 

@@ -67,31 +67,23 @@ struct Game_Sound_Output_Buffer
 struct Game_Button_State
 {
     s32 half_transition_count;
-    bool ended_down;
+    bool32 ended_down;
 };
 
 struct Game_Controller_Input
 {
-    static constexpr u32 s_button_cnt { 12 };
+    static constexpr szt s_button_cnt { 12 };
 
     bool is_connected;
     bool is_analog;
 
-    f32 start_left_stick_x;
-    f32 start_left_stick_y;
-    f32 start_right_stick_x;
-    f32 start_right_stick_y;
+    v2 min;
+    v2 max;
+    v2 start_left_stick;
+    v2 start_right_stick;
 
-    f32 min_x;
-    f32 min_y;
-
-    f32 max_x;
-    f32 max_y;
-
-    f32 end_left_stick_x;
-    f32 end_left_stick_y;
-    f32 end_right_stick_x;
-    f32 end_right_stick_y;
+    v2 end_left_stick;
+    v2 end_right_stick;
 
     union
     {
@@ -116,7 +108,7 @@ struct Game_Controller_Input
 
 struct Game_Keyboard_Input
 {
-    static constexpr szt s_key_cnt { 13 };
+    static constexpr szt s_key_cnt { 14 };
 
     union
     {
@@ -131,6 +123,7 @@ struct Game_Keyboard_Input
             Game_Button_State space;
             Game_Button_State left_shift;
             Game_Button_State p;
+            Game_Button_State t;
             Game_Button_State d1;
             Game_Button_State d2;
             Game_Button_State d3;
@@ -157,10 +150,7 @@ struct Player_Actions
 {
     bool start;
 
-    bool left;
-    bool right;
-    bool up;
-    bool down;
+    v2 dir;
 
     bool sprint;
 };
@@ -250,9 +240,18 @@ struct Mem_Arena
     mem_ind used;
 };
 
+enum Dir : s32
+{
+    down = 0,
+    right,
+    up,
+    left
+
+};
+
 struct Entity
 {
-    bool exists;
+    bool32 exists;
 
     f32 height;
     f32 width;
@@ -298,11 +297,15 @@ struct Game_State
     ARGB_Img bg_img;
     ARGB_Img seaside_cliff;
 
+    ARGB_Img crosshair_img;
+
     ARGB_Img red_square_img;
     ARGB_Img green_square_img;
     ARGB_Img blue_square_img;
 
     ARGB_Img player_sprites[4];
+
+    Tile_Map_Pos test_pos;
 };
 
 void *
@@ -310,5 +313,17 @@ push_size(Mem_Arena *arena_, mem_ind size_);
 
 #define PushStruct(arena, type)       (type *)push_size(arena, sizeof(type))
 #define PushArray(arena, count, type) (type *)push_size(arena, (count * sizeof(type)))
+
+inline bool
+is_key_up(const Game_Button_State &key_)
+{
+    return key_.half_transition_count > 0 && key_.ended_down == 0;
+}
+
+inline bool
+is_button_up(const Game_Button_State &button_)
+{
+    return is_key_up(button_);
+}
 
 }  // namespace tomato

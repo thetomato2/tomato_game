@@ -105,7 +105,7 @@ draw_ARGB(Game_Offscreen_Buffer &buffer_, ARGB_Img &img_, v2 pos_)
     }
 }
 inline bool
-check_player_collision(const Tile_Map &tile_map_, const Entity entity_,
+check_player_collision(const Tile_Map &tile_map_, const Entity &entity_,
                        const Tile_Map_Pos test_pos_, v2 *r_ = nullptr)
 {
     bool result                = false;
@@ -278,12 +278,11 @@ process_keyboard(const Game_Keyboard_Input &keyboard)
 {
     Player_Actions result {};
 
-    // printf("htc %d, ed %d\n", keyboard.enter.half_transition_count, keyboard.enter.ended_down);
-    if (keyboard.enter.ended_down) result.start = true;
-    if (keyboard.w.ended_down) result.up = true;
-    if (keyboard.a.ended_down) result.left = true;
-    if (keyboard.s.ended_down) result.down = true;
-    if (keyboard.d.ended_down) result.right = true;
+    if (is_key_up(keyboard.t)) result.start = true;
+    if (keyboard.w.ended_down) result.dir = { 0.f, 1.f };
+    if (keyboard.a.ended_down) result.dir = { -1.f, 0.f };
+    if (keyboard.s.ended_down) result.dir = { 0.f, -1.f };
+    if (keyboard.d.ended_down) result.dir = { 1.f, 0.f };
     if (keyboard.left_shift.ended_down) result.sprint = true;
 
     return result;
@@ -294,80 +293,106 @@ process_controller(const Game_Controller_Input &controller_)
 {
     Player_Actions result {};
 
-    if (controller_.button_start.ended_down) result.start = true;
-    if (controller_.dpad_up.ended_down) result.up = true;
-    if (controller_.dpad_left.ended_down) result.left = true;
-    if (controller_.dpad_down.ended_down) result.down = true;
-    if (controller_.dpad_right.ended_down) result.right = true;
+    if (is_button_up(controller_.button_start)) result.start = true;
+
+    if (controller_.is_analog) {
+        result.dir = controller_.end_left_stick;
+    }
+
     if (controller_.button_A.ended_down) result.sprint = true;
 
     return result;
 }
 
+// void
+// test_wall()
+// {
+
+// }
+
 void
 update_player(Entity &player_, const Player_Actions &player_actions_, Tile_Map &tile_map_,
-              const f32 delta_time_)
+              const f32 delta_time_, Game_State *game_state_ = nullptr)
 {
     v2 r {};  // reflect vector
-    v2 player_acc {};
-    f32 player_speed = player_actions_.sprint ? 50.f : 10.f;
-
-    if (player_actions_.up) {
-        player_acc.y      = player_speed;
-        player_.direction = 2;
-    } else if (player_actions_.down) {
-        player_acc.y      = -player_speed;
-        player_.direction = 0;
-    }
-
-    if (player_actions_.right) {
-        player_acc.x      = player_speed;
-        player_.direction = 1;
-    } else if (player_actions_.left) {
-        player_acc.x      = -player_speed;
-        player_.direction = 3;
-    }
-
+    v2 player_acc { player_actions_.dir };
+    // NOTE: normalize vector to unit length
+    f32 player_acc_length = math::length_sq(player_acc);
+    if (player_acc_length > 1.0f) player_acc *= (1.f / math::sqrt_f32(player_acc_length));
+    f32 player_speed = player_actions_.sprint ? 50.f : 25.f;
+    player_acc *= player_speed;
     player_acc -= player_.vel * 2.f;
 
-    player_.pos = recanonicalize_pos(tile_map_, player_.pos);
+    auto old_player_pos { player_.pos };
     auto new_player_pos { player_.pos };
     v2 player_delta { (.5f * player_acc * math::square(delta_time_) + player_.vel * delta_time_) };
+    player_.vel += player_acc * delta_time_;
     new_player_pos.offset += player_delta;
+    new_player_pos = recanonicalize_pos(tile_map_, new_player_pos);
 
-#if 1
+#if 0
     if (check_player_collision(tile_map_, player_, new_player_pos, &r)) {
         player_.pos = recanonicalize_pos(tile_map_, new_player_pos);
     } else {
         player_.vel -= 2 * math::inner(player_.vel, r) * r;
     }
 #else
-    u32 min_tile_x {};
-    u32 min_tile_y {};
-    u32 one_past_max_tile_x { 20 };
-    u32 one_past_max_tile_y { 20 };
+
+    u32 min_tile_x { math::min(old_player_pos.abs_tile_x, new_player_pos.abs_tile_x) };
+    u32 min_tile_y { math::min(old_player_pos.abs_tile_y, new_player_pos.abs_tile_y) };
+    u32 one_past_max_tile_x { math::max(old_player_pos.abs_tile_x, new_player_pos.abs_tile_x) + 1 };
+    u32 one_past_max_tile_y { math::max(old_player_pos.abs_tile_y, new_player_pos.abs_tile_y) + 1 };
     u32 abs_tile_z { player_.pos.abs_tile_z };
-    Tile_Map_Pos best_pnt { player_.pos };
-    f32 best_dist_sq { math::length_sq(player_delta) };
+
+    // f32 t_min { math::length_sq(player_delta) };
+    f32 t_min { 1.f };
+
+    // TODO: maybe pull this out into a real function
+    auto test_wall = [&t_min](f32 wall_x, f32 rel_x, f32 rel_y, f32 player_delta_x,
+                              f32 player_delta_y, f32 min_y, f32 max_y) {
+        f32 t_esp = .001f;
+        if (player_delta_x != 0.f) {
+            f32 t_res = (wall_x - rel_x) / player_delta_x;
+            f32 y     = rel_y + t_res * player_delta_y;
+
+            if (t_res >= 0.f && (t_min > t_res)) {
+                if (y >= min_y && y <= max_y) {
+                    t_min = math::max(0.f, t_res - t_esp);
+                }
+            }
+        }
+    };
 
     for (u32 abs_tile_y = min_tile_y; abs_tile_y != one_past_max_tile_y; ++abs_tile_y) {
         for (u32 abs_tile_x = min_tile_x; abs_tile_x <= one_past_max_tile_x; ++abs_tile_x) {
-            Tile_Map_Pos test_tile_pos =
-                get_centered_tile_point(abs_tile_x, abs_tile_y, abs_tile_z);
-            u32 tile_value = get_tile_value(*world->tile_map, abs_tile_x, abs_tile_y, abs_tile_z);
-            if (is_tile_value_empty(tile_value)) {
+            Tile_Map_Pos test_tile_pos { get_centered_tile_point(abs_tile_x, abs_tile_y,
+                                                                 abs_tile_z) };
+            u32 tile_value { get_tile_value(tile_map_, test_tile_pos) };
+            if (!is_tile_value_empty(tile_value)) {
                 v2 min_corner { -.5f *
                                 v2 { Tile_Map::s_tile_size_meters, Tile_Map::s_tile_size_meters } };
 
                 v2 max_corner { .5f *
                                 v2 { Tile_Map::s_tile_size_meters, Tile_Map::s_tile_size_meters } };
 
-                Tile_Map_Dif rel_new_player_pos = get_tile_diff(test_tile_pos, new_player_pos);
+                Tile_Map_Dif rel_old_player_pos = get_tile_diff(old_player_pos, test_tile_pos);
+                v2 rel { rel_old_player_pos.dif_xy };
 
-                v2 test_pnt = closest_point_in_rect(min_corner, max_corner, rel_new_player_pos);
+                test_wall(min_corner.x, rel.x, rel.y, player_delta.x, player_delta.y, min_corner.y,
+                          max_corner.y);
+                test_wall(max_corner.x, rel.x, rel.y, player_delta.x, player_delta.y, min_corner.y,
+                          max_corner.y);
+                test_wall(min_corner.y, rel.y, rel.x, player_delta.y, player_delta.x, min_corner.x,
+                          max_corner.x);
+                test_wall(max_corner.y, rel.y, rel.x, player_delta.y, player_delta.x, min_corner.x,
+                          max_corner.x);
             }
         }
     }
+    new_player_pos = player_.pos;
+    new_player_pos.offset += t_min * player_delta;
+    player_.pos = recanonicalize_pos(tile_map_, new_player_pos);
+
 #endif
 
     player_.vel = player_acc * delta_time_ + player_.vel;
@@ -380,6 +405,14 @@ update_player(Entity &player_, const Player_Actions &player_actions_, Tile_Map &
                        player_.pos.abs_tile_z) == 3) {
         player_.pos.abs_tile_z == 0 ? player_.pos.abs_tile_z = 1 : player_.pos.abs_tile_z = 0;
         player_.stair_cd = 0.f;
+    }
+
+    v2 pv = player_.vel;
+
+    if (math::abs_f32(pv.x) > math::abs_f32(pv.y)) {
+        pv.x > 0.f ? player_.direction = Dir::right : player_.direction = Dir::left;
+    } else if (math::abs_f32(pv.y) > math::abs_f32(pv.x)) {
+        pv.y > 0.f ? player_.direction = Dir::up : player_.direction = Dir::down;
     }
 }
 
@@ -420,9 +453,6 @@ GAME_UPDATE_AND_RENDER(game_update_and_render)
     if (!memory_.is_initialized) {
         const char *bg            = "uv_color_squares_960x540";
         const char *seaside_cliff = "bg_seaside_cliff";
-        const char *red_square    = "red_square";
-        const char *green_square  = "green_square";
-        const char *blue_square   = "blue_square";
 
         const char *player_front = "girl_chibi_front";
         const char *player_back  = "girl_chibi_back";
@@ -434,12 +464,15 @@ GAME_UPDATE_AND_RENDER(game_update_and_render)
         game_state.seaside_cliff =
             load_ARGB(thread_, memory_.platfrom_read_entire_file, seaside_cliff);
 
+        game_state.crosshair_img =
+            load_ARGB(thread_, memory_.platfrom_read_entire_file, "crosshair");
+
         game_state.red_square_img =
-            load_ARGB(thread_, memory_.platfrom_read_entire_file, red_square);
+            load_ARGB(thread_, memory_.platfrom_read_entire_file, "red_square");
         game_state.green_square_img =
-            load_ARGB(thread_, memory_.platfrom_read_entire_file, green_square);
+            load_ARGB(thread_, memory_.platfrom_read_entire_file, "green_square");
         game_state.blue_square_img =
-            load_ARGB(thread_, memory_.platfrom_read_entire_file, blue_square);
+            load_ARGB(thread_, memory_.platfrom_read_entire_file, "blue_square");
 
         init_arena(&game_state.world_arena, memory_.permanent_storage_size - sizeof(game_state),
                    (u8 *)memory_.permanent_storage + sizeof(game_state));
@@ -550,13 +583,13 @@ GAME_UPDATE_AND_RENDER(game_update_and_render)
 
         game_state.entity_camera_follow_ind = 0;
 
-        game_state.player_sprites[0] =
+        game_state.player_sprites[Dir::down] =
             load_ARGB(thread_, memory_.platfrom_read_entire_file, player_front);
-        game_state.player_sprites[1] =
+        game_state.player_sprites[Dir::right] =
             load_ARGB(thread_, memory_.platfrom_read_entire_file, player_right);
-        game_state.player_sprites[2] =
+        game_state.player_sprites[Dir::up] =
             load_ARGB(thread_, memory_.platfrom_read_entire_file, player_back);
-        game_state.player_sprites[3] =
+        game_state.player_sprites[Dir::left] =
             load_ARGB(thread_, memory_.platfrom_read_entire_file, player_left);
 
         // NOTE: clearing out garbage data
@@ -583,15 +616,6 @@ GAME_UPDATE_AND_RENDER(game_update_and_render)
         *world->tile_map, game_state.entities[0].pos.abs_tile_x,
         game_state.entities[0].pos.abs_tile_y, game_state.entities[0].pos.abs_tile_z);
 
-    Game_Controller_Input &controller_0 = input_.controllers[0];
-    if (controller_0.is_analog) {
-        // gameState.xOffset += s32(speed * (controller0.endLX));
-        // gameState.yOffset += s32(speed * (controller0.endLY));
-
-    } else {
-        // TODO: handle digital input_
-    }
-
     for (szt player {}; player < Game_Input::s_input_cnt; ++player) {
         Player_Actions player_action {};
         if (player == 0) {
@@ -601,23 +625,30 @@ GAME_UPDATE_AND_RENDER(game_update_and_render)
         }
 
         auto &cur_player = game_state.entities[player];
-        if (player_action.start) cur_player.exists = !cur_player.exists;
+        if (player_action.start) {
+            cur_player.exists = !cur_player.exists;
+            if (cur_player.exists) game_state.entity_camera_follow_ind = player;
+        }
 
         if (cur_player.exists) {
-            update_player(cur_player, player_action, *world->tile_map, input_.delta_time);
+            update_player(cur_player, player_action, *world->tile_map, input_.delta_time,
+                          &game_state);
         }
     }
 
-    if (input_.keyboard.d1.ended_down)
-        game_state.entity_camera_follow_ind = 0;
-    else if (input_.keyboard.d2.ended_down)
-        game_state.entity_camera_follow_ind = 1;
-    else if (input_.keyboard.d3.ended_down)
-        game_state.entity_camera_follow_ind = 2;
-    else if (input_.keyboard.d4.ended_down)
-        game_state.entity_camera_follow_ind = 3;
-    else if (input_.keyboard.d5.ended_down)
-        game_state.entity_camera_follow_ind = 4;
+    game_state.entities[game_state.entity_camera_follow_ind];
+
+    if (input_.keyboard.d1.ended_down) {
+        if (game_state.entities[0].exists) game_state.entity_camera_follow_ind = 0;
+    } else if (input_.keyboard.d2.ended_down) {
+        if (game_state.entities[1].exists) game_state.entity_camera_follow_ind = 1;
+    } else if (input_.keyboard.d3.ended_down) {
+        if (game_state.entities[2].exists) game_state.entity_camera_follow_ind = 2;
+    } else if (input_.keyboard.d4.ended_down) {
+        if (game_state.entities[3].exists) game_state.entity_camera_follow_ind = 3;
+    } else if (input_.keyboard.d5.ended_down) {
+        if (game_state.entities[4].exists) game_state.entity_camera_follow_ind = 4;
+    }
 
     camera.pos.abs_tile_z = game_state.entities[game_state.entity_camera_follow_ind].pos.abs_tile_z;
     move_camera(camera, game_state.entities[game_state.entity_camera_follow_ind]);
@@ -686,6 +717,11 @@ GAME_UPDATE_AND_RENDER(game_update_and_render)
         if (cur_player.exists && camera.pos.abs_tile_z == cur_player.pos.abs_tile_z) {
             auto player_dif = get_tile_diff(cur_player.pos, camera.pos);
 
+            v2 player_true_mid {
+                (screen_center.x + (player_dif.dif_xy.x * global::s_meters_to_pixels)),
+                (screen_center.y - (player_dif.dif_xy.y * global::s_meters_to_pixels))
+            };
+
             v2 player_mid { (screen_center.x + (player_dif.dif_xy.x * global::s_meters_to_pixels)),
                             (screen_center.y - (player_dif.dif_xy.y * global::s_meters_to_pixels) -
                              (cur_player.height * global::s_meters_to_pixels)) };
@@ -697,16 +733,22 @@ GAME_UPDATE_AND_RENDER(game_update_and_render)
 
             // draw_ARGB(video_buffer_, cur_player.sprites[cur_player.direction], argb_mid);
             draw_ARGB(video_buffer_, game_state.player_sprites[cur_player.direction], argb_mid);
+            draw_ARGB(video_buffer_, game_state.crosshair_img, player_true_mid);
         }
     }
+    // NOTE: hacky way to draw a debug postion
+    auto test_dif = get_tile_diff(game_state.test_pos, camera.pos);
+    v2 test_mid { (screen_center.x + (test_dif.dif_xy.x * global::s_meters_to_pixels)),
+                  (screen_center.y - (test_dif.dif_xy.y * global::s_meters_to_pixels)) };
+    draw_ARGB(video_buffer_, game_state.crosshair_img, test_mid);
 
-    constexpr s32 square_offset = 0;
-    draw_ARGB(video_buffer_, game_state.red_square_img,
-              { f32(64 + square_offset), f32(video_buffer_.height - 64) });
-    draw_ARGB(video_buffer_, game_state.green_square_img,
-              { f32(64 + square_offset), f32(video_buffer_.height - 192) });
-    draw_ARGB(video_buffer_, game_state.blue_square_img,
-              { f32(64 + square_offset), f32(video_buffer_.height - 320) });
+    // constexpr s32 square_offset = 0;
+    // draw_ARGB(video_buffer_, game_state.red_square_img,
+    //           { f32(64 + square_offset), f32(video_buffer_.height - 64) });
+    // draw_ARGB(video_buffer_, game_state.green_square_img,
+    //           { f32(64 + square_offset), f32(video_buffer_.height - 192) });
+    // draw_ARGB(video_buffer_, game_state.blue_square_img,
+    //           { f32(64 + square_offset), f32(video_buffer_.height - 320) });
 }
 
 #if 0
