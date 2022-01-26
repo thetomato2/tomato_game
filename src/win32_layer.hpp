@@ -49,7 +49,7 @@ struct Win32_State
     s32 input_recording_index;
     HANDLE playback_handle;
     s32 input_playback_index;
-    replay_buffer replay_buffers[4];
+    Replay_Buffer replay_buffers[4];
 #endif
 };
 

@@ -664,20 +664,20 @@ get_seconds_elapsed(LARGE_INTEGER start_, LARGE_INTEGER end_)
 
 #if REPLAY_BUFFERS == 1
 void
-get_input_file_path(win32_State &state_, bool32 is_input_stream_)
+get_input_file_path(Win32_State &state_, bool32 is_input_stream_)
 {
     int x = 0;
 }
 
-replay_buffer &
-get_replay_buffer(win32_State &state_, szt index_)
+Replay_Buffer &
+get_replay_buffer(Win32_State &state_, szt index_)
 {
     assert(index_ < ArrayCount(state_.replay_buffers));
     return state_.replay_buffers[index_];
 }
 
 void
-begin_recording_input(win32_State &state_, i32 input_recording_index_)
+begin_recording_input(Win32_State &state_, s32 input_recording_index_)
 {
     auto &replay_buffer = get_replay_buffer(state_, input_recording_index_);
     if (replay_buffer.memory_block) {
@@ -695,7 +695,7 @@ begin_recording_input(win32_State &state_, i32 input_recording_index_)
 }
 
 void
-end_recording_input(win32_State &state_)
+end_recording_input(Win32_State &state_)
 {
     printf("Recording ended.\n");
     CloseHandle(state_.recording_handle);
@@ -703,7 +703,7 @@ end_recording_input(win32_State &state_)
 }
 
 void
-begin_input_playback(win32_State &state_, i32 input_playback_index_)
+begin_input_playback(Win32_State &state_, s32 input_playback_index_)
 {
     auto &replay_buffer = get_replay_buffer(state_, input_playback_index_);
     if (replay_buffer.memory_block) {
@@ -720,7 +720,7 @@ begin_input_playback(win32_State &state_, i32 input_playback_index_)
 }
 
 void
-end_input_playback(win32_State &state_)
+end_input_playback(Win32_State &state_)
 {
     printf("Input playback ended.\n");
     CloseHandle(state_.playback_handle);
@@ -728,20 +728,20 @@ end_input_playback(win32_State &state_)
 }
 
 void
-record_input(win32_State &state_, GameInput &new_input_)
+record_input(Win32_State &state_, Game_Input &new_input_)
 {
     DWORD bytes_written;
     WriteFile(state_.recording_handle, &new_input_, sizeof(new_input_), &bytes_written, 0);
 }
 
 void
-playback_input(win32_State &state_, GameInput &new_input_)
+playback_input(Win32_State &state_, Game_Input &new_input_)
 {
     DWORD bytes_read;
     if (ReadFile(state_.playback_handle, &new_input_, sizeof(new_input_), &bytes_read, 0)) {
         if (bytes_read == 0) {
             // NOTE: hit end of stream, go back to begining;
-            i32 playback_index = state_.input_playback_index;
+            s32 playback_index = state_.input_playback_index;
             end_input_playback(state_);
             begin_input_playback(state_, playback_index);
             ReadFile(state_.playback_handle, &new_input_, sizeof(new_input_), &bytes_read, 0);
@@ -1004,8 +1004,8 @@ Main(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLine, s32 nShowCm
 
 #if REPLAY_BUFFERS
     // mapping memory to file
-    for (i32 replay_index {}; replay_index < ArrayCount(state.replay_buffers); ++replay_index) {
-        ReplayBuffer &replay_buffer = state.replay_buffers[replay_index];
+    for (s32 replay_index {}; replay_index < ArrayCount(state.replay_buffers); ++replay_index) {
+        Replay_Buffer &replay_buffer = state.replay_buffers[replay_index];
         _stprintf_s(replay_buffer.file_name, sizeof(TCHAR) * 512, _T("replay_%d_state.ti"),
                     replay_index);
 
@@ -1090,10 +1090,10 @@ Main(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLine, s32 nShowCm
 
 #if REPLAY_BUFFERS
         if (state.input_recording_index) {
-            record_input(state, new_input);
+            record_input(state, *new_input);
         }
         if (state.input_playback_index) {
-            playback_input(state, new_input);
+            playback_input(state, *new_input);
         }
 #endif
         // null check for stub sections
