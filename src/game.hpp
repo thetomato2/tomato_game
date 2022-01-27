@@ -11,7 +11,7 @@
 
 #define REPLAY_BUFFERS 1
 
-namespace tomato
+namespace tom
 {
 
 // NOTE: services that the platform provides for the game
@@ -38,9 +38,8 @@ typedef DEBUG_PLATFORM_FREE_FILE_MEMORY(debug_platform_free_file_memory);
         debug_ReadFileResult name(Thread_Context *thread_, const char *file_name_)
 typedef DEBUG_PLATFORM_READ_ENTIRE_FILE(debug_platform_read_entire_file);
 
-    #define DEBUG_PLATFORM_WRITE_ENTIRE_FILE(name)                                     \
-        bool32 name(Thread_Context *thread_, const char *file_name_, u64 memory_size_, \
-                    void *memory_)
+    #define DEBUG_PLATFORM_WRITE_ENTIRE_FILE(name) \
+        b32 name(Thread_Context *thread_, const char *file_name_, u64 memory_size_, void *memory_)
 typedef DEBUG_PLATFORM_WRITE_ENTIRE_FILE(debug_platform_write_entire_file);
 #endif
 
@@ -67,7 +66,7 @@ struct Game_Sound_Output_Buffer
 struct Game_Button_State
 {
     s32 half_transition_count;
-    bool32 ended_down;
+    b32 ended_down;
 };
 
 struct Game_Controller_Input
@@ -251,7 +250,7 @@ enum Dir : s32
 
 struct Entity
 {
-    bool32 exists;
+    b32 exists;
 
     f32 height;
     f32 width;
@@ -326,4 +325,4 @@ is_button_up(const Game_Button_State &button_)
     return is_key_up(button_);
 }
 
-}  // namespace tomato
+}  // namespace tom

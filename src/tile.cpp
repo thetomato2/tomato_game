@@ -2,7 +2,7 @@
 #include "framework.hpp"
 #include "game.hpp"
 
-namespace tomato
+namespace tom
 {
 
 void
@@ -205,4 +205,4 @@ offset_pos(const Tile_Map_Pos &pos_, const v2 offset_)
 
     return result;
 }
-}  // namespace tomato
+}  // namespace tom

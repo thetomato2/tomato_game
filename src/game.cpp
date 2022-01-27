@@ -1,8 +1,6 @@
 #include "game.hpp"
 
-namespace tomato
-{
-namespace
+namespace tom
 {
 namespace global
 {
@@ -12,7 +10,7 @@ static constexpr f32 s_meters_to_pixels = s_tile_size_pixels / Tile_Map::s_tile_
 #include "rng_nums.h"
 }  // namespace global
 
-void
+static void
 clear_buffer(Game_Offscreen_Buffer &buffer_, Color_u32 color_ = { 0xff'ff'00'ff })
 {
     s32 width  = buffer_.width;
@@ -28,7 +26,7 @@ clear_buffer(Game_Offscreen_Buffer &buffer_, Color_u32 color_ = { 0xff'ff'00'ff 
     }
 }
 
-void
+static void
 draw_rect(Game_Offscreen_Buffer &buffer_, f32 f32_min_x_, f32 f_min_y_, f32 f32_max_x_,
           f32 f32_max_y_, Color_u32 color_ = { 0xffffffff })
 {
@@ -53,7 +51,7 @@ draw_rect(Game_Offscreen_Buffer &buffer_, f32 f32_min_x_, f32 f_min_y_, f32 f32_
     }
 }
 
-void
+static void
 draw_ARGB(Game_Offscreen_Buffer &buffer_, ARGB_Img &img_, v2 pos_)
 {
     s32 min_y = math::round_f32_to_s32(pos_.y - ((f32)img_.height / 2.f));
@@ -105,13 +103,13 @@ draw_ARGB(Game_Offscreen_Buffer &buffer_, ARGB_Img &img_, v2 pos_)
     }
 }
 
-inline Tile_Map_Pos
+static Tile_Map_Pos
 get_entity_center_pos(const Entity &entity_)
 {
     return offset_pos(entity_.pos, { entity_.width / 2.f, entity_.height / 2.f });
 }
 
-void
+static void
 entity_check_tile_map(Tile_Map &tile_map_, const Entity &entity_)
 {
     // NOTE: this function gets the center of the player,
@@ -124,7 +122,7 @@ entity_check_tile_map(Tile_Map &tile_map_, const Entity &entity_)
         tile_map_.cur_tile_chunk = tile_map;
 }
 
-void
+static void
 game_ouput_sound(Game_Sound_Output_Buffer &sound_buffer_)
 {
     // NOTE: outputs nothing atm
@@ -136,7 +134,7 @@ game_ouput_sound(Game_Sound_Output_Buffer &sound_buffer_)
     }
 }
 
-void
+static void
 init_arena(Mem_Arena *arena_, mem_ind size_, byt *base_)
 {
     arena_->size = size_;
@@ -144,7 +142,7 @@ init_arena(Mem_Arena *arena_, mem_ind size_, byt *base_)
     arena_->used = 0;
 }
 
-Bitmap
+static Bitmap
 load_bmp(Thread_Context *thread_, debug_platform_read_entire_file *read_entire_file_,
          const char *file_name_)
 {
@@ -161,14 +159,14 @@ load_bmp(Thread_Context *thread_, debug_platform_read_entire_file *read_entire_f
     return result;
 }
 
-ARGB_Img
+static ARGB_Img
 load_ARGB(Thread_Context *thread_, debug_platform_read_entire_file *read_entire_file_,
           const char *file_name_)
 {
     const char *argb_dir = "T:/assets/argbs/";
     char img_path_buf[512];
     szt img_buf_len;
-    tomato::util::cat_str(argb_dir, file_name_, &img_path_buf[0], &img_buf_len);
+    util::cat_str(argb_dir, file_name_, &img_path_buf[0], &img_buf_len);
     img_path_buf[img_buf_len++] = '.';
     img_path_buf[img_buf_len++] = 'a';
     img_path_buf[img_buf_len++] = 'r';
@@ -189,7 +187,7 @@ load_ARGB(Thread_Context *thread_, debug_platform_read_entire_file *read_entire_
     return result;
 }
 
-void
+static void
 init_player(Entity &player_, ARGB_Img *sprites = nullptr)
 {
     player_.exists         = false;
@@ -207,7 +205,7 @@ init_player(Entity &player_, ARGB_Img *sprites = nullptr)
     player_.sprites = sprites;
 }
 
-void
+static void
 move_camera(Camera &camera_, Entity &entity_)
 {
     // NOTE: moves the camera_ to follow the player in set increments
@@ -230,7 +228,7 @@ move_camera(Camera &camera_, Entity &entity_)
     }
 }
 
-Player_Actions
+static Player_Actions
 process_keyboard(const Game_Keyboard_Input &keyboard)
 {
     Player_Actions result {};
@@ -245,7 +243,7 @@ process_keyboard(const Game_Keyboard_Input &keyboard)
     return result;
 }
 
-Player_Actions
+static Player_Actions
 process_controller(const Game_Controller_Input &controller_)
 {
     Player_Actions result {};
@@ -261,7 +259,7 @@ process_controller(const Game_Controller_Input &controller_)
     return result;
 }
 
-void
+static void
 update_player(Entity &player_, const Player_Actions &player_actions_, Tile_Map &tile_map_,
               const f32 delta_time_, Game_State *game_state_ = nullptr)
 {
@@ -385,7 +383,11 @@ update_player(Entity &player_, const Player_Actions &player_actions_, Tile_Map &
     }
 }
 
-}  // namespace
+static void
+do_nothing()
+{
+    printf("boobs\n");
+}
 
 void *
 push_size(Mem_Arena *arena_, mem_ind size_)
@@ -737,4 +739,4 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD ul_reason_for_call, LPVOID lpReserv
 
     #endif
 #endif
-}  // namespace tomato
+}  // namespace tom

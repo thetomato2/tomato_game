@@ -1,7 +1,7 @@
 #pragma once
 #include "framework.hpp"
 
-namespace tomato::util
+namespace tom::util
 {
 #if 0
 void
@@ -157,4 +157,4 @@ str_to_wstr(const char *str_, wchar *buf_)
 }
 
 }  // namespace win32
-}  // namespace tomato::util
+}  // namespace tom::util

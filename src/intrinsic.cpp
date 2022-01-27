@@ -1,6 +1,6 @@
 #include "intrinsic.hpp"
 
-namespace tomato::math
+namespace tom::math
 {
 
 s32
@@ -45,4 +45,4 @@ atan2(f32 x_, f32 y_)
     return result;
 }
 
-}  // namespace tomato::math
+}  // namespace tom::math

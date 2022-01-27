@@ -1,8 +1,6 @@
 #pragma once
 #include "game.hpp"
 
-namespace tomato::win32
-{
 struct Win_Dim
 {
     s32 width;
@@ -57,8 +55,8 @@ struct Game_Code
 {
     HMODULE game_code_DLL;
     FILETIME last_write_time_DLL;
-    game_update_and_render_stub *update_and_render;
-    game_get_sound_samples_stub *get_sound_samples;
+    tom::game_update_and_render_stub *update_and_render;
+    tom::game_get_sound_samples_stub *get_sound_samples;
     bool is_valid;
 };
 
@@ -69,5 +67,3 @@ struct debug_Sound_Time_Marker
     DWORD write_cursor;
 };
 #endif
-
-}  // namespace tomato::win32

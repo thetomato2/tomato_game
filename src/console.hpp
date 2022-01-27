@@ -1,7 +1,7 @@
 #pragma once
 #include "framework.hpp"
 
-namespace tomato
+namespace tom
 {
 class Console
 {
@@ -54,4 +54,4 @@ private:
     HICON _icon          = nullptr;
 };
 
-}  // namespace tomato
+}  // namespace tom

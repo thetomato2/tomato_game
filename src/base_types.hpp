@@ -24,4 +24,4 @@ using ul    = unsigned long;
 using ull   = unsigned long long;
 #endif
 
-using bool32 = s32;
+using b32 = int32_t;

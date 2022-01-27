@@ -3,7 +3,7 @@
 #include <cmath>
 #include "base_types.hpp"
 
-namespace tomato::math
+namespace tom::math
 {
 
 struct Bit_Scan_Result
@@ -60,4 +60,4 @@ cos(f32 angle_);
 f32
 atan2(f32 x_, f32 y_);
 
-}  // namespace tomato::math
+}  // namespace tom::math

@@ -1,6 +1,6 @@
 #include "utils.hpp"
 
-namespace tomato::util
+namespace tom::util
 {
 #if 0
 void
@@ -20,4 +20,4 @@ DeletionQueue::flush()
 	deletors_.clear();
 }
 #endif
-}  // namespace tomato::util
+}  // namespace tom::util

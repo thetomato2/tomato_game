@@ -2,7 +2,7 @@
 #include "base_types.hpp"
 #include "math.hpp"
 
-namespace tomato
+namespace tom
 {
 
 struct Mem_Arena;
@@ -106,4 +106,4 @@ get_centered_tile_point(u32 abs_tile_x_, u32 abs_tile_y_, u32 abs_tile_z_);
 Tile_Map_Pos
 offset_pos(const Tile_Map_Pos &pos_, v2 offset_);
 
-}  // namespace tomato
+}  // namespace tom

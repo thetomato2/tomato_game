@@ -1,7 +1,7 @@
 #pragma once
 #include "base_types.hpp"
 
-namespace tomato
+namespace tom
 {
 union v2
 {
@@ -109,4 +109,4 @@ operator*=(v2 &a_, f32 b_)
     return a_;
 }
 
-}  // namespace tomato
+}  // namespace tom

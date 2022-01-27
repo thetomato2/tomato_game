@@ -1,9 +1,8 @@
 #include "win32_layer.hpp"
 
-namespace tomato
-{
 #ifdef TOM_INTERNAL
-
+namespace tom
+{
 DEBUG_PLATFORM_FREE_FILE_MEMORY(_debug_platform_free_file_memory)
 {
     if (memory_) {
@@ -44,7 +43,7 @@ DEBUG_PLATFORM_READ_ENTIRE_FILE(_debug_platform_read_entire_file)
 
 DEBUG_PLATFORM_WRITE_ENTIRE_FILE(_debug_platform_write_entire_file)
 {
-    bool32 success = false;
+    b32 success = false;
 
     HANDLE file_handle = CreateFileA(file_name_, GENERIC_WRITE, 0, 0, CREATE_ALWAYS, 0, 0);
     if (file_handle != INVALID_HANDLE_VALUE) {
@@ -61,10 +60,9 @@ DEBUG_PLATFORM_WRITE_ENTIRE_FILE(_debug_platform_write_entire_file)
     return success;
 }
 
+}  // namespace tom
 #endif
 
-namespace win32
-{
 //! this is a roundabout way of extracting a method out of a header...
 #define X_INPUT_GET_STATE(name) DWORD WINAPI name(DWORD dwUserIndex, XINPUT_STATE *pState)
 typedef X_INPUT_GET_STATE(x_input_get_state);
@@ -302,9 +300,9 @@ load_game_code(const TCHAR *DLL_name_)
 
     code.game_code_DLL = LoadLibrary(DLL_copy);
     if (code.game_code_DLL) {
-        code.update_and_render = (game_update_and_render_stub *)GetProcAddress(
+        code.update_and_render = (tom::game_update_and_render_stub *)GetProcAddress(
             code.game_code_DLL, "game_update_and_render");
-        code.get_sound_samples = (game_get_sound_samples_stub *)GetProcAddress(
+        code.get_sound_samples = (tom::game_get_sound_samples_stub *)GetProcAddress(
             code.game_code_DLL, "game_get_sound_samples");
         code.is_valid = (code.update_and_render && code.get_sound_samples);
     }
@@ -413,7 +411,7 @@ init_WASAPI(s32 samples_per_second_, s32 buffer_size_in_samples_)
 
 void
 fill_sound_buffer(Sound_Output &sound_output_, s32 samples_to_write_,
-                  Game_Sound_Output_Buffer &source_buffer)
+                  tom::Game_Sound_Output_Buffer &source_buffer)
 {
     {
         BYTE *soundBufDat;
@@ -500,7 +498,7 @@ display_buffer_in_window(HDC hdc_, Offscreen_Buffer &buffer_, s32 x_, s32 y_, s3
 }
 
 void
-process_keyboard_message(Game_Button_State &new_state_, const bool32 is_down_)
+process_keyboard_message(tom::Game_Button_State &new_state_, const b32 is_down_)
 {
     if (new_state_.ended_down != (is_down_ != 0)) {
         new_state_.ended_down = is_down_;
@@ -509,8 +507,8 @@ process_keyboard_message(Game_Button_State &new_state_, const bool32 is_down_)
 }
 
 void
-process_Xinput_digital_button(DWORD Xinput_button_state_, Game_Button_State &old_state_,
-                              DWORD button_bit_, Game_Button_State &new_state_)
+process_Xinput_digital_button(DWORD Xinput_button_state_, tom::Game_Button_State &old_state_,
+                              DWORD button_bit_, tom::Game_Button_State &new_state_)
 {
     new_state_.ended_down = ((Xinput_button_state_ & button_bit_) == button_bit_);
     if (new_state_.ended_down && old_state_.ended_down)
@@ -518,7 +516,7 @@ process_Xinput_digital_button(DWORD Xinput_button_state_, Game_Button_State &old
 }
 
 void
-do_controller_input(Game_Input &old_input_, Game_Input &new_input_, HWND hWnd_)
+do_controller_input(tom::Game_Input &old_input_, tom::Game_Input &new_input_, HWND hWnd_)
 {
     // mouse cursor
     POINT mouse_point;
@@ -533,7 +531,7 @@ do_controller_input(Game_Input &old_input_, Game_Input &new_input_, HWND hWnd_)
     process_keyboard_message(new_input_.mouse_buttons[1], ::GetKeyState(VK_RBUTTON) & (1 << 15));
     process_keyboard_message(new_input_.mouse_buttons[2], ::GetKeyState(VK_MBUTTON) & (1 << 15));
 
-    for (szt key {}; key < Game_Keyboard_Input::s_key_cnt; ++key) {
+    for (szt key {}; key < tom::Game_Keyboard_Input::s_key_cnt; ++key) {
         if (old_input_.keyboard.keys[key].half_transition_count > 0 &&
             old_input_.keyboard.keys[key].ended_down == 0)
             old_input_.keyboard.keys[key].half_transition_count = 0;
@@ -564,8 +562,8 @@ do_controller_input(Game_Input &old_input_, Game_Input &new_input_, HWND hWnd_)
     }
 
     for (DWORD controller_index = 0; controller_index < XUSER_MAX_COUNT; controller_index++) {
-        Game_Controller_Input &old_controller = old_input_.controllers[controller_index];
-        Game_Controller_Input &new_controller = new_input_.controllers[controller_index];
+        tom::Game_Controller_Input &old_controller = old_input_.controllers[controller_index];
+        tom::Game_Controller_Input &new_controller = new_input_.controllers[controller_index];
 
         XINPUT_STATE controller_state;
         if (XInputGetState(controller_index, &controller_state) == ERROR_SUCCESS) {
@@ -586,8 +584,8 @@ do_controller_input(Game_Input &old_input_, Game_Input &new_input_, HWND hWnd_)
                     return (f32)val / 32767.0f;
             };
 
-            v2 stick_left;
-            v2 stick_right;
+            tom::v2 stick_left;
+            tom::v2 stick_right;
             stick_left.x  = normalize(pad.sThumbLX);
             stick_left.y  = normalize(pad.sThumbLY);
             stick_right.x = normalize(pad.sThumbRX);
@@ -598,7 +596,7 @@ do_controller_input(Game_Input &old_input_, Game_Input &new_input_, HWND hWnd_)
             new_controller.min.y = new_controller.max.y = new_controller.end_left_stick.y =
                 stick_left.y;
 
-            for (szt button {}; button < Game_Controller_Input::s_button_cnt; ++button) {
+            for (szt button {}; button < tom::Game_Controller_Input::s_button_cnt; ++button) {
                 if (!old_controller.buttons[button].ended_down)
                     old_controller.buttons[button].half_transition_count = 0;
             }
@@ -664,7 +662,7 @@ get_seconds_elapsed(LARGE_INTEGER start_, LARGE_INTEGER end_)
 
 #if REPLAY_BUFFERS == 1
 void
-get_input_file_path(Win32_State &state_, bool32 is_input_stream_)
+get_input_file_path(Win32_State &state_, b32 is_input_stream_)
 {
     int x = 0;
 }
@@ -728,14 +726,14 @@ end_input_playback(Win32_State &state_)
 }
 
 void
-record_input(Win32_State &state_, Game_Input &new_input_)
+record_input(Win32_State &state_, tom::Game_Input &new_input_)
 {
     DWORD bytes_written;
     WriteFile(state_.recording_handle, &new_input_, sizeof(new_input_), &bytes_written, 0);
 }
 
 void
-playback_input(Win32_State &state_, Game_Input &new_input_)
+playback_input(Win32_State &state_, tom::Game_Input &new_input_)
 {
     DWORD bytes_read;
     if (ReadFile(state_.playback_handle, &new_input_, sizeof(new_input_), &bytes_read, 0)) {
@@ -751,7 +749,7 @@ playback_input(Win32_State &state_, Game_Input &new_input_)
 #endif
 
 void
-process_pending_messages(Win32_State &state_, Game_Input &input_)
+process_pending_messages(Win32_State &state_, tom::Game_Input &input_)
 {
     MSG msg;
     while (PeekMessage(&msg, 0, 0, 0, PM_REMOVE)) {
@@ -866,7 +864,7 @@ s32
 Main(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLine, s32 nShowCmd)
 {
     // Init
-    auto console = new Console();
+    auto console = new tom::Console();
     assert(console);
     printf("Starting...\n");
 
@@ -955,7 +953,7 @@ Main(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLine, s32 nShowCm
     // NOTE: Set the windows schedule granularity to 1ms
     // so sleep will be more granular
     UINT desired_scheduler_MS = 1;
-    bool32 is_sleep_granular  = (timeBeginPeriod(desired_scheduler_MS) == TIMERR_NOERROR);
+    b32 is_sleep_granular     = (timeBeginPeriod(desired_scheduler_MS) == TIMERR_NOERROR);
     is_sleep_granular         = false;
 
     HDC device_context                  = GetDC(hWnd);
@@ -987,12 +985,12 @@ Main(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLine, s32 nShowCm
     LPVOID base_address       = 0;
 #endif
 
-    Game_Mem memory                   = {};
+    tom::Game_Mem memory              = {};
     memory.permanent_storage_size     = MEGABYTES(64);
     memory.transient_storage_size     = GIGABYTES(1);
-    memory.platform_free_file_memory  = _debug_platform_free_file_memory;
-    memory.platfrom_read_entire_file  = _debug_platform_read_entire_file;
-    memory.platform_write_entire_file = _debug_platform_write_entire_file;
+    memory.platform_free_file_memory  = tom::_debug_platform_free_file_memory;
+    memory.platfrom_read_entire_file  = tom::_debug_platform_read_entire_file;
+    memory.platform_write_entire_file = tom::_debug_platform_write_entire_file;
 
     state.total_size = memory.permanent_storage_size + memory.transient_storage_size;
     // TODO: use large pages
@@ -1025,9 +1023,9 @@ Main(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLine, s32 nShowCm
     }
 #endif
 
-    Game_Input input[2]   = {};
-    Game_Input *new_input = &input[0];
-    Game_Input *old_input = &input[1];
+    tom::Game_Input input[2]   = {};
+    tom::Game_Input *new_input = &input[0];
+    tom::Game_Input *old_input = &input[1];
 
     LARGE_INTEGER last_counter = get_wall_clock();
     u64 last_cycle_count       = __rdtsc();
@@ -1075,18 +1073,18 @@ Main(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLine, s32 nShowCm
             // assert(samplesToWrite < maxSampleCnt);
         }
 
-        Game_Sound_Output_Buffer sound_buffer {};
+        tom::Game_Sound_Output_Buffer sound_buffer {};
         sound_buffer.samples_per_second = sound_output.samples_per_sec;
         sound_buffer.sample_count       = samples_to_write;
         sound_buffer.samples            = samples;
 
         // video
-        Game_Offscreen_Buffer buffer = {};
-        buffer.memory                = global::back_buffer.memory;
-        buffer.width                 = global::back_buffer.width;
-        buffer.height                = global::back_buffer.height;
-        buffer.bytes_per_pixel       = 4;
-        buffer.pitch                 = global::back_buffer.pitch;
+        tom::Game_Offscreen_Buffer buffer = {};
+        buffer.memory                     = global::back_buffer.memory;
+        buffer.width                      = global::back_buffer.width;
+        buffer.height                     = global::back_buffer.height;
+        buffer.bytes_per_pixel            = 4;
+        buffer.pitch                      = global::back_buffer.pitch;
 
 #if REPLAY_BUFFERS
         if (state.input_recording_index) {
@@ -1101,7 +1099,7 @@ Main(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLine, s32 nShowCm
         // isGameCodeLoaded = false;
 
         // NOTE: dummy thread context, for now
-        Thread_Context thread {};
+        tom::Thread_Context thread {};
 
         if (is_game_code_loaded) {
             code.update_and_render(&thread, memory, *input, buffer, sound_buffer);
@@ -1162,9 +1160,9 @@ Main(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLine, s32 nShowCm
             write_cursor -= sound_output.secondary_buf_size;
         }
 
-        Game_Input *temp_input = new_input;
-        new_input              = old_input;
-        old_input              = temp_input;
+        tom::Game_Input *temp_input = new_input;
+        new_input                   = old_input;
+        old_input                   = temp_input;
 
         u64 end_cycle_count = __rdtsc();
         u64 cycles_elapsed  = end_cycle_count - last_cycle_count;
@@ -1173,9 +1171,6 @@ Main(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLine, s32 nShowCm
 
     return 0;
 }
-
-}  // namespace win32
-}  // namespace tomato
 
 //========================================================================================
 // ENTRY POINT
@@ -1199,7 +1194,7 @@ wWinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _In_ LPWSTR
     HRESULT hr = CoInitializeEx(nullptr, COINITBASE_MULTITHREADED);
     if (FAILED(hr)) return 1;
 
-    s32 ecode = tomato::win32::Main(hInstance, hPrevInstance, lpCmdLine, nCmdShow);
+    s32 ecode = Main(hInstance, hPrevInstance, lpCmdLine, nCmdShow);
 
     CoUninitialize();
 

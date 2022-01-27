@@ -90,7 +90,7 @@ win32_read_file(const char *file_name_)
 bool
 win32_write_file(const char *file_name_, u64 memory_size_, void *memory_)
 {
-    bool32 success = false;
+    b32 success = false;
 
     HANDLE file_handle = CreateFileA(file_name_, GENERIC_WRITE, 0, 0, CREATE_ALWAYS, 0, 0);
     if (file_handle != INVALID_HANDLE_VALUE) {

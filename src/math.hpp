@@ -6,7 +6,7 @@
 
 // TODO: convert all of these to platform-efficient versions and remove cmath
 
-namespace tomato
+namespace tom
 {
 
 namespace math
@@ -96,4 +96,4 @@ ceil_f32_to_s32(f32 val_)
 }
 
 }  // namespace math
-}  // namespace tomato
+}  // namespace tom
