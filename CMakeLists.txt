@@ -72,13 +72,13 @@ add_library(Tomato_Game_Lib SHARED
     ${Source_Dir}/intrinsic.cpp
     ${Source_Dir}/intrinsic.hpp
     ${Source_Dir}/macros.hpp
-    ${Source_Dir}/math.cpp
     ${Source_Dir}/math.hpp
     ${Source_Dir}/rng_nums.h
     ${Source_Dir}/tile.cpp
     ${Source_Dir}/tile.hpp
     ${Source_Dir}/utils.cpp
     ${Source_Dir}/utils.hpp
+    ${Source_Dir}/vector.hpp
     )
 
 set_target_properties(Tomato_Game_Lib PROPERTIES OUTPUT_NAME tomato_game)
