@@ -1,14 +1,9 @@
-#include "game.hpp"
+#include "tomato_game.hpp"
 
-namespace tom
-{
-namespace global
-{
-static constexpr u32 s_tile_size_pixels = 40;
-static constexpr f32 s_meters_to_pixels = s_tile_size_pixels / Tile_Map::s_tile_size_meters;
+static constexpr u32 gs_tile_size_pixels = 40;
+static constexpr f32 gs_meters_to_pixels = gs_tile_size_pixels / Tile_Map::s_tile_size_meters;
 
 #include "rng_nums.h"
-}  // namespace global
 
 static void
 clear_buffer(Game_Offscreen_Buffer &buffer_, Color_u32 color_ = { 0xff'ff'00'ff })
@@ -30,10 +25,10 @@ static void
 draw_rect(Game_Offscreen_Buffer &buffer_, f32 f32_min_x_, f32 f_min_y_, f32 f32_max_x_,
           f32 f32_max_y_, Color_u32 color_ = { 0xffffffff })
 {
-    s32 min_x = math::round_f32_to_s32(f32_min_x_);
-    s32 min_y = math::round_f32_to_s32(f_min_y_);
-    s32 max_x = math::round_f32_to_s32(f32_max_x_);
-    s32 max_y = math::round_f32_to_s32(f32_max_y_);
+    s32 min_x = round_f32_to_s32(f32_min_x_);
+    s32 min_y = round_f32_to_s32(f_min_y_);
+    s32 max_x = round_f32_to_s32(f32_max_x_);
+    s32 max_y = round_f32_to_s32(f32_max_y_);
 
     if (min_x < 0) min_x = 0;
     if (min_y < 0) min_y = 0;
@@ -54,10 +49,10 @@ draw_rect(Game_Offscreen_Buffer &buffer_, f32 f32_min_x_, f32 f_min_y_, f32 f32_
 static void
 draw_ARGB(Game_Offscreen_Buffer &buffer_, ARGB_Img &img_, v2 pos_)
 {
-    s32 min_y = math::round_f32_to_s32(pos_.y - ((f32)img_.height / 2.f));
-    s32 min_x = math::round_f32_to_s32(pos_.x - ((f32)img_.width / 2.f));
-    s32 max_y = math::round_f32_to_s32(pos_.y + ((f32)img_.height / 2.f));
-    s32 max_x = math::round_f32_to_s32(pos_.x + ((f32)img_.width / 2.f));
+    s32 min_y = round_f32_to_s32(pos_.y - ((f32)img_.height / 2.f));
+    s32 min_x = round_f32_to_s32(pos_.x - ((f32)img_.width / 2.f));
+    s32 max_y = round_f32_to_s32(pos_.y + ((f32)img_.height / 2.f));
+    s32 max_x = round_f32_to_s32(pos_.x + ((f32)img_.width / 2.f));
 
     s32 x_offset_left {}, x_offset_right {}, y_offset {};
 
@@ -167,7 +162,7 @@ load_ARGB(Thread_Context *thread_, debug_platform_read_entire_file *read_entire_
     const char *argb_dir = "T:/assets/argbs/";
     char img_path_buf[512];
     szt img_buf_len;
-    util::cat_str(argb_dir, file_name_, &img_path_buf[0], &img_buf_len);
+    cat_str(argb_dir, file_name_, &img_path_buf[0], &img_buf_len);
     img_path_buf[img_buf_len++] = '.';
     img_path_buf[img_buf_len++] = 'a';
     img_path_buf[img_buf_len++] = 'r';
@@ -305,7 +300,7 @@ process_controller(const Game_Controller_Input &controller_)
     if (is_button_up(controller_.button_start)) result.start = true;
 
     if (controller_.is_analog) {
-        result.dir = controller_.end_left_stick;
+        result.dir = { controller_.end_left_stick_x, controller_.end_left_stick_y };
     }
 
     if (controller_.button_A.ended_down) result.sprint = true;
@@ -320,16 +315,15 @@ update_player(Entity player_, const Player_Actions &player_actions_, Tile_Map &t
     v2 r {};  // reflect vector
     v2 player_acc { player_actions_.dir };
     // NOTE: normalize vector to unit length
-    f32 player_acc_length = math::length_sq(player_acc);
-    if (player_acc_length > 1.0f) player_acc *= (1.f / math::sqrt_f32(player_acc_length));
+    f32 player_acc_length = length_sq(player_acc);
+    if (player_acc_length > 1.0f) player_acc *= (1.f / sqrt_f32(player_acc_length));
     f32 player_speed = player_actions_.sprint ? 50.f : 25.f;
     player_acc *= player_speed;
     player_acc -= player_.high->vel * 10.f;
 
     auto old_player_pos { player_.dormant->pos };
     auto new_player_pos { player_.dormant->pos };
-    v2 player_delta { (.5f * player_acc * math::square(delta_time_) +
-                       player_.high->vel * delta_time_) };
+    v2 player_delta { (.5f * player_acc * square(delta_time_) + player_.high->vel * delta_time_) };
     player_.high->vel += player_acc * delta_time_;
     new_player_pos = offset_pos(new_player_pos, player_delta);
 
@@ -366,7 +360,7 @@ update_player(Entity player_, const Player_Actions &player_actions_, Tile_Map &t
 
                     if (t_res >= 0.f && (t_min > t_res)) {
                         if (y >= min_y && y <= max_y) {
-                            t_min = math::max(0.f, t_res - t_esp);
+                            t_min = max(0.f, t_res - t_esp);
                             hit   = true;
                         }
                     }
@@ -394,8 +388,8 @@ update_player(Entity player_, const Player_Actions &player_actions_, Tile_Map &t
 
             if (hit_ent_ind) {
                 // player_.dormant->pos = offset_pos(player_.dormant->pos, t_min * player_delta);
-                player_.high->vel -= 1.f * math::inner(player_.high->vel, wall_nrm) * wall_nrm;
-                player_delta -= 1.f * math::inner(player_delta, wall_nrm) * wall_nrm;
+                player_.high->vel -= 1.f * inner(player_.high->vel, wall_nrm) * wall_nrm;
+                player_delta -= 1.f * inner(player_delta, wall_nrm) * wall_nrm;
                 t_remain -= t_min * t_remain;
 
                 Entity hit_ent = get_entity(game_state_, hit_ent_ind);
@@ -417,9 +411,9 @@ update_player(Entity player_, const Player_Actions &player_actions_, Tile_Map &t
 
     // NOTE: changes the players direction for the sprite
     v2 pv = player_.high->vel;
-    if (math::abs_f32(pv.x) > math::abs_f32(pv.y)) {
+    if (abs_f32(pv.x) > abs_f32(pv.y)) {
         pv.x > 0.f ? player_.high->direction = Dir::right : player_.high->direction = Dir::left;
-    } else if (math::abs_f32(pv.y) > math::abs_f32(pv.x)) {
+    } else if (abs_f32(pv.y) > abs_f32(pv.x)) {
         pv.y > 0.f ? player_.high->direction = Dir::up : player_.high->direction = Dir::down;
     }
 }
@@ -513,7 +507,7 @@ GAME_UPDATE_AND_RENDER(game_update_and_render)
         bool stairs_back = false;
 
         for (u32 screen_ind {}; screen_ind < Game_State::s_num_screens; ++screen_ind) {
-            u32 rng_choice = global::rng_table[rng_ind++] % 3;
+            u32 rng_choice = rng_table[rng_ind++] % 3;
 
             switch (rng_choice) {
                 case 0: {
@@ -718,16 +712,16 @@ GAME_UPDATE_AND_RENDER(game_update_and_render)
                 tile_color.argb = 0xff'ff'00'00;
             }
 
-            v2 center { (screen_center.x - (camera.pos.offset.x * global::s_meters_to_pixels) +
-                         (f32)rel_x * global::s_tile_size_pixels),
-                        (screen_center.y + (camera.pos.offset.y * global::s_meters_to_pixels) -
-                         (f32)rel_y * global::s_tile_size_pixels) };
+            v2 center { (screen_center.x - (camera.pos.offset.x * gs_meters_to_pixels) +
+                         (f32)rel_x * gs_tile_size_pixels),
+                        (screen_center.y + (camera.pos.offset.y * gs_meters_to_pixels) -
+                         (f32)rel_y * gs_tile_size_pixels) };
 
-            v2 min { (center.x - .5f * global::s_tile_size_pixels),
-                     (center.y - .5f * global::s_tile_size_pixels) };
+            v2 min { (center.x - .5f * gs_tile_size_pixels),
+                     (center.y - .5f * gs_tile_size_pixels) };
 
-            v2 max { (center.x + .5f * global::s_tile_size_pixels),
-                     (center.y + .5f * global::s_tile_size_pixels) };
+            v2 max { (center.x + .5f * gs_tile_size_pixels),
+                     (center.y + .5f * gs_tile_size_pixels) };
 
             draw_rect(video_buffer_, min.x, min.y, max.x, max.y, tile_color);
         }
@@ -740,9 +734,8 @@ GAME_UPDATE_AND_RENDER(game_update_and_render)
             camera.pos.abs_tile_z == cur_player.dormant->pos.abs_tile_z) {
             auto player_dif = get_tile_diff(cur_player.dormant->pos, camera.pos);
 
-            v2 player_mid { (screen_center.x + (player_dif.dif_xy.x * global::s_meters_to_pixels)),
-                            (screen_center.y -
-                             (player_dif.dif_xy.y * global::s_meters_to_pixels)) };
+            v2 player_mid { (screen_center.x + (player_dif.dif_xy.x * gs_meters_to_pixels)),
+                            (screen_center.y - (player_dif.dif_xy.y * gs_meters_to_pixels)) };
 
             v2 argb_mid { player_mid.x, player_mid.y - 16 };
 
@@ -761,8 +754,8 @@ GAME_UPDATE_AND_RENDER(game_update_and_render)
                     auto player_dif = get_tile_diff(cur_player.pos, camera.pos);
 
                     v2 player_mid {
-                        (screen_center.x + (player_dif.dif_xy.x * global::s_meters_to_pixels)),
-                        (screen_center.y - (player_dif.dif_xy.y * global::s_meters_to_pixels))
+                        (screen_center.x + (player_dif.dif_xy.x * gs_meters_to_pixels)),
+                        (screen_center.y - (player_dif.dif_xy.y * gs_meters_to_pixels))
                     };
 
                     v2 argb_mid { player_mid.x, player_mid.y - 16 };
@@ -776,8 +769,8 @@ GAME_UPDATE_AND_RENDER(game_update_and_render)
 #endif
     // NOTE: hacky way to draw a debug postion
     auto test_dif = get_tile_diff(game_state.test_pos, camera.pos);
-    v2 test_mid { (screen_center.x + (test_dif.dif_xy.x * global::s_meters_to_pixels)),
-                  (screen_center.y - (test_dif.dif_xy.y * global::s_meters_to_pixels)) };
+    v2 test_mid { (screen_center.x + (test_dif.dif_xy.x * gs_meters_to_pixels)),
+                  (screen_center.y - (test_dif.dif_xy.y * gs_meters_to_pixels)) };
     draw_ARGB(video_buffer_, game_state.crosshair_img, test_mid);
 
     // constexpr s32 square_offset = 0;
@@ -811,4 +804,3 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD ul_reason_for_call, LPVOID lpReserv
 
     #endif
 #endif
-}  // namespace tom

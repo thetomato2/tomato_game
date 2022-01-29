@@ -1,16 +1,11 @@
-#include "tile.hpp"
-#include "framework.hpp"
-#include "game.hpp"
-
-namespace tom
-{
+#include "tomato_tile.hpp"
 
 void
 recanonicalize_coord(u32 &tile_, f32 &tile_rel_)
 {
     // NOTE: world is assumed to be toroidal (torus shaped world),
     // if you step off one end where you wrap around
-    s32 offset = math::round_f32_to_s32(tile_rel_ / (f32)Tile_Map::s_tile_size_meters);
+    s32 offset = round_f32_to_s32(tile_rel_ / (f32)Tile_Map::s_tile_size_meters);
 
     tile_ += offset;
     tile_rel_ -= offset * (f32)Tile_Map::s_tile_size_meters;
@@ -205,4 +200,3 @@ offset_pos(const Tile_Map_Pos &pos_, const v2 offset_)
 
     return result;
 }
-}  // namespace tom

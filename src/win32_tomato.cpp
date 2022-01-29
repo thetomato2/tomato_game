@@ -1,8 +1,30 @@
-#include "win32_layer.hpp"
+#include "win32_tomato.hpp"
+
+// ===============================================================================================
+// #GLOBALS
+// ===============================================================================================
+
+static constexpr u32 g_game_update_hertz        = 60;
+static constexpr f32 g_target_frames_per_second = 1.f / (f32)g_game_update_hertz;
+
+static bool running;
+static bool g_pause;
+
+static WINDOWPLACEMENT g_win_pos    = { sizeof(g_win_pos) };
+static const TCHAR *g_game_DLL_name = _T("tomato_game.dll");
+static bool g_debug_show_cursor;
+
+static Offscreen_Buffer g_back_buffer;
+static Win_Dim g_win_dim;
+static s64 g_performance_counter_frequency;
+
+// TODO: the sleep precision issue is keeping this above 1 frame... I think
+static constexpr f32 g_frames_of_audio_latency = (1.1f / 30) * g_game_update_hertz;
+static IAudioClient *g_audio_client;
+static IAudioRenderClient *g_audio_render_client;
+static IAudioClock *g_audio_clock;
 
 #ifdef TOM_INTERNAL
-namespace tom
-{
 DEBUG_PLATFORM_FREE_FILE_MEMORY(_debug_platform_free_file_memory)
 {
     if (memory_) {
@@ -19,7 +41,7 @@ DEBUG_PLATFORM_READ_ENTIRE_FILE(_debug_platform_read_entire_file)
     if (file_handle != INVALID_HANDLE_VALUE) {
         LARGE_INTEGER fileSize;
         if (GetFileSizeEx(file_handle, &fileSize)) {
-            u32 fileSize32 = math::safe_truncate_u32_to_u64(fileSize.QuadPart);
+            u32 fileSize32 = safe_truncate_u32_to_u64(fileSize.QuadPart);
             file.contents  = VirtualAlloc(0, fileSize32, MEM_RESERVE | MEM_COMMIT, PAGE_READWRITE);
             if (file.contents) {
                 DWORD bytesRead;
@@ -60,7 +82,6 @@ DEBUG_PLATFORM_WRITE_ENTIRE_FILE(_debug_platform_write_entire_file)
     return success;
 }
 
-}  // namespace tom
 #endif
 
 //! this is a roundabout way of extracting a method out of a header...
@@ -83,164 +104,7 @@ static x_input_set_state *XInputSetState_ = XInputSetStateStub;
 #define XInputGetState XInputGetState_
 #define XInputSetState XInputSetState_
 
-namespace
-{
 // windows keymap
-enum Keys : byt
-{
-    none           = 0,
-    back           = 0x8,
-    tab            = 0x9,
-    enter          = 0xd,
-    pause          = 0x13,
-    caps_lock      = 0x14,
-    kana           = 0x15,
-    kanji          = 0x19,
-    escape         = 0x1b,
-    ime_convert    = 0x1c,
-    ime_no_convert = 0x1d,
-    space          = 0x20,
-    pageUp         = 0x21,
-    pageDown       = 0x22,
-    end            = 0x23,
-    home           = 0x24,
-    left           = 0x25,
-    up             = 0x26,
-    right          = 0x27,
-    down           = 0x28,
-    select         = 0x29,
-    print          = 0x2a,
-    execute        = 0x2b,
-    print_screen   = 0x2c,
-    insert         = 0x2d,
-    delete_key     = 0x2e,
-    help           = 0x2f,
-    d0             = 0x30,
-    d1             = 0x31,
-    d2             = 0x32,
-    d3             = 0x33,
-    d4             = 0x34,
-    d5             = 0x35,
-    d6             = 0x36,
-    d7             = 0x37,
-    d8             = 0x38,
-    d9             = 0x39,
-    a              = 0x41,
-    b              = 0x42,
-    c              = 0x43,
-    d              = 0x44,
-    e              = 0x45,
-    f              = 0x46,
-    g              = 0x47,
-    h              = 0x48,
-    i              = 0x49,
-    j              = 0x4a,
-    k              = 0x4b,
-    l              = 0x4c,
-    m              = 0x4d,
-    n              = 0x4e,
-    o              = 0x4f,
-    p              = 0x50,
-    q              = 0x51,
-    r              = 0x52,
-    s              = 0x53,
-    t              = 0x54,
-    u              = 0x55,
-    v              = 0x56,
-    w              = 0x57,
-    x              = 0x58,
-    y              = 0x59,
-    z              = 0x5a,
-    left_windows   = 0x5b,
-    right_windows  = 0x5c,
-    apps           = 0x5d,
-    sleep          = 0x5f,
-    num_pad_0      = 0x60,
-    num_pad_1      = 0x61,
-    num_pad_2      = 0x62,
-    num_pad_3      = 0x63,
-    num_pad_4      = 0x64,
-    num_pad_5      = 0x65,
-    num_pad_6      = 0x66,
-    num_pad_7      = 0x67,
-    num_pad_8      = 0x68,
-    num_pad_9      = 0x69,
-    multiply       = 0x6a,
-    add            = 0x6b,
-    separator      = 0x6c,
-    subtract       = 0x6d,
-    decimal        = 0x6e,
-    divide         = 0x6f,
-    f1             = 0x70,
-    f2             = 0x71,
-    f3             = 0x72,
-    f4             = 0x73,
-    f5             = 0x74,
-    f6             = 0x75,
-    f7             = 0x76,
-    f8             = 0x77,
-    f9             = 0x78,
-    f10            = 0x79,
-    f11            = 0x7a,
-    f12            = 0x7b,
-    f13            = 0x7c,
-    f14            = 0x7d,
-    f15            = 0x7e,
-    f16            = 0x7f,
-    f17            = 0x80,
-    f18            = 0x81,
-    f19            = 0x82,
-    f20            = 0x83,
-    f21            = 0x84,
-    f22            = 0x85,
-    f23            = 0x86,
-    f24            = 0x87,
-    num_lock       = 0x90,
-    scroll         = 0x91,
-    left_shift     = 0xa0,
-    right_shift    = 0xa1,
-    left_control   = 0xa2,
-    right_control  = 0xa3,
-    left_alt       = 0xa4,
-    right_alt      = 0xa5,
-    semicolon      = 0xba,
-    plus           = 0xbb,
-    comma          = 0xbc,
-    minus          = 0xbd,
-    period         = 0xbe,
-    question       = 0xbf,
-    tilde          = 0xc0,
-    open_brackets  = 0xdb,
-    pipe           = 0xdc,
-    close_brackets = 0xdd,
-    quotes         = 0xde,
-    oem8           = 0xdf,
-    backslash      = 0xe2,
-    process_key    = 0xe5,
-};
-
-namespace global
-{
-constexpr u32 game_update_hertz        = 60;
-constexpr f32 target_frames_per_second = 1.f / (f32)game_update_hertz;
-
-bool running;
-bool pause;
-
-WINDOWPLACEMENT win_pos    = { sizeof(win_pos) };
-const TCHAR *game_DLL_name = _T("tomato_game.dll");
-bool debug_show_cursor;
-
-Offscreen_Buffer back_buffer;
-Win_Dim win_dim;
-s64 performance_counter_frequency;
-
-// TODO: the sleep precision issue is keeping this above 1 frame... I think
-constexpr f32 frames_of_audio_latency = (1.1f / 30) * game_update_hertz;
-IAudioClient *audio_client;
-IAudioRenderClient *audio_render_client;
-IAudioClock *audio_clock;
-}  // namespace global
 
 void
 toggle_fullscreen(HWND hWnd_)
@@ -248,7 +112,7 @@ toggle_fullscreen(HWND hWnd_)
     DWORD dwStyle = GetWindowLong(hWnd_, GWL_STYLE);
     if (dwStyle & WS_OVERLAPPEDWINDOW) {
         MONITORINFO mi = { sizeof(mi) };
-        if (GetWindowPlacement(hWnd_, &global::win_pos) &&
+        if (GetWindowPlacement(hWnd_, &g_win_pos) &&
             GetMonitorInfo(MonitorFromWindow(hWnd_, MONITOR_DEFAULTTOPRIMARY), &mi)) {
             SetWindowLong(hWnd_, GWL_STYLE, dwStyle & ~WS_OVERLAPPEDWINDOW);
             SetWindowPos(hWnd_, HWND_TOP, mi.rcMonitor.left, mi.rcMonitor.top,
@@ -258,7 +122,7 @@ toggle_fullscreen(HWND hWnd_)
         }
     } else {
         SetWindowLong(hWnd_, GWL_STYLE, dwStyle | WS_OVERLAPPEDWINDOW);
-        SetWindowPlacement(hWnd_, &global::win_pos);
+        SetWindowPlacement(hWnd_, &g_win_pos);
         SetWindowPos(hWnd_, NULL, 0, 0, 0, 0,
                      SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER | SWP_NOOWNERZORDER | SWP_FRAMECHANGED);
     }
@@ -300,9 +164,9 @@ load_game_code(const TCHAR *DLL_name_)
 
     code.game_code_DLL = LoadLibrary(DLL_copy);
     if (code.game_code_DLL) {
-        code.update_and_render = (tom::game_update_and_render_stub *)GetProcAddress(
+        code.update_and_render = (game_update_and_render_stub *)GetProcAddress(
             code.game_code_DLL, "game_update_and_render");
-        code.get_sound_samples = (tom::game_get_sound_samples_stub *)GetProcAddress(
+        code.get_sound_samples = (game_get_sound_samples_stub *)GetProcAddress(
             code.game_code_DLL, "game_get_sound_samples");
         code.is_valid = (code.update_and_render && code.get_sound_samples);
     }
@@ -364,7 +228,7 @@ init_WASAPI(s32 samples_per_second_, s32 buffer_size_in_samples_)
     }
 
     if (FAILED(device->Activate(__uuidof(IAudioClient), CLSCTX_ALL, NULL,
-                                (LPVOID *)&global::audio_client))) {
+                                (LPVOID *)&g_audio_client))) {
         assert(false);
     }
 
@@ -385,22 +249,21 @@ init_WASAPI(s32 samples_per_second_, s32 buffer_size_in_samples_)
 
     REFERENCE_TIME buffer_duration = 10000000ULL * buffer_size_in_samples_ /
                                      samples_per_second_;  // buffer size in 100 nanoseconds
-    if (FAILED(global::audio_client->Initialize(AUDCLNT_SHAREMODE_SHARED,
-                                                AUDCLNT_STREAMFLAGS_NOPERSIST, buffer_duration, 0,
-                                                &wave_format.Format, nullptr))) {
+    if (FAILED(g_audio_client->Initialize(AUDCLNT_SHAREMODE_SHARED, AUDCLNT_STREAMFLAGS_NOPERSIST,
+                                          buffer_duration, 0, &wave_format.Format, nullptr))) {
         assert(false);
     }
 
-    if (FAILED(global::audio_client->GetService(IID_PPV_ARGS(&global::audio_render_client)))) {
+    if (FAILED(g_audio_client->GetService(IID_PPV_ARGS(&g_audio_render_client)))) {
         assert(false);
     }
 
     UINT32 soundFrmCnt;
-    if (FAILED(global::audio_client->GetBufferSize(&soundFrmCnt))) {
+    if (FAILED(g_audio_client->GetBufferSize(&soundFrmCnt))) {
         assert(false);
     }
 
-    if (FAILED(global::audio_client->GetService(IID_PPV_ARGS(&global::audio_clock)))) {
+    if (FAILED(g_audio_client->GetService(IID_PPV_ARGS(&g_audio_clock)))) {
         assert(false);
     }
 
@@ -411,12 +274,11 @@ init_WASAPI(s32 samples_per_second_, s32 buffer_size_in_samples_)
 
 void
 fill_sound_buffer(Sound_Output &sound_output_, s32 samples_to_write_,
-                  tom::Game_Sound_Output_Buffer &source_buffer)
+                  Game_Sound_Output_Buffer &source_buffer)
 {
     {
         BYTE *soundBufDat;
-        if (SUCCEEDED(
-                global::audio_render_client->GetBuffer((UINT32)samples_to_write_, &soundBufDat))) {
+        if (SUCCEEDED(g_audio_render_client->GetBuffer((UINT32)samples_to_write_, &soundBufDat))) {
             s16 *sourceSample = source_buffer.samples;
             s16 *destSample   = (s16 *)soundBufDat;
             for (szt i = 0; i < samples_to_write_; ++i) {
@@ -425,7 +287,7 @@ fill_sound_buffer(Sound_Output &sound_output_, s32 samples_to_write_,
                 ++sound_output_.running_sample_index;
             }
 
-            global::audio_render_client->ReleaseBuffer((UINT32)samples_to_write_, 0);
+            g_audio_render_client->ReleaseBuffer((UINT32)samples_to_write_, 0);
         }
     }
 }
@@ -498,7 +360,7 @@ display_buffer_in_window(HDC hdc_, Offscreen_Buffer &buffer_, s32 x_, s32 y_, s3
 }
 
 void
-process_keyboard_message(tom::Game_Button_State &new_state_, const b32 is_down_)
+process_keyboard_message(Game_Button_State &new_state_, const b32 is_down_)
 {
     if (new_state_.ended_down != (is_down_ != 0)) {
         new_state_.ended_down = is_down_;
@@ -507,8 +369,8 @@ process_keyboard_message(tom::Game_Button_State &new_state_, const b32 is_down_)
 }
 
 void
-process_Xinput_digital_button(DWORD Xinput_button_state_, tom::Game_Button_State &old_state_,
-                              DWORD button_bit_, tom::Game_Button_State &new_state_)
+process_Xinput_digital_button(DWORD Xinput_button_state_, Game_Button_State &old_state_,
+                              DWORD button_bit_, Game_Button_State &new_state_)
 {
     new_state_.ended_down = ((Xinput_button_state_ & button_bit_) == button_bit_);
     if (new_state_.ended_down && old_state_.ended_down)
@@ -516,7 +378,7 @@ process_Xinput_digital_button(DWORD Xinput_button_state_, tom::Game_Button_State
 }
 
 void
-do_controller_input(tom::Game_Input &old_input_, tom::Game_Input &new_input_, HWND hWnd_)
+do_controller_input(Game_Input &old_input_, Game_Input &new_input_, HWND hWnd_)
 {
     // mouse cursor
     POINT mouse_point;
@@ -531,7 +393,7 @@ do_controller_input(tom::Game_Input &old_input_, tom::Game_Input &new_input_, HW
     process_keyboard_message(new_input_.mouse_buttons[1], ::GetKeyState(VK_RBUTTON) & (1 << 15));
     process_keyboard_message(new_input_.mouse_buttons[2], ::GetKeyState(VK_MBUTTON) & (1 << 15));
 
-    for (szt key {}; key < tom::Game_Keyboard_Input::s_key_cnt; ++key) {
+    for (szt key {}; key < Game_Keyboard_Input::s_key_cnt; ++key) {
         if (old_input_.keyboard.keys[key].half_transition_count > 0 &&
             old_input_.keyboard.keys[key].ended_down == 0)
             old_input_.keyboard.keys[key].half_transition_count = 0;
@@ -562,8 +424,8 @@ do_controller_input(tom::Game_Input &old_input_, tom::Game_Input &new_input_, HW
     }
 
     for (DWORD controller_index = 0; controller_index < XUSER_MAX_COUNT; controller_index++) {
-        tom::Game_Controller_Input &old_controller = old_input_.controllers[controller_index];
-        tom::Game_Controller_Input &new_controller = new_input_.controllers[controller_index];
+        Game_Controller_Input &old_controller = old_input_.controllers[controller_index];
+        Game_Controller_Input &new_controller = new_input_.controllers[controller_index];
 
         XINPUT_STATE controller_state;
         if (XInputGetState(controller_index, &controller_state) == ERROR_SUCCESS) {
@@ -584,19 +446,17 @@ do_controller_input(tom::Game_Input &old_input_, tom::Game_Input &new_input_, HW
                     return (f32)val / 32767.0f;
             };
 
-            tom::v2 stick_left;
-            tom::v2 stick_right;
-            stick_left.x  = normalize(pad.sThumbLX);
-            stick_left.y  = normalize(pad.sThumbLY);
-            stick_right.x = normalize(pad.sThumbRX);
-            stick_right.y = normalize(pad.sThumbRY);
+            f32 stick_left_x  = normalize(pad.sThumbLX);
+            f32 stick_left_y  = normalize(pad.sThumbLY);
+            f32 stick_right_x = normalize(pad.sThumbRX);
+            f32 stick_right_y = normalize(pad.sThumbRY);
 
-            new_controller.min.x = new_controller.max.x = new_controller.end_left_stick.x =
-                stick_left.x;
-            new_controller.min.y = new_controller.max.y = new_controller.end_left_stick.y =
-                stick_left.y;
+            new_controller.min_x = new_controller.max_x = new_controller.end_left_stick_x =
+                stick_left_x;
+            new_controller.min_y = new_controller.max_y = new_controller.end_left_stick_y =
+                stick_left_y;
 
-            for (szt button {}; button < tom::Game_Controller_Input::s_button_cnt; ++button) {
+            for (szt button {}; button < Game_Controller_Input::s_button_cnt; ++button) {
                 if (!old_controller.buttons[button].ended_down)
                     old_controller.buttons[button].half_transition_count = 0;
             }
@@ -652,7 +512,7 @@ get_wall_clock()
 inline f32
 get_seconds_elapsed(LARGE_INTEGER start_, LARGE_INTEGER end_)
 {
-    f32 seconds = f32(end_.QuadPart - start_.QuadPart) / f32(global::performance_counter_frequency);
+    f32 seconds = f32(end_.QuadPart - start_.QuadPart) / f32(g_performance_counter_frequency);
     return seconds;
 }
 
@@ -726,14 +586,14 @@ end_input_playback(Win32_State &state_)
 }
 
 void
-record_input(Win32_State &state_, tom::Game_Input &new_input_)
+record_input(Win32_State &state_, Game_Input &new_input_)
 {
     DWORD bytes_written;
     WriteFile(state_.recording_handle, &new_input_, sizeof(new_input_), &bytes_written, 0);
 }
 
 void
-playback_input(Win32_State &state_, tom::Game_Input &new_input_)
+playback_input(Win32_State &state_, Game_Input &new_input_)
 {
     DWORD bytes_read;
     if (ReadFile(state_.playback_handle, &new_input_, sizeof(new_input_), &bytes_read, 0)) {
@@ -748,13 +608,37 @@ playback_input(Win32_State &state_, tom::Game_Input &new_input_)
 }
 #endif
 
+static void
+init_console()
+{
+    bool is_initialized = AllocConsole();
+    assert(is_initialized);
+
+    if (is_initialized) {
+        FILE *fDummy;
+        freopen_s(&fDummy, "CONOUT$", "w", stdout);
+        freopen_s(&fDummy, "CONOUT$", "w", stderr);
+        freopen_s(&fDummy, "CONIN$", "r", stdin);
+
+        HANDLE hConOut = CreateFile(_T("CONOUT$"), GENERIC_READ | GENERIC_WRITE,
+                                    FILE_SHARE_READ | FILE_SHARE_WRITE, NULL, OPEN_EXISTING,
+                                    FILE_ATTRIBUTE_NORMAL, NULL);
+        HANDLE hConIn  = CreateFile(_T("CONIN$"), GENERIC_READ | GENERIC_WRITE,
+                                    FILE_SHARE_READ | FILE_SHARE_WRITE, NULL, OPEN_EXISTING,
+                                    FILE_ATTRIBUTE_NORMAL, NULL);
+        SetStdHandle(STD_OUTPUT_HANDLE, hConOut);
+        SetStdHandle(STD_ERROR_HANDLE, hConOut);
+        SetStdHandle(STD_INPUT_HANDLE, hConIn);
+    }
+}
+
 void
-process_pending_messages(Win32_State &state_, tom::Game_Input &input_)
+process_pending_messages(Win32_State &state_, Game_Input &input_)
 {
     MSG msg;
     while (PeekMessage(&msg, 0, 0, 0, PM_REMOVE)) {
         switch (msg.message) {
-            case WM_QUIT: global::running = false; break;
+            case WM_QUIT: running = false; break;
             case WM_SYSKEYDOWN:
             case WM_SYSKEYUP:
             case WM_KEYDOWN:
@@ -765,10 +649,10 @@ process_pending_messages(Win32_State &state_, tom::Game_Input &input_)
                 bool alt_key_down = (msg.lParam & (1 << 29));
                 if (was_down != is_down) {
                     switch (VKCode) {
-                        case VK_ESCAPE: global::running = false; break;
+                        case VK_ESCAPE: running = false; break;
                         case 'P': {
                             if (is_down) {
-                                global::pause = !global::pause;
+                                g_pause = !g_pause;
                             }
                         } break;
 
@@ -779,7 +663,7 @@ process_pending_messages(Win32_State &state_, tom::Game_Input &input_)
                         } break;
                         case (VK_F4): {
                             if (alt_key_down) {
-                                global::running = false;
+                                running = false;
                             }
                         } break;
 #if REPLAY_BUFFERS
@@ -810,8 +694,6 @@ process_pending_messages(Win32_State &state_, tom::Game_Input &input_)
     }
 }
 
-}  // namespace
-
 //==================================================================================
 
 LRESULT CALLBACK
@@ -820,21 +702,21 @@ WndProc(HWND hWnd, UINT msg_, WPARAM wParam_, LPARAM lParam_)
     LRESULT result = 0;
     switch (msg_) {
         case WM_SETCURSOR: {
-            if (global::debug_show_cursor) {
+            if (g_debug_show_cursor) {
                 result = DefWindowProcA(hWnd, msg_, wParam_, lParam_);
             } else {
                 SetCursor(0);
             }
         } break;
         case WM_SIZE: {
-            global::win_dim = Get_window_dimensions(hWnd);
+            g_win_dim = Get_window_dimensions(hWnd);
             // ResizeDIBSection(g_backBuffer, g_winDims.width, g_winDims.height);
         } break;
         case WM_DESTROY: {
-            global::running = false;
+            running = false;
         } break;
         case WM_CLOSE: {
-            global::running = false;
+            running = false;
             PostQuitMessage(0);
         } break;
         case WM_ACTIVATEAPP: break;
@@ -845,7 +727,7 @@ WndProc(HWND hWnd, UINT msg_, WPARAM wParam_, LPARAM lParam_)
             s32 y              = paint.rcPaint.right;
             s32 height         = paint.rcPaint.bottom - paint.rcPaint.top;
             s32 width          = paint.rcPaint.right - paint.rcPaint.left;
-            display_buffer_in_window(device_context, global::back_buffer, x, y, width, height);
+            display_buffer_in_window(device_context, g_back_buffer, x, y, width, height);
             EndPaint(hWnd, &paint);
         } break;
         default:
@@ -864,8 +746,17 @@ s32
 Main(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLine, s32 nShowCmd)
 {
     // Init
-    auto console = new tom::Console();
-    assert(console);
+
+    // WARN
+    const TCHAR *icon_path = _T("T:\\data\\tomato.ico");
+    auto icon              = (HICON)(LoadImage(NULL, icon_path, IMAGE_ICON, 0, 0,
+                                               LR_LOADFROMFILE | LR_DEFAULTSIZE | LR_SHARED));
+
+    init_console();
+    HWND cons_hWnd = GetConsoleWindow();
+    assert(cons_hWnd);
+    SendMessage(cons_hWnd, WM_SETICON, NULL, (LPARAM)icon);
+
     printf("Starting...\n");
 
     Win32_State state {};
@@ -875,15 +766,15 @@ Main(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLine, s32 nShowCm
 
     LARGE_INTEGER performance_query_result;
     QueryPerformanceFrequency(&performance_query_result);
-    global::performance_counter_frequency = performance_query_result.QuadPart;
+    g_performance_counter_frequency = performance_query_result.QuadPart;
 
-    auto code = load_game_code(global::game_DLL_name);
+    auto code = load_game_code(g_game_DLL_name);
     load_Xinput();
 
 #ifdef TOM_INTERNAL
-    global::debug_show_cursor = true;
+    g_debug_show_cursor = true;
 #else
-    global::debug_show_cursor = false;
+    debug_show_cursor   = false;
 #endif
 
     WNDCLASS window_class = {};  // should init to 0n
@@ -891,13 +782,7 @@ Main(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLine, s32 nShowCm
     static constexpr s32 win_width  = 960;
     static constexpr s32 win_height = 540;
 
-    resize_DIB_section(global::back_buffer, win_width, win_height);
-
-    // TODO: install assets eventuallly
-    const TCHAR *icon_path = _T("T:\\data\\tomato.ico");
-    auto icon              = (HICON)(LoadImage(NULL, icon_path, IMAGE_ICON, 0, 0,
-                                               LR_LOADFROMFILE | LR_DEFAULTSIZE | LR_SHARED));
-    console->set_icon(icon);
+    resize_DIB_section(g_back_buffer, win_width, win_height);
 
     window_class.style         = CS_HREDRAW | CS_VREDRAW | CS_OWNDC;
     window_class.lpfnWndProc   = WndProc;
@@ -956,24 +841,23 @@ Main(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLine, s32 nShowCm
     b32 is_sleep_granular     = (timeBeginPeriod(desired_scheduler_MS) == TIMERR_NOERROR);
     is_sleep_granular         = false;
 
-    HDC device_context                  = GetDC(hWnd);
-    global::running                     = true;
-    global::pause                       = false;
-    global::back_buffer.bytes_per_pixel = 4;
+    HDC device_context            = GetDC(hWnd);
+    running                       = true;
+    g_pause                       = false;
+    g_back_buffer.bytes_per_pixel = 4;
 
     s32 monitor_refresh_rate = GetDeviceCaps(device_context, VREFRESH);
     printf("Monitor Refresh Rate: %d\n", monitor_refresh_rate);
 
-    Sound_Output sound_output       = {};
-    sound_output.samples_per_sec    = 48000;
-    sound_output.bytes_per_sample   = sizeof(s16) * 2;
-    sound_output.secondary_buf_size = sound_output.samples_per_sec;
-    sound_output.latency_sample_count =
-        s32(global::frames_of_audio_latency *
-            f32(sound_output.samples_per_sec / (f32)global::game_update_hertz));
+    Sound_Output sound_output         = {};
+    sound_output.samples_per_sec      = 48000;
+    sound_output.bytes_per_sample     = sizeof(s16) * 2;
+    sound_output.secondary_buf_size   = sound_output.samples_per_sec;
+    sound_output.latency_sample_count = s32(
+        g_frames_of_audio_latency * f32(sound_output.samples_per_sec / (f32)g_game_update_hertz));
 
     init_WASAPI(sound_output.samples_per_sec, sound_output.secondary_buf_size);
-    global::audio_client->Start();
+    g_audio_client->Start();
 
     // TODO: Pool with bitmap VirtualAlloc
     s16 *samples = (s16 *)VirtualAlloc(0, sound_output.secondary_buf_size, MEM_RESERVE | MEM_COMMIT,
@@ -982,15 +866,15 @@ Main(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLine, s32 nShowCm
 #ifdef TOM_INTERNAL
     LPVOID base_address = (LPVOID)TERABYTES((u64)2);
 #else
-    LPVOID base_address       = 0;
+    LPVOID base_address = 0;
 #endif
 
-    tom::Game_Mem memory              = {};
+    Game_Mem memory                   = {};
     memory.permanent_storage_size     = MEGABYTES(64);
     memory.transient_storage_size     = GIGABYTES(1);
-    memory.platform_free_file_memory  = tom::_debug_platform_free_file_memory;
-    memory.platfrom_read_entire_file  = tom::_debug_platform_read_entire_file;
-    memory.platform_write_entire_file = tom::_debug_platform_write_entire_file;
+    memory.platform_free_file_memory  = _debug_platform_free_file_memory;
+    memory.platfrom_read_entire_file  = _debug_platform_read_entire_file;
+    memory.platform_write_entire_file = _debug_platform_write_entire_file;
 
     state.total_size = memory.permanent_storage_size + memory.transient_storage_size;
     // TODO: use large pages
@@ -1023,9 +907,9 @@ Main(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLine, s32 nShowCm
     }
 #endif
 
-    tom::Game_Input input[2]   = {};
-    tom::Game_Input *new_input = &input[0];
-    tom::Game_Input *old_input = &input[1];
+    Game_Input input[2]   = {};
+    Game_Input *new_input = &input[0];
+    Game_Input *old_input = &input[1];
 
     LARGE_INTEGER last_counter = get_wall_clock();
     u64 last_cycle_count       = __rdtsc();
@@ -1038,53 +922,53 @@ Main(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLine, s32 nShowCm
     // =============================================================================================
     // #MAIN LOOP
     // =============================================================================================
-    while (global::running) {
+    while (running) {
         do_controller_input(*old_input, *new_input, hWnd);
         process_pending_messages(state, *new_input);
         // NOTE: this isn't calculated and needs to be for a varaible framerate
-        new_input->delta_time = global::target_frames_per_second;
+        new_input->delta_time = g_target_frames_per_second;
 
-        auto dllWriteTime = get_last_write_time(global::game_DLL_name);
+        auto dllWriteTime = get_last_write_time(g_game_DLL_name);
         if (CompareFileTime(&dllWriteTime, &code.last_write_time_DLL)) {
             unload_game_code(code);
-            code = load_game_code(global::game_DLL_name);
+            code = load_game_code(g_game_DLL_name);
             printf("New Game Code loaded!\n");
         }
 
         // NOTE: temp program exit from controller
         if (new_input->controllers->button_back.ended_down) {
-            global::running = false;
+            running = false;
         }
 
         // #Sound
 
         REFERENCE_TIME latency {};
-        if (SUCCEEDED(global::audio_client->GetStreamLatency(&latency))) {
+        if (SUCCEEDED(g_audio_client->GetStreamLatency(&latency))) {
         } else {
             printf("ERROR--> Failed to get audio latency\n");
         }
 
         s32 samples_to_write = 0;
         UINT32 sound_pad_size;
-        if (SUCCEEDED(global::audio_client->GetCurrentPadding(&sound_pad_size))) {
+        if (SUCCEEDED(g_audio_client->GetCurrentPadding(&sound_pad_size))) {
             s32 maxSampleCnt = s32(sound_output.secondary_buf_size - sound_pad_size);
             samples_to_write = s32(sound_output.latency_sample_count - sound_pad_size);
             if (samples_to_write < 0) samples_to_write = 0;
             // assert(samplesToWrite < maxSampleCnt);
         }
 
-        tom::Game_Sound_Output_Buffer sound_buffer {};
+        Game_Sound_Output_Buffer sound_buffer {};
         sound_buffer.samples_per_second = sound_output.samples_per_sec;
         sound_buffer.sample_count       = samples_to_write;
         sound_buffer.samples            = samples;
 
         // video
-        tom::Game_Offscreen_Buffer buffer = {};
-        buffer.memory                     = global::back_buffer.memory;
-        buffer.width                      = global::back_buffer.width;
-        buffer.height                     = global::back_buffer.height;
-        buffer.bytes_per_pixel            = 4;
-        buffer.pitch                      = global::back_buffer.pitch;
+        Game_Offscreen_Buffer buffer = {};
+        buffer.memory                = g_back_buffer.memory;
+        buffer.width                 = g_back_buffer.width;
+        buffer.height                = g_back_buffer.height;
+        buffer.bytes_per_pixel       = 4;
+        buffer.pitch                 = g_back_buffer.pitch;
 
 #if REPLAY_BUFFERS
         if (state.input_recording_index) {
@@ -1099,7 +983,7 @@ Main(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLine, s32 nShowCm
         // isGameCodeLoaded = false;
 
         // NOTE: dummy thread context, for now
-        tom::Thread_Context thread {};
+        Thread_Context thread {};
 
         if (is_game_code_loaded) {
             code.update_and_render(&thread, memory, *input, buffer, sound_buffer);
@@ -1113,17 +997,17 @@ Main(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLine, s32 nShowCm
         f32 work_seconds_elapsed = get_seconds_elapsed(last_counter, work_counter);
 
         f32 seconds_elapsed_for_frame = work_seconds_elapsed;
-        if (seconds_elapsed_for_frame < global::target_frames_per_second) {
+        if (seconds_elapsed_for_frame < g_target_frames_per_second) {
             if (is_sleep_granular) {
                 auto sleepMs =
-                    DWORD(1000.f * (global::target_frames_per_second - seconds_elapsed_for_frame));
+                    DWORD(1000.f * (g_target_frames_per_second - seconds_elapsed_for_frame));
                 if (sleepMs > 0) {
                     ::Sleep(sleepMs);
                 }
             }
             f32 test_seconds_elapsed_for_frame =
                 get_seconds_elapsed(last_counter, get_wall_clock());
-            while (seconds_elapsed_for_frame < global::target_frames_per_second) {
+            while (seconds_elapsed_for_frame < g_target_frames_per_second) {
                 seconds_elapsed_for_frame = get_seconds_elapsed(last_counter, get_wall_clock());
             }
         } else {
@@ -1137,8 +1021,8 @@ Main(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLine, s32 nShowCm
         last_counter = end_counter;
 
         // NOTE: this is debug code
-        display_buffer_in_window(device_context, global::back_buffer, 0, 0, global::win_dim.width,
-                                 global::win_dim.height);
+        display_buffer_in_window(device_context, g_back_buffer, 0, 0, g_win_dim.width,
+                                 g_win_dim.height);
 
         DWORD play_cursor;
         DWORD write_cursor;
@@ -1146,8 +1030,8 @@ Main(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLine, s32 nShowCm
         UINT64 frequency_position;
         UINT64 units_posisition;
 
-        global::audio_clock->GetFrequency(&frequency_position);
-        global::audio_clock->GetPosition(&units_posisition, 0);
+        g_audio_clock->GetFrequency(&frequency_position);
+        g_audio_clock->GetPosition(&units_posisition, 0);
 
         play_cursor =
             (DWORD)(sound_output.samples_per_sec * units_posisition / frequency_position) %
@@ -1160,9 +1044,9 @@ Main(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLine, s32 nShowCm
             write_cursor -= sound_output.secondary_buf_size;
         }
 
-        tom::Game_Input *temp_input = new_input;
-        new_input                   = old_input;
-        old_input                   = temp_input;
+        Game_Input *temp_input = new_input;
+        new_input              = old_input;
+        old_input              = temp_input;
 
         u64 end_cycle_count = __rdtsc();
         u64 cycles_elapsed  = end_cycle_count - last_cycle_count;

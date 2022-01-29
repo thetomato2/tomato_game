@@ -1,6 +1,80 @@
-#pragma once
-#include "framework.hpp"
-#include "tile.hpp"
+/*
+** Anything that needs to used in a platform layer gets put here
+*/
+
+#ifdef _MSVC
+    #define MSVC 1
+#endif
+
+#ifdef _LLVM
+    #define LLVM 1
+#endif
+
+#if MSVC
+    #include <intrin.h>
+    #pragma intrinsic(_BitScanForward)
+#endif
+
+#include <tchar.h>
+
+#include <cassert>
+#include <cmath>
+#include <cstdint>
+#include <cstdio>
+#include <cwchar>
+
+#ifndef TOM_INTERNAL
+    #define TOM_INTERNAL
+#endif
+
+#define internal        static
+#define local_persist   static
+#define global_variable static
+
+using s8  = int8_t;
+using s16 = int16_t;
+using s32 = int32_t;
+using s64 = int64_t;
+
+using u8  = uint8_t;
+using u16 = uint16_t;
+using u32 = uint32_t;
+using u64 = uint64_t;
+
+using f32 = float;
+using f64 = double;
+
+using szt     = size_t;
+using mem_ind = size_t;
+using byt     = u8;
+
+#ifdef _WIN32
+using wchar = wchar_t;
+using ul    = unsigned long;
+using ull   = unsigned long long;
+#endif
+
+using b32 = int32_t;
+
+#ifdef TOM_INTERNAL
+    #define TOM_ASSERT(x, ...)                                                            \
+        {                                                                                 \
+            if (!(x)) {                                                                   \
+                tomato::util::Print("Assertion Failed in {0} at line {1}: {2}", __FILE__, \
+                                    __LINE__, __VA_ARGS__);                               \
+                __debugbreak();                                                           \
+            }                                                                             \
+        }
+#else
+    #define TOM_ASSERT(x, ...)
+#endif
+
+#define KILOBYTES(val) ((val)*1024)
+#define MEGABYTES(val) (KILOBYTES(val) * 1024)
+#define GIGABYTES(val) (MEGABYTES(val) * 1024)
+#define TERABYTES(val) (GIGABYTES(val) * 1024)
+
+#define ArrayCount(Array) (sizeof((Array)) / sizeof((Array)[0]))
 
 #define TOM_WIN32
 #ifdef TOM_WIN32
@@ -11,8 +85,23 @@
 
 #define REPLAY_BUFFERS 1
 
-namespace tom
-{
+#define TOM_WIN32
+#ifdef TOM_WIN32
+    #define TOM_DLL_EXPORT __declspec(dllexport)
+#else
+    #define TOM_DLL_EXPORT
+#endif
+
+#define REPLAY_BUFFERS 1
+
+#define TOM_WIN32
+#ifdef TOM_WIN32
+    #define TOM_DLL_EXPORT __declspec(dllexport)
+#else
+    #define TOM_DLL_EXPORT
+#endif
+
+#define REPLAY_BUFFERS 1
 
 // NOTE: services that the platform provides for the game
 #ifdef TOM_INTERNAL
@@ -42,8 +131,6 @@ typedef DEBUG_PLATFORM_READ_ENTIRE_FILE(debug_platform_read_entire_file);
         b32 name(Thread_Context *thread_, const char *file_name_, u64 memory_size_, void *memory_)
 typedef DEBUG_PLATFORM_WRITE_ENTIRE_FILE(debug_platform_write_entire_file);
 #endif
-
-#define ArrayCount(Array) (sizeof((Array)) / sizeof((Array)[0]))
 
 struct Game_Offscreen_Buffer
 
@@ -76,13 +163,23 @@ struct Game_Controller_Input
     bool is_connected;
     bool is_analog;
 
-    v2 min;
-    v2 max;
-    v2 start_left_stick;
-    v2 start_right_stick;
+    f32 min_x;
+    f32 min_y;
 
-    v2 end_left_stick;
-    v2 end_right_stick;
+    f32 max_x;
+    f32 max_y;
+
+    f32 start_left_stick_x;
+    f32 start_left_stick_y;
+
+    f32 start_right_stick_y;
+    f32 start_right_stick_x;
+
+    f32 end_left_stick_x;
+    f32 end_left_stick_y;
+
+    f32 end_right_stick_x;
+    f32 end_right_stick_y;
 
     union
     {
@@ -145,15 +242,6 @@ struct Game_Input
     Game_Controller_Input controllers[4];
 };
 
-struct Player_Actions
-{
-    bool start;
-
-    v2 dir;
-
-    bool sprint;
-};
-
 struct Game_Mem
 {
     bool is_initialized;
@@ -170,59 +258,6 @@ struct Game_Mem
 #endif
 };
 
-struct Color_u32
-{
-    union
-    {
-        u32 argb;
-        struct
-        {
-            u8 b;
-            u8 g;
-            u8 r;
-            u8 a;
-        };
-    };
-};
-
-#pragma pack(push, 1)
-struct Bitmap_Header
-{
-    u16 file_type;
-    u32 file_size;
-    u16 reserved_1;
-    u16 reserved_2;
-    u32 bitmap_offset;
-    u32 size;
-    s32 width;
-    s32 height;
-    u16 planes;
-    u16 bits_per_pixel;
-};
-
-struct ARGB_Header
-{
-    u32 width;
-    u32 height;
-    u32 size;
-};
-#pragma pack(pop)
-
-struct Bitmap
-{
-    s32 width;
-    s32 height;
-    u32 *pixel_ptr;
-};
-
-struct ARGB_Img
-{
-    u32 width;
-    u32 height;
-    u32 size;
-    u32 *pixel_ptr;
-};
-
 #define GAME_UPDATE_AND_RENDER(name)                                          \
     void name(Thread_Context *thread_, Game_Mem &memory_, Game_Input &input_, \
               Game_Offscreen_Buffer &video_buffer_, Game_Sound_Output_Buffer &sound_buffer_)
@@ -232,127 +267,11 @@ typedef GAME_UPDATE_AND_RENDER(game_update_and_render_stub);
     void name(Thread_Context *thread_, Game_Mem &memory_, Game_Sound_Output_Buffer &sound_buffer_)
 typedef GAME_GET_SOUND_SAMPLES(game_get_sound_samples_stub);
 
-struct Mem_Arena
+inline u32
+safe_truncate_u32_to_u64(u64 val_)
 {
-    mem_ind size;
-    u8 *base;
-    mem_ind used;
-};
-
-enum Dir : s32
-{
-    down = 0,
-    right,
-    up,
-    left
-
-};
-
-struct High_Entity
-{
-    b32 exists;
-    // NOTE: relative to camera
-    v2 pos, vel;
-    u32 abs_tile_z;
-    u32 direction;
-    f32 stair_cd;
-};
-
-struct Low_Entity
-{
-};
-
-struct Dormant_Entity
-{
-    Tile_Map_Pos pos;
-    f32 width, height;
-    Color_u32 color;
-    ARGB_Img *sprites;
-
-    b32 collides;
-    b32 stairs;
-};
-
-enum Entity_Residence
-{
-    non_existent,
-    dormant,
-    low,
-    high
-};
-
-struct Entity
-{
-    Entity_Residence *residence;
-    Low_Entity *low;
-    High_Entity *high;
-    Dormant_Entity *dormant;
-};
-
-struct World
-{
-    Tile_Map *tile_map;
-};
-
-struct Camera
-{
-    Tile_Map_Pos pos;
-};
-
-struct Game_State
-{
-    static constexpr szt s_max_entities { 256 };
-    u32 static constexpr s_num_screens { 100 };
-    u32 static constexpr s_num_tiles_per_screen_x { 20 };
-    u32 static constexpr s_num_tiles_per_screen_y { 11 };
-
-    Mem_Arena world_arena;
-    World *world;
-
-    szt entity_camera_follow_ind;
-    Camera camera;
-
-    Bitmap bitmap;
-
-    szt player_controller_ind[Game_Input::s_input_cnt];
-
-    u32 entity_cnt;
-    u32 player_cnt;
-    Entity_Residence entity_residence[s_max_entities];
-    High_Entity high_entities[s_max_entities];
-    Low_Entity low_entities[s_max_entities];
-    Dormant_Entity dormant_entities[s_max_entities];
-
-    ARGB_Img bg_img;
-    ARGB_Img seaside_cliff;
-
-    ARGB_Img crosshair_img;
-
-    ARGB_Img red_square_img;
-    ARGB_Img green_square_img;
-    ARGB_Img blue_square_img;
-
-    ARGB_Img player_sprites[4];
-
-    Tile_Map_Pos test_pos;
-};
-
-void *
-push_size(Mem_Arena *arena_, mem_ind size_);
-
-#define PushStruct(arena, type)       (type *)push_size(arena, sizeof(type))
-#define PushArray(arena, count, type) (type *)push_size(arena, (count * sizeof(type)))
-
-inline bool
-is_key_up(const Game_Button_State &key_)
-{
-    return key_.half_transition_count > 0 && key_.ended_down == 0;
+    // TODO: defines for max values
+    assert(val_ <= 0xFFFFFFFF);
+    u32 result = (u32)val_;
+    return result;
 }
-
-inline bool
-is_button_up(const Game_Button_State &button_)
-{
-    return is_key_up(button_);
-}
-
-}  // namespace tom

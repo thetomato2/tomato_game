@@ -1,5 +1,3 @@
-#pragma once
-#include "base_types.hpp"
 
 u32 rng_table[] = {
     0x0721440, 0x35fe838, 0x23d7563, 0x35f0a1d, 0x08e7382, 0x20d9412, 0x0be6c8e, 0x2f7e82e,

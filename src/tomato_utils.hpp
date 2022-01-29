@@ -1,48 +1,3 @@
-#pragma once
-#include "framework.hpp"
-
-namespace tom::util
-{
-#if 0
-void
-generate_rainbow(Color_u32& color_, f32 frequency_, f32 time_)
-{
-	f32 f = (f32)sin(time * frequency_) / 2.0f + 0.5f;
-
-	f32 a = (1.0f - f) / 0.2f;
-	f32 x = floorf(a);
-	f32 y = floorf(255.0f * (a - x));
-	f32 red, green, blue;
-
-	if (x == 0.0f) {
-		red	  = 255.0f;
-		green = y;
-		blue  = 0;
-	} else if (x == 1.0f) {
-		red	  = 255.0f - y;
-		green = 255.0f;
-		blue  = 0;
-	} else if (x == 2.0f) {
-		red	  = 0.0f;
-		green = 255.0f;
-		blue  = y;
-	} else if (x == 3.0f) {
-		red	  = 0.0f;
-		green = 255.0f - y;
-		blue  = 255.0f;
-	} else if (x == 4.0f) {
-		red	  = y;
-		green = 0.0f;
-		blue  = 255.0f;
-	} else if (x == 5.0f) {
-		red	  = 255.0f;
-		green = 0.0f;
-		blue  = 255.0f;
-	}
-
-	color_.argb = (0xFF << 24) | ((u8)red << 16) | ((u8)green << 8) | ((u8)blue);
-}
-#endif
 
 inline szt
 get_wstr_len(const wchar *wstr_)
@@ -120,9 +75,8 @@ cat_str(const char *left_, const char *right_, char *out_, szt *len_out_)
     *out_     = '\0';
 }
 
-namespace win32
-{
-
+// #ifdef TOM_WIN32
+#if 0
 // Convert a wide Unicode string to an UTF8 string
 inline szt
 get_wstr_sz(const wchar *wstr_)
@@ -155,6 +109,31 @@ str_to_wstr(const char *str_, wchar *buf_)
     auto size = (szt)MultiByteToWideChar(CP_UTF8, 0, str_, (s32)len, NULL, 0);
     MultiByteToWideChar(CP_UTF8, 0, str_, (s32)len, buf_, (s32)size);
 }
+#else
+inline szt
+get_wstr_sz(const wchar *wstr_)
+{
+    // TODO: stub
+    return -1;
+}
 
-}  // namespace win32
-}  // namespace tom::util
+inline szt
+get_wstr_sz(const char *str_)
+{
+    // TODO: stub
+    return -1;
+}
+
+// FIXME: idk if this is working
+inline void
+wstr_to_str(const wchar *wstr_, char *buf_)
+{
+    // TODO: stub
+}
+
+inline void
+str_to_wstr(const char *str_, wchar *buf_)
+{
+    // TODO: stub
+}
+#endif
