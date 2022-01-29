@@ -18,7 +18,7 @@ set(Build_Dir ${CMAKE_CURRENT_LIST_DIR}/build)
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${Build_Dir})
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${Build_Dir})
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${Build_Dir})
-# set(CMAKE_SUPPRESS_REGENERATION true) #feck off ZERO_CHECK
+set(CMAKE_SUPPRESS_REGENERATION true) #feck off ZERO_CHECK
 
 option(Emacs "Emacs" OFF)
 option(argb_converter "ARGB_Converter" OFF)
