@@ -9,6 +9,8 @@ set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
+set(CMAKE_UNITY_BUILD ON)
+
 set(Source_Dir ${CMAKE_CURRENT_LIST_DIR}/src)
 set(Extern_Dir ${CMAKE_CURRENT_LIST_DIR}/external)
 set(Build_Dir ${CMAKE_CURRENT_LIST_DIR}/build)
@@ -65,20 +67,7 @@ if (MSVC)
 endif()
 
 add_library(Tomato_Game_Lib SHARED
-    ${Source_Dir}/base_types.hpp
-    ${Source_Dir}/framework.hpp
-    ${Source_Dir}/game.cpp
-    ${Source_Dir}/game.hpp
-    ${Source_Dir}/intrinsic.cpp
-    ${Source_Dir}/intrinsic.hpp
-    ${Source_Dir}/macros.hpp
-    ${Source_Dir}/math.hpp
-    ${Source_Dir}/rng_nums.h
-    ${Source_Dir}/tile.cpp
-    ${Source_Dir}/tile.hpp
-    ${Source_Dir}/utils.cpp
-    ${Source_Dir}/utils.hpp
-    ${Source_Dir}/vector.hpp
+    ${Source_Dir}/tomato_game.cpp
     )
 
 set_target_properties(Tomato_Game_Lib PROPERTIES OUTPUT_NAME tomato_game)
@@ -106,8 +95,7 @@ if (MSVC)
 endif()
 
 add_executable(Win32_Tomato_Game WIN32
-    ${Source_Dir}/win32_layer.cpp
-    ${Source_Dir}/win32_layer.hpp
+    ${Source_Dir}/win32_tomato.cpp
     )
 
 target_include_directories(Win32_Tomato_Game PRIVATE ${Source_Dir})
@@ -139,7 +127,7 @@ if (MSVC)
 endif()
 
 add_executable(argb_converter
-    ${Source_Dir}/image_converter.cpp
+    ${Source_Dir}/win32_argb_converter.cpp
     ${Extern_Dir}/stb_image.h
     )
 
