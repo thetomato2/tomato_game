@@ -7,8 +7,16 @@ struct Mem_Arena
     u8 *base;
     mem_ind used;
 };
-void *
-push_size(Mem_Arena *arena_, mem_ind size_);
+
+inline void *
+push_size(Mem_Arena *arena_, mem_ind size_)
+{
+    assert((arena_->used + size_) <= arena_->size);
+    void *result = arena_->base + arena_->used;
+    arena_->used += size_;
+
+    return result;
+}
 
 #define PushStruct(arena, type)       (type *)push_size(arena, sizeof(type))
 #define PushArray(arena, count, type) (type *)push_size(arena, (count * sizeof(type)))

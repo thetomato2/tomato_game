@@ -418,16 +418,6 @@ update_player(Entity player_, const Player_Actions &player_actions_, Tile_Map &t
     }
 }
 
-void *
-push_size(Mem_Arena *arena_, mem_ind size_)
-{
-    assert((arena_->used + size_) <= arena_->size);
-    void *result = arena_->base + arena_->used;
-    arena_->used += size_;
-
-    return result;
-}
-
 // ===============================================================================================
 // #EXPORT
 // ===============================================================================================

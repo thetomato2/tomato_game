@@ -2,6 +2,7 @@
 #define TOMATO_TILE_HPP_
 
 #include "tomato_platform.hpp"
+#include "tomato_math.hpp"
 
 // TODO: change to V3
 struct Tile_Map_Dif

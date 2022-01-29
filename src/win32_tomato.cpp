@@ -106,8 +106,7 @@ static x_input_set_state *XInputSetState_ = XInputSetStateStub;
 
 // windows keymap
 
-void
-toggle_fullscreen(HWND hWnd_)
+void static toggle_fullscreen(HWND hWnd_)
 {
     DWORD dwStyle = GetWindowLong(hWnd_, GWL_STYLE);
     if (dwStyle & WS_OVERLAPPEDWINDOW) {
@@ -128,7 +127,7 @@ toggle_fullscreen(HWND hWnd_)
     }
 }
 
-inline FILETIME
+static FILETIME
 get_last_write_time(const TCHAR *file_name_)
 {
     FILETIME last_write_time {};
@@ -152,7 +151,7 @@ get_last_write_time(const TCHAR *file_name_)
     return last_write_time;
 }
 
-Game_Code
+static Game_Code
 load_game_code(const TCHAR *DLL_name_)
 {
     Game_Code code {};
@@ -182,7 +181,7 @@ load_game_code(const TCHAR *DLL_name_)
     return code;
 }
 
-void
+static void
 unload_game_code(Game_Code &game_code_)
 {
     if (game_code_.game_code_DLL) {
@@ -193,7 +192,7 @@ unload_game_code(Game_Code &game_code_)
     printf("Game code unloaded.");
 }
 
-void
+static void
 load_Xinput()
 {
     // TODO: test this on other windows version
@@ -209,7 +208,7 @@ load_Xinput()
     }
 }
 
-void
+static void
 init_WASAPI(s32 samples_per_second_, s32 buffer_size_in_samples_)
 {
     if (FAILED(CoInitializeEx(0, COINIT_SPEED_OVER_MEMORY))) {
@@ -272,7 +271,7 @@ init_WASAPI(s32 samples_per_second_, s32 buffer_size_in_samples_)
     assert(buffer_size_in_samples_ <= (s32)soundFrmCnt);
 }
 
-void
+static void
 fill_sound_buffer(Sound_Output &sound_output_, s32 samples_to_write_,
                   Game_Sound_Output_Buffer &source_buffer)
 {
@@ -292,7 +291,7 @@ fill_sound_buffer(Sound_Output &sound_output_, s32 samples_to_write_,
     }
 }
 
-Win_Dim
+static Win_Dim
 Get_window_dimensions(HWND hWnd_)
 {
     RECT client_rect;
@@ -303,7 +302,7 @@ Get_window_dimensions(HWND hWnd_)
     return WinDim;
 }
 
-void
+static void
 resize_DIB_section(Offscreen_Buffer &buffer_, s32 width_, s32 height_)
 {
     // TODO: bulletproof this
@@ -330,7 +329,7 @@ resize_DIB_section(Offscreen_Buffer &buffer_, s32 width_, s32 height_)
     buffer_.pitch = width_ * buffer_.bytes_per_pixel;
 }
 
-void
+static void
 display_buffer_in_window(HDC hdc_, Offscreen_Buffer &buffer_, s32 x_, s32 y_, s32 width_,
                          s32 height_)
 {
@@ -359,7 +358,7 @@ display_buffer_in_window(HDC hdc_, Offscreen_Buffer &buffer_, s32 x_, s32 y_, s3
     }
 }
 
-void
+static void
 process_keyboard_message(Game_Button_State &new_state_, const b32 is_down_)
 {
     if (new_state_.ended_down != (is_down_ != 0)) {
@@ -368,7 +367,7 @@ process_keyboard_message(Game_Button_State &new_state_, const b32 is_down_)
     }
 }
 
-void
+static void
 process_Xinput_digital_button(DWORD Xinput_button_state_, Game_Button_State &old_state_,
                               DWORD button_bit_, Game_Button_State &new_state_)
 {
@@ -377,7 +376,7 @@ process_Xinput_digital_button(DWORD Xinput_button_state_, Game_Button_State &old
         new_state_.half_transition_count = ++old_state_.half_transition_count;
 }
 
-void
+static void
 do_controller_input(Game_Input &old_input_, Game_Input &new_input_, HWND hWnd_)
 {
     // mouse cursor
@@ -501,7 +500,7 @@ do_controller_input(Game_Input &old_input_, Game_Input &new_input_, HWND hWnd_)
     }
 }
 
-inline LARGE_INTEGER
+static LARGE_INTEGER
 get_wall_clock()
 {
     LARGE_INTEGER time;
@@ -509,7 +508,7 @@ get_wall_clock()
     return time;
 }
 
-inline f32
+static f32
 get_seconds_elapsed(LARGE_INTEGER start_, LARGE_INTEGER end_)
 {
     f32 seconds = f32(end_.QuadPart - start_.QuadPart) / f32(g_performance_counter_frequency);
@@ -521,20 +520,20 @@ get_seconds_elapsed(LARGE_INTEGER start_, LARGE_INTEGER end_)
 // ===============================================================================================
 
 #if REPLAY_BUFFERS == 1
-void
+static void
 get_input_file_path(Win32_State &state_, b32 is_input_stream_)
 {
     int x = 0;
 }
 
-Replay_Buffer &
+static Replay_Buffer &
 get_replay_buffer(Win32_State &state_, szt index_)
 {
     assert(index_ < ArrayCount(state_.replay_buffers));
     return state_.replay_buffers[index_];
 }
 
-void
+static void
 begin_recording_input(Win32_State &state_, s32 input_recording_index_)
 {
     auto &replay_buffer = get_replay_buffer(state_, input_recording_index_);
@@ -552,7 +551,7 @@ begin_recording_input(Win32_State &state_, s32 input_recording_index_)
     }
 }
 
-void
+static void
 end_recording_input(Win32_State &state_)
 {
     printf("Recording ended.\n");
@@ -560,7 +559,7 @@ end_recording_input(Win32_State &state_)
     state_.input_recording_index = 0;
 }
 
-void
+static void
 begin_input_playback(Win32_State &state_, s32 input_playback_index_)
 {
     auto &replay_buffer = get_replay_buffer(state_, input_playback_index_);
@@ -577,7 +576,7 @@ begin_input_playback(Win32_State &state_, s32 input_playback_index_)
     }
 }
 
-void
+static void
 end_input_playback(Win32_State &state_)
 {
     printf("Input playback ended.\n");
@@ -585,14 +584,14 @@ end_input_playback(Win32_State &state_)
     state_.input_playback_index = 0;
 }
 
-void
+static void
 record_input(Win32_State &state_, Game_Input &new_input_)
 {
     DWORD bytes_written;
     WriteFile(state_.recording_handle, &new_input_, sizeof(new_input_), &bytes_written, 0);
 }
 
-void
+static void
 playback_input(Win32_State &state_, Game_Input &new_input_)
 {
     DWORD bytes_read;
@@ -632,7 +631,7 @@ init_console()
     }
 }
 
-void
+static void
 process_pending_messages(Win32_State &state_, Game_Input &input_)
 {
     MSG msg;
