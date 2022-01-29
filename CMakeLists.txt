@@ -18,7 +18,7 @@ set(Build_Dir ${CMAKE_CURRENT_LIST_DIR}/build)
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${Build_Dir})
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${Build_Dir})
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${Build_Dir})
-set(CMAKE_SUPPRESS_REGENERATION true) #feck off ZERO_CHECK
+# set(CMAKE_SUPPRESS_REGENERATION true) #feck off ZERO_CHECK
 
 option(Emacs "Emacs" OFF)
 option(argb_converter "ARGB_Converter" OFF)
@@ -66,9 +66,19 @@ if (MSVC)
         )
 endif()
 
+
+
 add_library(Tomato_Game_Lib SHARED
     ${Source_Dir}/tomato_game.cpp
+    ${Source_Dir}/tomato_game.hpp
+    ${Source_Dir}/tomato_intrinsic.hpp
+    ${Source_Dir}/tomato_math.hpp
+    ${Source_Dir}/tomato_platform.hpp
+    ${Source_Dir}/tomato_tile.cpp
+    ${Source_Dir}/tomato_tile.hpp
     )
+
+set_source_files_properties(${Source_Dir}/tomato_tile.cpp PROPERTIES HEADER_FILE_ONLY TRUE)
 
 set_target_properties(Tomato_Game_Lib PROPERTIES OUTPUT_NAME tomato_game)
 target_include_directories(Tomato_Game_Lib PUBLIC ${Source_Dir})

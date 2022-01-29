@@ -1,3 +1,6 @@
+#ifndef TOMATO_MATH_HPP_
+#define TOMATO_MATH_HPP_
+#include "tomato_platform.hpp"
 // ===============================================================================================
 // #VECTOR 2
 // ===============================================================================================
@@ -162,3 +165,4 @@ min(const T a_, const T b_)
     a_ < b_ ? res = a_ : res = b_;
     return res;
 }
+#endif  // TOMATO_MATH_HPP_

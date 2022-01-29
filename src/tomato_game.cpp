@@ -142,7 +142,7 @@ static Bitmap
 load_bmp(Thread_Context *thread_, debug_platform_read_entire_file *read_entire_file_,
          const char *file_name_)
 {
-    debug_ReadFileResult read_result = read_entire_file_(thread_, file_name_);
+    debug_Read_File_Result read_result = read_entire_file_(thread_, file_name_);
     Bitmap result;
 
     if (read_result.content_size != 0) {
@@ -170,7 +170,7 @@ load_ARGB(Thread_Context *thread_, debug_platform_read_entire_file *read_entire_
     img_path_buf[img_buf_len++] = 'b';
     img_path_buf[img_buf_len++] = '\0';
 
-    debug_ReadFileResult read_result = read_entire_file_(thread_, img_path_buf);
+    debug_Read_File_Result read_result = read_entire_file_(thread_, img_path_buf);
     ARGB_Img result;
 
     if (read_result.content_size != 0) {

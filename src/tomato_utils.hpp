@@ -1,3 +1,7 @@
+#ifndef TOMATO_UTILS_HPP_
+#define TOMATO_UTILS_HPP_
+
+#include "tomato_platform.hpp"
 
 inline szt
 get_wstr_len(const wchar *wstr_)
@@ -137,3 +141,5 @@ str_to_wstr(const char *str_, wchar *buf_)
     // TODO: stub
 }
 #endif
+
+#endif  //  TOMATO_UTILS_HPP_

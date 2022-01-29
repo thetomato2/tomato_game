@@ -1,0 +1,4 @@
+#+TITLE: Todo
+- write a renderer
+- make the game
+- cpp -> c -- tomato_platform.hpp

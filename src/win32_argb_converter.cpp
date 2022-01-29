@@ -1,17 +1,34 @@
-#include "framework.hpp"
+#include "tomato_platform.hpp"
 
 #define STB_IMAGE_IMPLEMENTATION
 #include "../external/stb_image.h"
 
 // NOTE: coverst PNGs to my personal image format which is just bascially
 // the most basic bitch bitmap
+//
+#ifdef _EMACS
+using wchar_t = uint16_t;
+#endif
+// WinHelp is deprecate
+#define NOHELP
+// DirectX apps don't need GDI
+// NOTE: I am using GDI to slowly blit to the screen
+//#define NODRAWTEXT
+//#define NOGDI
+//#define NOBITMAP
+//#define WIN32_LEAN_AND_MEAN
 
-namespace
-{
+// Use the C++ standard templated min/max
+#ifndef NOMINMAX
+    #define NOMINMAX
+#endif
+#include <windows.h>
+
+#include "tomato_utils.hpp"
 
 #pragma pack(push, 1)
 
-struct BitmapHeader
+struct Bitmap_Header
 {
     u16 file_type;
     u32 file_size;
@@ -25,19 +42,13 @@ struct BitmapHeader
     u16 bits_per_pixel;
 };
 
-struct ARGB_header
+struct ARGB_Header
 {
     u32 width;
     u32 height;
     u32 size;
 };
 #pragma pack(pop)
-
-struct debug_ReadFileResult
-{
-    u32 content_size;
-    void *contents;
-};
 
 struct Bitmap
 {
@@ -54,17 +65,17 @@ win32_free_memor(void *memory_)
     }
 }
 
-debug_ReadFileResult
+debug_Read_File_Result
 win32_read_file(const char *file_name_)
 {
-    debug_ReadFileResult file = {};
+    debug_Read_File_Result file = {};
 
     HANDLE file_handle =
         CreateFileA(file_name_, GENERIC_READ, 0, 0, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, 0);
     if (file_handle != INVALID_HANDLE_VALUE) {
         LARGE_INTEGER fileSize;
         if (GetFileSizeEx(file_handle, &fileSize)) {
-            u32 fileSize32 = tomato::math::safe_truncate_u32_to_u64(fileSize.QuadPart);
+            u32 fileSize32 = safe_truncate_u32_to_u64(fileSize.QuadPart);
             file.contents  = VirtualAlloc(0, fileSize32, MEM_RESERVE | MEM_COMMIT, PAGE_READWRITE);
             if (file.contents) {
                 DWORD bytesRead;
@@ -110,20 +121,18 @@ win32_write_file(const char *file_name_, u64 memory_size_, void *memory_)
 Bitmap
 load_bmp(const char *file_name_)
 {
-    debug_ReadFileResult read_result = win32_read_file(file_name_);
+    debug_Read_File_Result read_result = win32_read_file(file_name_);
     Bitmap result;
 
     if (read_result.content_size != 0) {
-        BitmapHeader *header = (BitmapHeader *)read_result.contents;
-        u32 *pixels          = (u32 *)((byt *)read_result.contents + header->bitmap_offset);
-        result.width         = header->width;
-        result.height        = header->height;
-        result.pixel_ptr     = pixels;
+        Bitmap_Header *header = (Bitmap_Header *)read_result.contents;
+        u32 *pixels           = (u32 *)((byt *)read_result.contents + header->bitmap_offset);
+        result.width          = header->width;
+        result.height         = header->height;
+        result.pixel_ptr      = pixels;
     }
     return result;
 }
-
-}  // namespace
 
 s32
 main(s32 argc, char *argv[])
@@ -150,10 +159,10 @@ main(s32 argc, char *argv[])
         printf("Loaded: \"%s\"\n", argv[1]);
     }
 
-    ARGB_header argb;
+    ARGB_Header argb;
     argb.width      = (u32)width;
     argb.height     = (u32)height;
-    argb.size       = sizeof(ARGB_header) + sizeof(u32) * (u32)argb.width * (u32)argb.height;
+    argb.size       = sizeof(ARGB_Header) + sizeof(u32) * (u32)argb.width * (u32)argb.height;
     auto *pixel_ptr = (u32 *)image;
 
     for (u32 pixel {}; pixel < width * height; ++pixel) {
@@ -176,7 +185,7 @@ main(s32 argc, char *argv[])
         *write_ptr++ = *pixel_ptr++;
     }
 
-    szt input_path_len = tomato::util::get_str_len(argv[1]);
+    szt input_path_len = get_str_len(argv[1]);
     szt path_ind       = input_path_len - 1;
     char *path_str     = argv[1];
     while (path_str[path_ind] != '\\') {

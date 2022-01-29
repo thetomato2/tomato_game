@@ -1,3 +1,6 @@
+#ifndef TOMATO_INTRINSIC_HPP_
+#define TOMATO_INTRINSIC_HPP_
+#include "tomato_platform.hpp"
 
 struct Bit_Scan_Result
 {
@@ -25,42 +28,42 @@ find_least_signifcant_set_bit(u32 val_)
     return result;
 }
 
-s32
+inline s32
 round_f32_to_s32(f32 val_)
 {
     s32 val = (s32)roundf(val_);
     return val;
 }
 
-u32
+inline u32
 round_f32_to_u32(f32 val_)
 {
     u32 val = (u32)roundf(val_);
     return val;
 }
 
-s32
+inline s32
 floorf_to_s32(f32 val_)
 {
     s32 result = (s32)floorf(val_);
     return result;
 }
 
-f32
+inline f32
 tom_sin(f32 angle_)
 {
     f32 result = sinf(angle_);
     return result;
 }
 
-f32
+inline f32
 tom_cos(f32 angle_)
 {
     f32 result = cosf(angle_);
     return result;
 }
 
-f32
+inline f32
 tom_atan2(f32 x_, f32 y_)
 {
     f32 result = atan2f(x_, y_);
@@ -94,3 +97,5 @@ ceil_f32_to_s32(f32 val_)
     s32 res = (s32)ceilf(val_);
     return res;
 }
+
+#endif  // TOMATO_INTRINSIC_HPP_

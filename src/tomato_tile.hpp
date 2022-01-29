@@ -1,5 +1,7 @@
+#ifndef TOMATO_TILE_HPP_
+#define TOMATO_TILE_HPP_
 
-// struct Mem_Arena;
+#include "tomato_platform.hpp"
 
 // TODO: change to V3
 struct Tile_Map_Dif
@@ -49,3 +51,5 @@ struct Tile_Map
     Tile_Chunk *tile_chunks;
     Tile_Chunk *cur_tile_chunk;
 };
+
+#endif  // TOMATO_TILE_HPP_

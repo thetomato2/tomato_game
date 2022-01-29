@@ -1,3 +1,5 @@
+#ifndef TOMATO_PLATFORM_HPP_
+#define TOMATO_PLATFORM_HPP_
 /*
 ** Anything that needs to used in a platform layer gets put here
 */
@@ -112,7 +114,7 @@ struct Thread_Context
     s32 place_holder;
 };
 
-struct debug_ReadFileResult
+struct debug_Read_File_Result
 {
     u32 content_size;
     void *contents;
@@ -124,7 +126,7 @@ struct debug_ReadFileResult
 typedef DEBUG_PLATFORM_FREE_FILE_MEMORY(debug_platform_free_file_memory);
 
     #define DEBUG_PLATFORM_READ_ENTIRE_FILE(name) \
-        debug_ReadFileResult name(Thread_Context *thread_, const char *file_name_)
+        debug_Read_File_Result name(Thread_Context *thread_, const char *file_name_)
 typedef DEBUG_PLATFORM_READ_ENTIRE_FILE(debug_platform_read_entire_file);
 
     #define DEBUG_PLATFORM_WRITE_ENTIRE_FILE(name) \
@@ -275,3 +277,5 @@ safe_truncate_u32_to_u64(u64 val_)
     u32 result = (u32)val_;
     return result;
 }
+
+#endif  // TOMATO_PLATFORM_HPP_

@@ -34,7 +34,7 @@ DEBUG_PLATFORM_FREE_FILE_MEMORY(_debug_platform_free_file_memory)
 
 DEBUG_PLATFORM_READ_ENTIRE_FILE(_debug_platform_read_entire_file)
 {
-    debug_ReadFileResult file = {};
+    debug_Read_File_Result file = {};
 
     HANDLE file_handle =
         CreateFileA(file_name_, GENERIC_READ, 0, 0, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, 0);
