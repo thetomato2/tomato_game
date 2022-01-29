@@ -248,21 +248,45 @@ enum Dir : s32
 
 };
 
-struct Entity
+struct High_Entity
 {
     b32 exists;
-
-    f32 height;
-    f32 width;
-
-    Tile_Map_Pos pos;
-    Color_u32 color;
-
+    // NOTE: relative to camera
+    v2 pos, vel;
+    u32 abs_tile_z;
     u32 direction;
+    f32 stair_cd;
+};
+
+struct Low_Entity
+{
+};
+
+struct Dormant_Entity
+{
+    Tile_Map_Pos pos;
+    f32 width, height;
+    Color_u32 color;
     ARGB_Img *sprites;
 
-    f32 stair_cd;
-    v2 vel;
+    b32 collides;
+    b32 stairs;
+};
+
+enum Entity_Residence
+{
+    non_existent,
+    dormant,
+    low,
+    high
+};
+
+struct Entity
+{
+    Entity_Residence *residence;
+    Low_Entity *low;
+    High_Entity *high;
+    Dormant_Entity *dormant;
 };
 
 struct World
@@ -291,7 +315,13 @@ struct Game_State
     Bitmap bitmap;
 
     szt player_controller_ind[Game_Input::s_input_cnt];
-    Entity entities[s_max_entities];
+
+    u32 entity_cnt;
+    u32 player_cnt;
+    Entity_Residence entity_residence[s_max_entities];
+    High_Entity high_entities[s_max_entities];
+    Low_Entity low_entities[s_max_entities];
+    Dormant_Entity dormant_entities[s_max_entities];
 
     ARGB_Img bg_img;
     ARGB_Img seaside_cliff;

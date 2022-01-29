@@ -8,7 +8,6 @@
 
 namespace tom
 {
-
 namespace math
 {
 // NOTE: inner product or dot product
