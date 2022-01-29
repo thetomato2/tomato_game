@@ -1,7 +1,7 @@
 #ifndef TOMATO_TILE_HPP_
 #define TOMATO_TILE_HPP_
 
-#include "tomato_platform.hpp"
+#include "tomato_platform.h"
 #include "tomato_math.hpp"
 
 // TODO: change to V3

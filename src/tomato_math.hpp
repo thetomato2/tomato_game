@@ -1,6 +1,6 @@
 #ifndef TOMATO_MATH_HPP_
 #define TOMATO_MATH_HPP_
-#include "tomato_platform.hpp"
+#include "tomato_platform.h"
 #include "tomato_intrinsic.hpp"
 // ===============================================================================================
 // #VECTOR 2

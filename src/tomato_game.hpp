@@ -1,4 +1,4 @@
-#include "tomato_platform.hpp"
+#include "tomato_platform.h"
 #include "tomato_intrinsic.hpp"
 
 struct Mem_Arena

@@ -1,6 +1,6 @@
 #ifndef TOMATO_INTRINSIC_HPP_
 #define TOMATO_INTRINSIC_HPP_
-#include "tomato_platform.hpp"
+#include "tomato_platform.h"
 
 struct Bit_Scan_Result
 {

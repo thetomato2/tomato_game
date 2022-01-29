@@ -73,7 +73,7 @@ add_library(Tomato_Game_Lib SHARED
     ${Source_Dir}/tomato_game.hpp
     ${Source_Dir}/tomato_intrinsic.hpp
     ${Source_Dir}/tomato_math.hpp
-    ${Source_Dir}/tomato_platform.hpp
+    ${Source_Dir}/tomato_platform.h
     ${Source_Dir}/tomato_tile.cpp
     ${Source_Dir}/tomato_tile.hpp
     )
@@ -99,7 +99,7 @@ if (MSVC)
 
     target_link_options(Tomato_Game_Lib PRIVATE
         ${Common_Linker_Flags}
-        -EXPORT:game_get_sound_samples
+        -EXPORT:game_get_sound_samples
         -EXPORT:game_update_and_render
         )
 endif()

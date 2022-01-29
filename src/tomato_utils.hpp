@@ -1,12 +1,12 @@
 #ifndef TOMATO_UTILS_HPP_
 #define TOMATO_UTILS_HPP_
 
-#include "tomato_platform.hpp"
+#include "tomato_platform.h"
 
 inline szt
 get_wstr_len(const wchar *wstr_)
 {
-    szt len {};
+    szt len;
     while (*wstr_++) {
         ++len;
     }

@@ -1,4 +1,4 @@
-#include "tomato_platform.hpp"
+#include "tomato_platform.h"
 
 #define STB_IMAGE_IMPLEMENTATION
 #include "../external/stb_image.h"
