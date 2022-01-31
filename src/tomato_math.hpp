@@ -2,10 +2,10 @@
 #define TOMATO_MATH_HPP_
 #include "tomato_platform.h"
 #include "tomato_intrinsic.hpp"
+
 // ===============================================================================================
 // #VECTOR 2
 // ===============================================================================================
-
 union v2
 {
     struct
@@ -111,6 +111,58 @@ operator*=(v2 &a_, f32 b_)
 
     return a_;
 }
+// ===============================================================================================
+// #RECT_V2
+// ===============================================================================================
+
+struct rect_v2
+{
+    v2 min;
+    v2 max;
+};
+
+inline rect_v2
+rect_v2_min_max(v2 min_, v2 max_)
+{
+    rect_v2 result;
+
+    result.min = min_;
+    result.max = max_;
+
+    return result;
+}
+
+inline rect_v2
+rect_v2_min_dim(v2 min_, v2 dim_)
+{
+    rect_v2 result;
+
+    result.min = min_;
+    result.max = min_ + dim_;
+
+    return result;
+}
+
+inline rect_v2
+rect_v2_center_half_dim(v2 center_, v2 half_dim_)
+{
+    rect_v2 result;
+
+    result.min = center_ - half_dim_;
+    result.max = center_ + half_dim_;
+
+    return result;
+}
+
+inline bool
+is_in_rect_v2(rect_v2 rect_, v2 test_)
+{
+    bool result = ((test_.x >= rect_.min.x) && (test_.y >= rect_.min.y) &&
+                   (test_.x <= rect_.max.x) && (test_.y <= rect_.max.y));
+
+    return result;
+}
+
 // NOTE: inner product or dot product
 inline f32
 inner(v2 a_, v2 b_)

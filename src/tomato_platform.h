@@ -5,15 +5,20 @@
 */
 #include <tchar.h>
 
-#include <cassert>
-#include <cmath>
-#include <cstdint>
-#include <cstdio>
-#include <cwchar>
-
 #ifdef __cplusplus
+    #include <cassert>
+    #include <cmath>
+    #include <cstdint>
+    #include <cstdio>
+    #include <cwchar>
 extern "C"
 {
+#else
+    #include <stdio.h>
+    #include <assert.h>
+    #include "math.h"
+    #include "stdint.h"
+    #include "wchar.h"
 #endif
 
 #ifdef _MSVC
@@ -27,10 +32,6 @@ extern "C"
 #if MSVC
     /* #include <intrin.h> */
     #pragma intrinsic(_BitScanForward)
-#endif
-
-#ifndef TOM_INTERNAL
-    #define TOM_INTERNAL
 #endif
 
 #define internal        static
@@ -62,19 +63,6 @@ extern "C"
 
     typedef int32_t b32;
 
-#ifdef TOM_INTERNAL
-    #define TOM_ASSERT(x, ...)                                                            \
-        {                                                                                 \
-            if (!(x)) {                                                                   \
-                tomato::util::Print("Assertion Failed in {0} at line {1}: {2}", __FILE__, \
-                                    __LINE__, __VA_ARGS__);                               \
-                __debugbreak();                                                           \
-            }                                                                             \
-        }
-#else
-    #define TOM_ASSERT(x, ...)
-#endif
-
 #define KILOBYTES(val) ((val)*1024)
 #define MEGABYTES(val) (KILOBYTES(val) * 1024)
 #define GIGABYTES(val) (MEGABYTES(val) * 1024)
@@ -82,14 +70,7 @@ extern "C"
 
 #define ArrayCount(Array) (sizeof((Array)) / sizeof((Array)[0]))
 
-#define TOM_WIN32
-#ifdef TOM_WIN32
-    #define TOM_DLL_EXPORT __declspec(dllexport)
-#else
-    #define TOM_DLL_EXPORT
-#endif
-
-#define REPLAY_BUFFERS 1
+#define INVALID_CODE_PATH assert(!"Invalid code path!")
 
 #define TOM_WIN32
 #ifdef TOM_WIN32
@@ -99,24 +80,15 @@ extern "C"
 #endif
 
 #define REPLAY_BUFFERS 1
-
-#define TOM_WIN32
-#ifdef TOM_WIN32
-    #define TOM_DLL_EXPORT __declspec(dllexport)
-#else
-    #define TOM_DLL_EXPORT
-#endif
-
-#define REPLAY_BUFFERS 1
-
-// NOTE: services that the platform provides for the game
-#ifdef TOM_INTERNAL
 
     // TODO: implement this
     typedef struct Thread_Context
     {
         s32 place_holder;
     } Thread_Context;
+
+// NOTE: services that the platform provides for the game
+#ifdef TOM_INTERNAL
 
     typedef struct debug_Read_File_Result
     {
@@ -283,8 +255,7 @@ extern "C"
     }
 
 #ifdef __cplusplus
-} 
+}
 #endif
 
 #endif  // TOMATO_PLATFORM_H_
-

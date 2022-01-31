@@ -1,25 +1,6 @@
 #include "tomato_platform.h"
 #include "tomato_intrinsic.hpp"
-
-struct Mem_Arena
-{
-    mem_ind size;
-    u8 *base;
-    mem_ind used;
-};
-
-inline void *
-push_size(Mem_Arena *arena_, mem_ind size_)
-{
-    assert((arena_->used + size_) <= arena_->size);
-    void *result = arena_->base + arena_->used;
-    arena_->used += size_;
-
-    return result;
-}
-
-#define PushStruct(arena, type)       (type *)push_size(arena, sizeof(type))
-#define PushArray(arena, count, type) (type *)push_size(arena, (count * sizeof(type)))
+#include "tomato_common.hpp"
 
 #include "tomato_math.hpp"
 #include "tomato_utils.hpp"
@@ -96,32 +77,7 @@ enum Dir : s32
 
 };
 
-struct High_Entity
-{
-    b32 exists;
-    // NOTE: relative to camera
-    v2 pos, vel;
-    u32 abs_tile_z;
-    u32 direction;
-    f32 stair_cd;
-};
-
-struct Low_Entity
-{
-};
-
-struct Dormant_Entity
-{
-    Tile_Map_Pos pos;
-    f32 width, height;
-    Color_u32 color;
-    ARGB_Img *sprites;
-
-    b32 collides;
-    b32 stairs;
-};
-
-enum Entity_Residence
+enum class Entity_Residence
 {
     non_existent,
     dormant,
@@ -129,12 +85,46 @@ enum Entity_Residence
     high
 };
 
+enum class Entity_Type
+{
+    null,
+    none,
+    player,
+    wall,
+    stairs
+};
+
+struct High_Entity
+{
+    b32 exists;
+
+    // NOTE: relative to camera
+    v2 pos, vel;
+    u32 abs_tile_z;
+    u32 direction;
+    f32 stair_cd;
+
+    u32 low_i;
+};
+
+struct Low_Entity
+{
+    Tile_Map_Pos pos;
+    f32 width, height;
+    Color_u32 color;
+    ARGB_Img *sprites;
+
+    b32 collides;
+    Entity_Type type;
+
+    u32 high_i;
+};
+
 struct Entity
 {
-    Entity_Residence *residence;
+    u32 low_i;
     Low_Entity *low;
     High_Entity *high;
-    Dormant_Entity *dormant;
 };
 
 struct World
@@ -149,38 +139,37 @@ struct Camera
 
 struct Game_State
 {
-    static constexpr szt s_max_entities { 256 };
-    u32 static constexpr s_num_screens { 100 };
-    u32 static constexpr s_num_tiles_per_screen_x { 20 };
-    u32 static constexpr s_num_tiles_per_screen_y { 11 };
+    static constexpr u32 s_max_low_cnt { 4096 };
+    static constexpr u32 s_max_high_cnt { 256 };
+    static constexpr u32 s_num_screens { 10 };
+    static constexpr u32 s_num_tiles_per_screen_x { 20 };
+    static constexpr u32 s_num_tiles_per_screen_y { 11 };
 
     Mem_Arena world_arena;
     World *world;
 
-    szt entity_camera_follow_ind;
+    u32 entity_camera_follow_ind;
     Camera camera;
 
     Bitmap bitmap;
 
-    szt player_controller_ind[Game_Input::s_input_cnt];
+    u32 player_controller_ind[Game_Input::s_input_cnt];
 
-    u32 entity_cnt;
     u32 player_cnt;
-    Entity_Residence entity_residence[s_max_entities];
-    High_Entity high_entities[s_max_entities];
-    Low_Entity low_entities[s_max_entities];
-    Dormant_Entity dormant_entities[s_max_entities];
+
+    u32 low_cnt;
+    Low_Entity low_entities[s_max_low_cnt];
+    u32 high_cnt;
+    High_Entity high_entities[s_max_high_cnt];
 
     ARGB_Img bg_img;
     ARGB_Img seaside_cliff;
-
     ARGB_Img crosshair_img;
-
     ARGB_Img red_square_img;
     ARGB_Img green_square_img;
     ARGB_Img blue_square_img;
-
     ARGB_Img player_sprites[4];
+    ARGB_Img tree_sprite;
 
     Tile_Map_Pos test_pos;
 };
