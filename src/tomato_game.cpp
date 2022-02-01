@@ -158,7 +158,7 @@ load_bmp(Thread_Context *thread_, debug_platform_read_entire_file *read_entire_f
 
 static ARGB_Img
 load_ARGB(Thread_Context *thread_, debug_platform_read_entire_file *read_entire_file_,
-          const char *file_name_)
+          const char *file_name_, const char *name_ = nullptr)
 {
     const char *argb_dir = "T:/assets/argbs/";
     char img_path_buf[512];
@@ -175,6 +175,10 @@ load_ARGB(Thread_Context *thread_, debug_platform_read_entire_file *read_entire_
     ARGB_Img result;
 
     if (read_result.content_size != 0) {
+        if (name_)
+            result.name = name_;
+        else
+            result.name = file_name_;
         auto *file_ptr   = (u32 *)read_result.contents;
         result.width     = *file_ptr++;
         result.height    = *file_ptr++;
@@ -328,6 +332,27 @@ add_wall(Game_State &game_state_, u32 abs_x_, u32 abs_y_, u32 abs_z_, ARGB_Img *
     wall->color          = { 0xff'dd'dd'dd };
     wall->sprites        = sprites_;
     wall->collides       = true;
+    wall->barrier        = true;
+
+    return wall_i;
+}
+
+static u32
+add_stairs(Game_State &game_state_, u32 abs_x_, u32 abs_y_, u32 abs_z_,
+           ARGB_Img *sprites_ = nullptr)
+{
+    u32 wall_i       = add_low_entity(game_state_, Entity_Type::stairs);
+    Low_Entity *wall = get_low_entity(game_state_, wall_i);
+
+    wall->height         = Tile_Map::s_tile_size_meters;
+    wall->width          = Tile_Map::s_tile_size_meters;
+    wall->pos.abs_tile_x = abs_x_;
+    wall->pos.abs_tile_y = abs_y_;
+    wall->pos.abs_tile_z = abs_z_;
+    wall->color          = { 0xff'1e'1e'1e };
+    wall->sprites        = sprites_;
+    wall->collides       = true;
+    wall->barrier        = false;
 
     return wall_i;
 }
@@ -372,7 +397,7 @@ move_player(Entity player_, const Player_Actions &player_actions_, Tile_Map &til
 
     // NOTE: normalize vector to unit length
     f32 player_acc_length = length_sq(player_acc);
-    f32 player_speed      = player_actions_.sprint ? 50.f : 25.f;
+    f32 player_speed      = player_actions_.sprint ? 100.f : 50.f;
 
     if (player_acc_length > 1.f) player_acc *= (1.f / sqrt_f32(player_acc_length));
     player_acc *= player_speed;
@@ -397,7 +422,7 @@ move_player(Entity player_, const Player_Actions &player_actions_, Tile_Map &til
             test_ent.high = game_state_.high_entities + test_high_i,
             test_ent.low  = game_state_.low_entities + test_ent.high->low_i;
 
-            if (test_ent.low->collides) continue;  // skip non-collision entities
+            if (!test_ent.low->collides) continue;  // skip non-collision entities
 
             // NOTE: Minkowski sum
             f32 radius_w = player_.low->width + test_ent.low->width;
@@ -431,32 +456,36 @@ move_player(Entity player_, const Player_Actions &player_actions_, Tile_Map &til
 
             if (test_wall(min_corner.x, rel.x, rel.y, player_delta.x, player_delta.y, min_corner.y,
                           max_corner.y)) {
-                wall_nrm    = { -1.f, 0.f };
+                wall_nrm    = v2 { -1.f, 0.f };
                 hit_ent_ind = test_high_i;
             }
             if (test_wall(max_corner.x, rel.x, rel.y, player_delta.x, player_delta.y, min_corner.y,
                           max_corner.y)) {
-                wall_nrm    = { 1.f, 0.f };
+                wall_nrm    = v2 { 1.f, 0.f };
                 hit_ent_ind = test_high_i;
             }
             if (test_wall(min_corner.y, rel.y, rel.x, player_delta.y, player_delta.x, min_corner.x,
                           max_corner.x)) {
-                wall_nrm    = { 0.f, -1.f };
+                wall_nrm    = v2 { 0.f, -1.f };
                 hit_ent_ind = test_high_i;
             }
             if (test_wall(max_corner.y, rel.y, rel.x, player_delta.y, player_delta.x, min_corner.x,
                           max_corner.x)) {
-                wall_nrm    = { 0.f, 1.f };
+                wall_nrm    = v2 { 0.f, 1.f };
                 hit_ent_ind = test_high_i;
             }
         }
+        High_Entity *hit_high = game_state_.high_entities + hit_ent_ind;
+        if (!game_state_.low_entities[hit_high->low_i].barrier) {
+            wall_nrm = { 0.f, 0.f };
+        }
+
         player_.high->pos += t_min * player_delta;
         if (hit_ent_ind) {
             player_.high->vel -= 1.f * inner(player_.high->vel, wall_nrm) * wall_nrm;
             player_delta -= 1.f * inner(player_delta, wall_nrm) * wall_nrm;
 
-            High_Entity *hit_high = game_state_.high_entities + hit_ent_ind;
-            if (player_.high->stair_cd &&
+            if (player_.high->stair_cd > .5f &&
                 game_state_.low_entities[hit_high->low_i].type == Entity_Type::stairs) {
                 player_.high->abs_tile_z == 0 ? player_.high->abs_tile_z = 1
                                               : player_.high->abs_tile_z = 0;
@@ -577,6 +606,7 @@ GAME_UPDATE_AND_RENDER(game_update_and_render)
             load_ARGB(thread_, memory_.platfrom_read_entire_file, "crosshair");
         game_state.tree_sprite =
             load_ARGB(thread_, memory_.platfrom_read_entire_file, "shitty_tree");
+        game_state.stair_sprite = load_ARGB(thread_, memory_.platfrom_read_entire_file, "stairs");
         game_state.red_square_img =
             load_ARGB(thread_, memory_.platfrom_read_entire_file, "red_square");
         game_state.green_square_img =
@@ -670,6 +700,7 @@ GAME_UPDATE_AND_RENDER(game_update_and_render)
                                  Game_State::s_num_tiles_per_screen_y / 2;
                 set_tile_value(&game_state.world_arena, *tile_map, mid_tile_x, mid_tile_y, screen_z,
                                3);
+                add_stairs(game_state, mid_tile_x, mid_tile_y, screen_z, &game_state.stair_sprite);
             }
 
             if (door_right) {

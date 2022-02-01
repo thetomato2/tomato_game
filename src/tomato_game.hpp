@@ -62,6 +62,7 @@ struct Bitmap
 
 struct ARGB_Img
 {
+    const char *name;
     u32 width;
     u32 height;
     u32 size;
@@ -115,6 +116,7 @@ struct Low_Entity
     ARGB_Img *sprites;
 
     b32 collides;
+    b32 barrier;
     Entity_Type type;
 
     u32 high_i;
@@ -170,6 +172,7 @@ struct Game_State
     ARGB_Img blue_square_img;
     ARGB_Img player_sprites[4];
     ARGB_Img tree_sprite;
+    ARGB_Img stair_sprite;
 
     Tile_Map_Pos test_pos;
 };
