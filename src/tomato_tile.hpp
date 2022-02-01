@@ -23,6 +23,19 @@ struct Tile_Map_Pos
     v2 offset;
 };
 
+inline bool
+operator==(const Tile_Map_Pos &lhs, const Tile_Map_Pos &rhs)
+{
+    return (lhs.abs_tile_x == rhs.abs_tile_x && lhs.abs_tile_y == rhs.abs_tile_y &&
+            lhs.abs_tile_z == rhs.abs_tile_z && lhs.offset.x == rhs.offset.x &&
+            lhs.offset.y == rhs.offset.y);
+}
+inline bool
+operator!=(const Tile_Map_Pos &lhs, const Tile_Map_Pos &rhs)
+{
+    return !(lhs == rhs);
+}
+
 struct Tile_Chunk_Pos
 {
     u32 chunk_tile_x;

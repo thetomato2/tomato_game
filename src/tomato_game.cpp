@@ -303,7 +303,7 @@ add_low_entity(Game_State &game_state_, Entity_Type type_ = Entity_Type::none)
 inline void
 offset_and_check_entities_by_area(Game_State &game_state_, rect_v2 area_, v2 offset_)
 {
-    for (u32 high_i = 1; high_i < game_state_.high_cnt;) {
+    for (u32 high_i = 6; high_i < game_state_.high_cnt;) {
         High_Entity *high = game_state_.high_entities + high_i;
         high->pos += offset_;
         if (is_in_rect_v2(area_, high->pos)) {
@@ -342,7 +342,7 @@ init_player(Game_State &game_state_, u32 player_i_, ARGB_Img *sprites_ = nullptr
         assert(player_i = player_i_);
         if (player_i == player_i_) {
             Low_Entity *player = get_low_entity(game_state_, player_i);
-#if 1
+#if 0
             make_entity_high(game_state_, player_i);
             High_Entity *player_high = game_state_.high_entities + player->high_i;
 
@@ -487,7 +487,7 @@ static void
 set_camera(Game_State &game_state_, Tile_Map_Pos new_cam_pos_)
 {
     Tile_Map_Pos old_cam_pos = game_state_.camera.pos;
-    Tile_Map_Dif dif_cam     = get_tile_diff(game_state_.camera.pos, old_cam_pos);
+    Tile_Map_Dif dif_cam     = get_tile_diff(new_cam_pos_, old_cam_pos);
     game_state_.camera.pos   = new_cam_pos_;
 
     // NOTE: camera space defined here
@@ -506,7 +506,7 @@ set_camera(Game_State &game_state_, Tile_Map_Pos new_cam_pos_)
     u32 min_tile_y = new_cam_pos_.abs_tile_y - tile_span_y / 2;
     u32 max_tile_x = new_cam_pos_.abs_tile_x + tile_span_x / 2;
     u32 max_tile_y = new_cam_pos_.abs_tile_y + tile_span_y / 2;
-    for (u32 low_i = 1; low_i < game_state_.low_cnt; ++low_i) {
+    for (u32 low_i = 6; low_i < game_state_.low_cnt; ++low_i) {
         Low_Entity *low = game_state_.low_entities + low_i;
         if (low->high_i == 0) {
             if (low->pos.abs_tile_z == new_cam_pos_.abs_tile_z &&
@@ -728,17 +728,17 @@ GAME_UPDATE_AND_RENDER(game_update_and_render)
         }
     }
 
-    // if (input_.keyboard.d1.ended_down) {
-    //     if (game_state.low_entities[1].high_i) game_state.entity_camera_follow_ind = 1;
-    // } else if (input_.keyboard.d2.ended_down) {
-    //     if (game_state.low_entities[2].high_i) game_state.entity_camera_follow_ind = 2;
-    // } else if (input_.keyboard.d3.ended_down) {
-    //     if (game_state.low_entities[3].high_i) game_state.entity_camera_follow_ind = 3;
-    // } else if (input_.keyboard.d4.ended_down) {
-    //     if (game_state.low_entities[4].high_i) game_state.entity_camera_follow_ind = 4;
-    // } else if (input_.keyboard.d5.ended_down) {
-    //     if (game_state.low_entities[5].high_i) game_state.entity_camera_follow_ind = 5;
-    // }
+    if (input_.keyboard.d1.ended_down) {
+        if (game_state.low_entities[1].high_i) game_state.entity_camera_follow_ind = 1;
+    } else if (input_.keyboard.d2.ended_down) {
+        if (game_state.low_entities[2].high_i) game_state.entity_camera_follow_ind = 2;
+    } else if (input_.keyboard.d3.ended_down) {
+        if (game_state.low_entities[3].high_i) game_state.entity_camera_follow_ind = 3;
+    } else if (input_.keyboard.d4.ended_down) {
+        if (game_state.low_entities[4].high_i) game_state.entity_camera_follow_ind = 4;
+    } else if (input_.keyboard.d5.ended_down) {
+        if (game_state.low_entities[5].high_i) game_state.entity_camera_follow_ind = 5;
+    }
 
     Entity cam_ent = get_high_entity(game_state, game_state.entity_camera_follow_ind);
 
@@ -746,24 +746,29 @@ GAME_UPDATE_AND_RENDER(game_update_and_render)
 
     camera.pos.abs_tile_z = cam_ent.high->abs_tile_z;
 
+    Tile_Map_Pos new_cam_pos = camera.pos;
     if (entity_dif.dif_xy.x >
         (Game_State::s_num_tiles_per_screen_x * Tile_Map::s_tile_size_meters) / 2) {
-        camera.pos.abs_tile_x += Game_State::s_num_tiles_per_screen_x / 2;
+        new_cam_pos.abs_tile_x += Game_State::s_num_tiles_per_screen_x / 2;
     }
     if (entity_dif.dif_xy.x <
         (Game_State::s_num_tiles_per_screen_x * Tile_Map::s_tile_size_meters) / -2) {
-        camera.pos.abs_tile_x -= Game_State::s_num_tiles_per_screen_x / 2;
+        new_cam_pos.abs_tile_x -= Game_State::s_num_tiles_per_screen_x / 2;
     }
     if (entity_dif.dif_xy.y >
         (Game_State::s_num_tiles_per_screen_y * Tile_Map::s_tile_size_meters) / 2) {
-        camera.pos.abs_tile_y += Game_State::s_num_tiles_per_screen_y / 2;
+        new_cam_pos.abs_tile_y += Game_State::s_num_tiles_per_screen_y / 2;
     }
     if (entity_dif.dif_xy.y <
         (Game_State::s_num_tiles_per_screen_y * Tile_Map::s_tile_size_meters) / -2) {
-        camera.pos.abs_tile_y -= Game_State::s_num_tiles_per_screen_y / 2;
+        new_cam_pos.abs_tile_y -= Game_State::s_num_tiles_per_screen_y / 2;
     }
 
-    set_camera(game_state, camera.pos);
+    if (new_cam_pos != camera.pos) {
+        printf("here");
+    }
+
+    set_camera(game_state, new_cam_pos);
 
     // ===============================================================================================
     // #Draw
