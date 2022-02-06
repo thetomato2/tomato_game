@@ -111,6 +111,7 @@ struct High_Entity
 struct Low_Entity
 {
     Tile_Map_Pos pos;
+    s32 virtual_z;
     f32 width, height;
     Color_u32 color;
     ARGB_Img *sprites;
@@ -141,11 +142,11 @@ struct Camera
 
 struct Game_State
 {
-    static constexpr u32 s_max_low_cnt { 4096 };
-    static constexpr u32 s_max_high_cnt { 256 };
-    static constexpr u32 s_num_screens { 10 };
-    static constexpr u32 s_num_tiles_per_screen_x { 20 };
-    static constexpr u32 s_num_tiles_per_screen_y { 11 };
+    static constexpr u32 s_max_low_cnt            = 4096;
+    static constexpr u32 s_max_high_cnt           = 256;
+    static constexpr u32 s_num_screens            = 10;
+    static constexpr u32 s_num_tiles_per_screen_x = 20;
+    static constexpr u32 s_num_tiles_per_screen_y = 11;
 
     Mem_Arena world_arena;
     World *world;

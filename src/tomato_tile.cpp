@@ -10,8 +10,8 @@ recanonicalize_coord(u32 &tile_, f32 &tile_rel_)
     tile_ += offset;
     tile_rel_ -= offset * (f32)Tile_Map::s_tile_size_meters;
 
-    assert(tile_rel_ >= -.5f * Tile_Map::s_tile_size_meters);
-    assert(tile_rel_ <= .5f * Tile_Map::s_tile_size_meters);
+    TOM_ASSERT(tile_rel_ >= -.5f * Tile_Map::s_tile_size_meters);
+    TOM_ASSERT(tile_rel_ <= .5f * Tile_Map::s_tile_size_meters);
 }
 
 static Tile_Map_Pos
@@ -51,26 +51,61 @@ get_chunk_pos(const Tile_Map_Pos &pos_)
 }
 
 static Tile_Chunk *
-get_tile_chunk(const Tile_Map &tile_map_, const u32 tile_chunk_x_, const u32 tile_chunk_y_,
-               const u32 tile_chunk_z_)
+get_tile_chunk(Tile_Map &tile_map_, const u32 tile_chunk_x_, const u32 tile_chunk_y_,
+               const u32 tile_chunk_z_, Mem_Arena *arena_ = nullptr)
 {
-    Tile_Chunk *TileChunk {};
+    TOM_ASSERT(tile_chunk_x_ > Tile_Map::s_tile_chunk_safe_margin);
+    TOM_ASSERT(tile_chunk_y_ > Tile_Map::s_tile_chunk_safe_margin);
+    TOM_ASSERT(tile_chunk_z_ > Tile_Map::s_tile_chunk_safe_margin);
+    TOM_ASSERT(tile_chunk_x_ < UINT32_MAX - Tile_Map::s_tile_chunk_safe_margin);
+    TOM_ASSERT(tile_chunk_y_ < UINT32_MAX - Tile_Map::s_tile_chunk_safe_margin);
+    TOM_ASSERT(tile_chunk_z_ < UINT32_MAX - Tile_Map::s_tile_chunk_safe_margin);
 
-    if (tile_chunk_x_ >= 0 && tile_chunk_x_ < Tile_Map::s_chunk_count && tile_chunk_y_ >= 0 &&
-        tile_chunk_y_ < Tile_Map::s_chunk_count && tile_chunk_z_ >= 0 &&
-        tile_chunk_z_ < Tile_Map::s_chunk_count_z) {
-        TileChunk = &tile_map_.tile_chunks[tile_chunk_z_ * Tile_Map::s_chunk_count *
-                                               Tile_Map::s_chunk_tile_count +
-                                           tile_chunk_y_ * Tile_Map::s_chunk_count + tile_chunk_x_];
-    }
-    return TileChunk;
+    // TODO: BETTER HASH FUNCTION!
+    u32 hash_val  = 19 * tile_chunk_x_ + 7 * tile_chunk_y_ + 3 * tile_chunk_z_;
+    u32 hash_slot = hash_val & (ArrayCount(tile_map_.tile_chunk_hash) - 1);
+    TOM_ASSERT(hash_slot < ArrayCount(tile_map_.tile_chunk_hash));
+
+    Tile_Chunk *chunk = tile_map_.tile_chunk_hash + hash_slot;
+    do {
+        // found chunk
+        if (tile_chunk_x_ == chunk->x && tile_chunk_y_ == chunk->y && tile_chunk_z_ == chunk->z) {
+            break;
+        }
+        // didn't find chunk but there isn't a next chunk
+        // so allocate a new one and move the pointer there
+        if (arena_ && chunk->x == 0 && !chunk->next_in_hash) {
+            chunk->next_in_hash = PushStruct(arena_, Tile_Chunk);
+            chunk->x            = 0;
+            chunk               = chunk->next_in_hash;
+        }
+
+        // if chunk is empty (0) allocate the tiles
+        if (arena_ && chunk->x == 0) {
+            chunk->tiles = PushArray(arena_, Tile_Map::s_chunk_tile_count_total, u32);
+
+            chunk->x = tile_chunk_x_;
+            chunk->y = tile_chunk_y_;
+            chunk->z = tile_chunk_z_;
+
+            // do we want to always initialize?
+            for (u32 tile_ind {}; tile_ind < Tile_Map::s_chunk_tile_count_total; ++tile_ind) {
+                chunk->tiles[tile_ind] = 1;
+            }
+            chunk->next_in_hash = nullptr;
+            break;
+        }
+        chunk = chunk->next_in_hash;
+    } while (chunk);
+
+    return chunk;
 }
 
 static u32
 get_tile_value_unchecked(const Tile_Chunk &tile_chunk_, const u32 tile_x_, const u32 tile_y_)
 {
-    assert(tile_chunk_.tiles);
-    assert(tile_x_ <= Tile_Map::s_chunk_tile_count && tile_y_ <= Tile_Map::s_chunk_tile_count);
+    TOM_ASSERT(tile_chunk_.tiles);
+    TOM_ASSERT(tile_x_ <= Tile_Map::s_chunk_tile_count && tile_y_ <= Tile_Map::s_chunk_tile_count);
     return tile_chunk_.tiles[tile_y_ * Tile_Map::s_chunk_tile_count + tile_x_];
 }
 
@@ -86,7 +121,7 @@ get_tile_value(Tile_Chunk *const tile_chunk_, const u32 tile_x_, const u32 tile_
 }
 
 static u32
-get_tile_value(const Tile_Map &tile_map_, const u32 abs_tile_x_, const u32 abs_tile_y_,
+get_tile_value(Tile_Map &tile_map_, const u32 abs_tile_x_, const u32 abs_tile_y_,
                const u32 abs_tile_z_)
 {
     u32 tile_value {};
@@ -102,7 +137,7 @@ get_tile_value(const Tile_Map &tile_map_, const u32 abs_tile_x_, const u32 abs_t
 }
 
 static u32
-get_tile_value(const Tile_Map &tile_map_, const Tile_Map_Pos &pos_)
+get_tile_value(Tile_Map &tile_map_, const Tile_Map_Pos &pos_)
 {
     u32 tile_value { get_tile_value(tile_map_, pos_.abs_tile_x, pos_.abs_tile_y, pos_.abs_tile_z) };
     return tile_value;
@@ -112,8 +147,8 @@ static void
 set_tile_value_unchecked(Tile_Chunk &tile_chunk_, const u32 tile_x_, const u32 tile_y_,
                          const u32 tile_value_)
 {
-    assert(tile_chunk_.tiles);
-    assert(tile_x_ <= Tile_Map::s_chunk_tile_count && tile_y_ <= Tile_Map::s_chunk_tile_count);
+    TOM_ASSERT(tile_chunk_.tiles);
+    TOM_ASSERT(tile_x_ <= Tile_Map::s_chunk_tile_count && tile_y_ <= Tile_Map::s_chunk_tile_count);
     tile_chunk_.tiles[tile_y_ * Tile_Map::s_chunk_tile_count + tile_x_] = tile_value_;
 }
 
@@ -131,18 +166,19 @@ set_tile_value(Mem_Arena *arena_, Tile_Map &tile_map_, const u32 abs_tile_x_, co
                const u32 abs_tile_z_, const u32 tile_value_)
 {
     Tile_Chunk_Pos chunk_pos { get_chunk_pos(abs_tile_x_, abs_tile_y_, abs_tile_z_) };
-    Tile_Chunk *TileChunk { get_tile_chunk(tile_map_, chunk_pos.chunk_tile_x,
-                                           chunk_pos.chunk_tile_y, chunk_pos.chunk_tile_z) };
+    Tile_Chunk *tile_chunk { get_tile_chunk(tile_map_, chunk_pos.chunk_tile_x,
+                                            chunk_pos.chunk_tile_y, chunk_pos.chunk_tile_z,
+                                            arena_) };
 
-    assert(TileChunk);
-    if (!TileChunk->tiles) {
-        TileChunk->tiles = PushArray(arena_, Tile_Map::s_chunk_tile_count_total, u32);
+    TOM_ASSERT(tile_chunk);
+    if (!tile_chunk->tiles) {
+        tile_chunk->tiles = PushArray(arena_, Tile_Map::s_chunk_tile_count_total, u32);
         for (u32 tile_ind {}; tile_ind < Tile_Map::s_chunk_tile_count_total; ++tile_ind) {
-            TileChunk->tiles[tile_ind] = 1;
+            tile_chunk->tiles[tile_ind] = 1;
         }
     }
 
-    set_tile_value(TileChunk, chunk_pos.rel_tile_x, chunk_pos.rel_tile_y, tile_value_);
+    set_tile_value(tile_chunk, chunk_pos.rel_tile_x, chunk_pos.rel_tile_y, tile_value_);
 }
 
 static bool
@@ -153,7 +189,7 @@ is_tile_value_empty(const u32 tile_value_)
 }
 
 static bool
-is_world_tile_empty(const Tile_Map &tile_map_, const Tile_Map_Pos &test_pos_)
+is_world_tile_empty(Tile_Map &tile_map_, const Tile_Map_Pos &test_pos_)
 {
     u32 tile_value =
         get_tile_value(tile_map_, test_pos_.abs_tile_x, test_pos_.abs_tile_y, test_pos_.abs_tile_z);
@@ -190,3 +226,12 @@ get_centered_tile_point(const u32 abs_tile_x_, const u32 abs_tile_y_, const u32 
 
     return result;
 }
+
+static void
+init_tile_map(Tile_Map &tile_map_)
+{
+    for (u32 tile_chunk_i = 0; tile_chunk_i < ArrayCount(tile_map_.tile_chunk_hash);
+         ++tile_chunk_i) {
+        tile_map_.tile_chunk_hash[tile_chunk_i].x = 0;  // null chunk
+    }
+};

@@ -212,23 +212,23 @@ static void
 init_WASAPI(s32 samples_per_second_, s32 buffer_size_in_samples_)
 {
     if (FAILED(CoInitializeEx(0, COINIT_SPEED_OVER_MEMORY))) {
-        assert(false);
+        INVALID_CODE_PATH;
     }
 
     IMMDeviceEnumerator *enumerator;
     if (FAILED(CoCreateInstance(__uuidof(MMDeviceEnumerator), nullptr, CLSCTX_ALL,
                                 IID_PPV_ARGS(&enumerator)))) {
-        assert(false);
+        INVALID_CODE_PATH;
     }
 
     IMMDevice *device;
     if (FAILED(enumerator->GetDefaultAudioEndpoint(eRender, eConsole, &device))) {
-        assert(false);
+        INVALID_CODE_PATH;
     }
 
     if (FAILED(device->Activate(__uuidof(IAudioClient), CLSCTX_ALL, NULL,
                                 (LPVOID *)&g_audio_client))) {
-        assert(false);
+        INVALID_CODE_PATH;
     }
 
     WAVEFORMATEXTENSIBLE wave_format;
@@ -250,25 +250,25 @@ init_WASAPI(s32 samples_per_second_, s32 buffer_size_in_samples_)
                                      samples_per_second_;  // buffer size in 100 nanoseconds
     if (FAILED(g_audio_client->Initialize(AUDCLNT_SHAREMODE_SHARED, AUDCLNT_STREAMFLAGS_NOPERSIST,
                                           buffer_duration, 0, &wave_format.Format, nullptr))) {
-        assert(false);
+        TOM_ASSERT(false);
     }
 
     if (FAILED(g_audio_client->GetService(IID_PPV_ARGS(&g_audio_render_client)))) {
-        assert(false);
+        TOM_ASSERT(false);
     }
 
     UINT32 soundFrmCnt;
     if (FAILED(g_audio_client->GetBufferSize(&soundFrmCnt))) {
-        assert(false);
+        TOM_ASSERT(false);
     }
 
     if (FAILED(g_audio_client->GetService(IID_PPV_ARGS(&g_audio_clock)))) {
-        assert(false);
+        TOM_ASSERT(false);
     }
 
     // Check if we got what we requested (better would to pass this value back
     // as real buffer size)
-    assert(buffer_size_in_samples_ <= (s32)soundFrmCnt);
+    TOM_ASSERT(buffer_size_in_samples_ <= (s32)soundFrmCnt);
 }
 
 static void
@@ -529,7 +529,7 @@ get_input_file_path(Win32_State &state_, b32 is_input_stream_)
 static Replay_Buffer &
 get_replay_buffer(Win32_State &state_, szt index_)
 {
-    assert(index_ < ArrayCount(state_.replay_buffers));
+    TOM_ASSERT(index_ < ArrayCount(state_.replay_buffers));
     return state_.replay_buffers[index_];
 }
 
@@ -611,7 +611,7 @@ static void
 init_console()
 {
     bool is_initialized = AllocConsole();
-    assert(is_initialized);
+    TOM_ASSERT(is_initialized);
 
     if (is_initialized) {
         FILE *fDummy;
@@ -753,7 +753,7 @@ Main(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLine, s32 nShowCm
 
     init_console();
     HWND cons_hWnd = GetConsoleWindow();
-    assert(cons_hWnd);
+    TOM_ASSERT(cons_hWnd);
     SendMessage(cons_hWnd, WM_SETICON, NULL, (LPARAM)icon);
 
     printf("Starting...\n");
@@ -792,7 +792,7 @@ Main(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLine, s32 nShowCm
 
     if (!RegisterClass(&window_class)) {
         printf("ERROR--> Failed to register window class!\n");
-        assert(false);
+        TOM_ASSERT(false);
         return 0;
     }
 
@@ -807,7 +807,7 @@ Main(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLine, s32 nShowCm
 
     if (AdjustWindowRect(&wr, dw_style, false) == 0) {
         printf("ERROR--> Failed to adjust window rect");
-        assert(false);
+        TOM_ASSERT(false);
     }
 
     HWND hWnd = CreateWindowEx(0, window_class.lpszClassName, _T("TomatoGame"), dw_style,
@@ -816,7 +816,7 @@ Main(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLine, s32 nShowCm
 
     if (!hWnd) {
         printf("Failed to create window!\n");
-        assert(hWnd);
+        TOM_ASSERT(hWnd);
         return 0;
     }
 
@@ -901,8 +901,8 @@ Main(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLine, s32 nShowCm
                               max_size.LowPart, NULL);
         DWORD error = GetLastError();
         replay_buffer.memory_block =
-            MapViewOfFile(replay_buffer.memory_map, FILE_MAP_ALL_ACCESS, 0, 0, state.total_size),
-        assert(replay_buffer.memory_block);
+            MapViewOfFile(replay_buffer.memory_map, FILE_MAP_ALL_ACCESS, 0, 0, state.total_size);
+        TOM_ASSERT(replay_buffer.memory_block);
     }
 #endif
 
@@ -953,7 +953,7 @@ Main(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLine, s32 nShowCm
             s32 maxSampleCnt = s32(sound_output.secondary_buf_size - sound_pad_size);
             samples_to_write = s32(sound_output.latency_sample_count - sound_pad_size);
             if (samples_to_write < 0) samples_to_write = 0;
-            // assert(samplesToWrite < maxSampleCnt);
+            // TOM_ASSERT(samplesToWrite < maxSampleCnt);
         }
 
         Game_Sound_Output_Buffer sound_buffer {};

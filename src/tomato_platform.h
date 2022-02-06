@@ -70,14 +70,26 @@ extern "C"
 
 #define ArrayCount(Array) (sizeof((Array)) / sizeof((Array)[0]))
 
-#define INVALID_CODE_PATH assert(!"Invalid code path!")
-
 #define TOM_WIN32
 #ifdef TOM_WIN32
     #define TOM_DLL_EXPORT __declspec(dllexport)
 #else
     #define TOM_DLL_EXPORT
 #endif
+#ifdef TOM_INTERNAL
+    #define TOM_ASSERT(x)                                                   \
+        {                                                                   \
+            if (!(x)) {                                                     \
+                printf("FAILED ASSERT -> %s at :%d\n", __FILE__, __LINE__); \
+                __debugbreak();                                             \
+            }                                                               \
+            assert(x);                                                      \
+        }
+#else
+    #define TOM_ASSERT(x)
+#endif
+
+#define INVALID_CODE_PATH TOM_ASSERT(!"Invalid code path!")
 
 #define REPLAY_BUFFERS 1
 
@@ -249,7 +261,7 @@ extern "C"
     safe_truncate_u32_to_u64(u64 val_)
     {
         // TODO: defines for max values
-        assert(val_ <= 0xFFFFFFFF);
+        TOM_ASSERT(val_ <= 0xFFFFFFFF);
         u32 result = (u32)val_;
         return result;
     }

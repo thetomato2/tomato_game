@@ -48,7 +48,13 @@ struct Tile_Chunk_Pos
 
 struct Tile_Chunk
 {
+    u32 x;
+    u32 y;
+    u32 z;
+
     u32 *tiles;
+
+    Tile_Chunk *next_in_hash;
 };
 
 struct Tile_Map
@@ -60,11 +66,11 @@ struct Tile_Map
     static constexpr u32 s_chunk_tile_count_total = s_chunk_tile_count * s_chunk_tile_count;
     static constexpr u32 s_chunk_count            = 128;
     static constexpr u32 s_chunk_count_z          = 2;
+    static constexpr u32 s_tile_chunk_safe_margin = 16;
 
     static constexpr f32 s_tile_size_meters = 1.4f;
 
-    Tile_Chunk *tile_chunks;
-    Tile_Chunk *cur_tile_chunk;
+    Tile_Chunk tile_chunk_hash[4096];
 };
 
 #endif  // TOMATO_TILE_HPP_
