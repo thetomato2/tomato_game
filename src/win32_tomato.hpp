@@ -24,27 +24,27 @@ using wchar_t = uint16_t;
 
 struct Win_Dim
 {
-    s32 width;
-    s32 height;
+    i32 width;
+    i32 height;
 };
 
 struct Offscreen_Buffer
 {
     BITMAPINFO info;
     void *memory;
-    s32 width;
-    s32 height;
-    s32 pitch;
-    s32 bytes_per_pixel;
+    i32 width;
+    i32 height;
+    i32 pitch;
+    i32 bytes_per_pixel;
 };
 
 struct Sound_Output
 {
-    s32 samples_per_sec;
+    i32 samples_per_sec;
     u32 running_sample_index;
-    s32 bytes_per_sample;
+    i32 bytes_per_sample;
     DWORD secondary_buf_size;
-    s32 latency_sample_count;
+    i32 latency_sample_count;
 };
 
 struct Replay_Buffer
@@ -65,9 +65,9 @@ struct Win32_State
 
 #if REPLAY_BUFFERS
     HANDLE recording_handle;
-    s32 input_recording_index;
+    i32 input_recording_index;
     HANDLE playback_handle;
-    s32 input_playback_index;
+    i32 input_playback_index;
     Replay_Buffer replay_buffers[4];
 #endif
 };

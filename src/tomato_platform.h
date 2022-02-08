@@ -38,10 +38,10 @@ extern "C"
 #define local_persist   static
 #define global_variable static
 
-    typedef int8_t s8;
-    typedef int16_t s16;
-    typedef int32_t s32;
-    typedef int64_t s64;
+    typedef int8_t i8;
+    typedef int16_t i16;
+    typedef int32_t i32;
+    typedef int64_t i64;
 
     typedef uint8_t u8;
     typedef uint16_t u16;
@@ -96,7 +96,7 @@ extern "C"
     // TODO: implement this
     typedef struct Thread_Context
     {
-        s32 place_holder;
+        i32 place_holder;
     } Thread_Context;
 
 // NOTE: services that the platform provides for the game
@@ -126,23 +126,23 @@ extern "C"
 
     {
         void *memory;
-        s32 width;
-        s32 height;
-        s32 pitch;
-        s32 bytes_per_pixel;
+        i32 width;
+        i32 height;
+        i32 pitch;
+        i32 bytes_per_pixel;
     } Game_Offscreen_Buffer;
 
     typedef struct Game_Sound_Output_Buffer
     {
-        s32 samples_per_second;
-        s32 sample_count;
-        s16 *samples;
-        s32 tone_hertz;
+        i32 samples_per_second;
+        i32 sample_count;
+        i16 *samples;
+        i32 tone_hertz;
     } Game_Sound_Output_Buffer;
 
     typedef struct Game_Button_State
     {
-        s32 half_transition_count;
+        i32 half_transition_count;
         b32 ended_down;
     } Game_Button_State;
 
@@ -227,7 +227,7 @@ extern "C"
         f32 delta_time;
 
         Game_Button_State mouse_buttons[3];
-        s32 mouse_x, mouse_y, mouse_z;
+        i32 mouse_x, mouse_y, mouse_z;
         Game_Keyboard_Input keyboard;
         Game_Controller_Input controllers[4];
     } Game_Input;

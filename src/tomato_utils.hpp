@@ -86,7 +86,7 @@ inline szt
 get_wstr_sz(const wchar *wstr_)
 {
     auto len  = get_wstr_len(wstr_);
-    auto size = (szt)WideCharToMultiByte(CP_UTF8, 0, wstr_, (s32)len, NULL, 0, NULL, NULL);
+    auto size = (szt)WideCharToMultiByte(CP_UTF8, 0, wstr_, (i32)len, NULL, 0, NULL, NULL);
     return size;
 }
 
@@ -94,7 +94,7 @@ inline szt
 get_wstr_sz(const char *str_)
 {
     auto len  = get_str_len(str_);
-    auto size = (szt)MultiByteToWideChar(CP_UTF8, 0, str_, (s32)len, NULL, 0);
+    auto size = (szt)MultiByteToWideChar(CP_UTF8, 0, str_, (i32)len, NULL, 0);
     return size;
 }
 
@@ -103,15 +103,15 @@ inline void
 wstr_to_str(const wchar *wstr_, char *buf_)
 {
     auto len  = get_wstr_len(wstr_);
-    auto size = (szt)WideCharToMultiByte(CP_UTF8, 0, wstr_, (s32)len, buf_, 0, NULL, NULL);
+    auto size = (szt)WideCharToMultiByte(CP_UTF8, 0, wstr_, (i32)len, buf_, 0, NULL, NULL);
 }
 
 inline void
 str_to_wstr(const char *str_, wchar *buf_)
 {
     auto len  = get_str_len(str_);
-    auto size = (szt)MultiByteToWideChar(CP_UTF8, 0, str_, (s32)len, NULL, 0);
-    MultiByteToWideChar(CP_UTF8, 0, str_, (s32)len, buf_, (s32)size);
+    auto size = (szt)MultiByteToWideChar(CP_UTF8, 0, str_, (i32)len, NULL, 0);
+    MultiByteToWideChar(CP_UTF8, 0, str_, (i32)len, buf_, (i32)size);
 }
 #else
 inline szt

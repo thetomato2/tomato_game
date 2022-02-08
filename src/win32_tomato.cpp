@@ -16,7 +16,7 @@ static bool g_debug_show_cursor;
 
 static Offscreen_Buffer g_back_buffer;
 static Win_Dim g_win_dim;
-static s64 g_performance_counter_frequency;
+static i64 g_performance_counter_frequency;
 
 // TODO: the sleep precision issue is keeping this above 1 frame... I think
 static constexpr f32 g_frames_of_audio_latency = (1.1f / 30) * g_game_update_hertz;
@@ -209,7 +209,7 @@ load_Xinput()
 }
 
 static void
-init_WASAPI(s32 samples_per_second_, s32 buffer_size_in_samples_)
+init_WASAPI(i32 samples_per_second_, i32 buffer_size_in_samples_)
 {
     if (FAILED(CoInitializeEx(0, COINIT_SPEED_OVER_MEMORY))) {
         INVALID_CODE_PATH;
@@ -268,18 +268,18 @@ init_WASAPI(s32 samples_per_second_, s32 buffer_size_in_samples_)
 
     // Check if we got what we requested (better would to pass this value back
     // as real buffer size)
-    TOM_ASSERT(buffer_size_in_samples_ <= (s32)soundFrmCnt);
+    TOM_ASSERT(buffer_size_in_samples_ <= (i32)soundFrmCnt);
 }
 
 static void
-fill_sound_buffer(Sound_Output &sound_output_, s32 samples_to_write_,
+fill_sound_buffer(Sound_Output &sound_output_, i32 samples_to_write_,
                   Game_Sound_Output_Buffer &source_buffer)
 {
     {
         BYTE *soundBufDat;
         if (SUCCEEDED(g_audio_render_client->GetBuffer((UINT32)samples_to_write_, &soundBufDat))) {
-            s16 *sourceSample = source_buffer.samples;
-            s16 *destSample   = (s16 *)soundBufDat;
+            i16 *sourceSample = source_buffer.samples;
+            i16 *destSample   = (i16 *)soundBufDat;
             for (szt i = 0; i < samples_to_write_; ++i) {
                 *destSample++ = *sourceSample++;
                 *destSample++ = *sourceSample++;
@@ -303,7 +303,7 @@ Get_window_dimensions(HWND hWnd_)
 }
 
 static void
-resize_DIB_section(Offscreen_Buffer &buffer_, s32 width_, s32 height_)
+resize_DIB_section(Offscreen_Buffer &buffer_, i32 width_, i32 height_)
 {
     // TODO: bulletproof this
     // maybe don't free first, free after, then free first if that fails
@@ -322,23 +322,23 @@ resize_DIB_section(Offscreen_Buffer &buffer_, s32 width_, s32 height_)
     buffer_.info.bmiHeader.biBitCount    = 32;
     buffer_.info.bmiHeader.biCompression = BI_RGB;
 
-    s32 bytes_per_pixel    = 4;
-    s32 bitmap_memory_size = (width_ * height_) * bytes_per_pixel;
+    i32 bytes_per_pixel    = 4;
+    i32 bitmap_memory_size = (width_ * height_) * bytes_per_pixel;
     buffer_.memory = VirtualAlloc(0, bitmap_memory_size, MEM_RESERVE | MEM_COMMIT, PAGE_READWRITE);
 
     buffer_.pitch = width_ * buffer_.bytes_per_pixel;
 }
 
 static void
-display_buffer_in_window(HDC hdc_, Offscreen_Buffer &buffer_, s32 x_, s32 y_, s32 width_,
-                         s32 height_)
+display_buffer_in_window(HDC hdc_, Offscreen_Buffer &buffer_, i32 x_, i32 y_, i32 width_,
+                         i32 height_)
 {
     if (width_ == buffer_.width * 2 && height_ == buffer_.height * 2) {
         ::StretchDIBits(hdc_, 0, 0, width_, height_, 0, 0, buffer_.width, buffer_.height,
                         buffer_.memory, &buffer_.info, DIB_RGB_COLORS, SRCCOPY);
     } else {
-        s32 offset_x = 0;
-        s32 offset_y = 0;
+        i32 offset_x = 0;
+        i32 offset_y = 0;
 
 #if 0
     // NOTE: this causes screen flickering - out of sync with screen refresh rate?
@@ -348,8 +348,8 @@ display_buffer_in_window(HDC hdc_, Offscreen_Buffer &buffer_, s32 x_, s32 y_, s3
     ::PatBlt(hdc_, offset_x + buffer_.width, 0, width_, height_, BLACKNESS);
 
 #endif
-        // s32 x_offset = 0;
-        // s32 y_offset = 0;
+        // i32 x_offset = 0;
+        // i32 y_offset = 0;
 
         // NOTE: this is matches the windows dimensions
         ::StretchDIBits(hdc_, offset_x, offset_y, buffer_.width, buffer_.height, 0, 0,
@@ -417,7 +417,7 @@ do_controller_input(Game_Input &old_input_, Game_Input &new_input_, HWND hWnd_)
 
     // controller
     // poll the input device
-    s32 max_controller_count = XUSER_MAX_COUNT;
+    i32 max_controller_count = XUSER_MAX_COUNT;
     if (max_controller_count > 4) {
         max_controller_count = 4;
     }
@@ -534,7 +534,7 @@ get_replay_buffer(Win32_State &state_, szt index_)
 }
 
 static void
-begin_recording_input(Win32_State &state_, s32 input_recording_index_)
+begin_recording_input(Win32_State &state_, i32 input_recording_index_)
 {
     auto &replay_buffer = get_replay_buffer(state_, input_recording_index_);
     if (replay_buffer.memory_block) {
@@ -560,7 +560,7 @@ end_recording_input(Win32_State &state_)
 }
 
 static void
-begin_input_playback(Win32_State &state_, s32 input_playback_index_)
+begin_input_playback(Win32_State &state_, i32 input_playback_index_)
 {
     auto &replay_buffer = get_replay_buffer(state_, input_playback_index_);
     if (replay_buffer.memory_block) {
@@ -598,7 +598,7 @@ playback_input(Win32_State &state_, Game_Input &new_input_)
     if (ReadFile(state_.playback_handle, &new_input_, sizeof(new_input_), &bytes_read, 0)) {
         if (bytes_read == 0) {
             // NOTE: hit end of stream, go back to begining;
-            s32 playback_index = state_.input_playback_index;
+            i32 playback_index = state_.input_playback_index;
             end_input_playback(state_);
             begin_input_playback(state_, playback_index);
             ReadFile(state_.playback_handle, &new_input_, sizeof(new_input_), &bytes_read, 0);
@@ -722,10 +722,10 @@ WndProc(HWND hWnd, UINT msg_, WPARAM wParam_, LPARAM lParam_)
         case WM_PAINT: {
             PAINTSTRUCT paint;
             HDC device_context = BeginPaint(hWnd, &paint);
-            s32 x              = paint.rcPaint.left;
-            s32 y              = paint.rcPaint.right;
-            s32 height         = paint.rcPaint.bottom - paint.rcPaint.top;
-            s32 width          = paint.rcPaint.right - paint.rcPaint.left;
+            i32 x              = paint.rcPaint.left;
+            i32 y              = paint.rcPaint.right;
+            i32 height         = paint.rcPaint.bottom - paint.rcPaint.top;
+            i32 width          = paint.rcPaint.right - paint.rcPaint.left;
             display_buffer_in_window(device_context, g_back_buffer, x, y, width, height);
             EndPaint(hWnd, &paint);
         } break;
@@ -741,8 +741,8 @@ WndProc(HWND hWnd, UINT msg_, WPARAM wParam_, LPARAM lParam_)
 // #START
 // ===============================================================================================
 
-s32
-Main(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLine, s32 nShowCmd)
+i32
+Main(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLine, i32 nShowCmd)
 {
     // Init
 
@@ -778,8 +778,8 @@ Main(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLine, s32 nShowCm
 
     WNDCLASS window_class = {};  // should init to 0n
 
-    static constexpr s32 win_width  = 960;
-    static constexpr s32 win_height = 540;
+    static constexpr i32 win_width  = 960;
+    static constexpr i32 win_height = 540;
 
     resize_DIB_section(g_back_buffer, win_width, win_height);
 
@@ -845,21 +845,21 @@ Main(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLine, s32 nShowCm
     g_pause                       = false;
     g_back_buffer.bytes_per_pixel = 4;
 
-    s32 monitor_refresh_rate = GetDeviceCaps(device_context, VREFRESH);
+    i32 monitor_refresh_rate = GetDeviceCaps(device_context, VREFRESH);
     printf("Monitor Refresh Rate: %d\n", monitor_refresh_rate);
 
     Sound_Output sound_output         = {};
     sound_output.samples_per_sec      = 48000;
-    sound_output.bytes_per_sample     = sizeof(s16) * 2;
+    sound_output.bytes_per_sample     = sizeof(i16) * 2;
     sound_output.secondary_buf_size   = sound_output.samples_per_sec;
-    sound_output.latency_sample_count = s32(
+    sound_output.latency_sample_count = i32(
         g_frames_of_audio_latency * f32(sound_output.samples_per_sec / (f32)g_game_update_hertz));
 
     init_WASAPI(sound_output.samples_per_sec, sound_output.secondary_buf_size);
     g_audio_client->Start();
 
     // TODO: Pool with bitmap VirtualAlloc
-    s16 *samples = (s16 *)VirtualAlloc(0, sound_output.secondary_buf_size, MEM_RESERVE | MEM_COMMIT,
+    i16 *samples = (i16 *)VirtualAlloc(0, sound_output.secondary_buf_size, MEM_RESERVE | MEM_COMMIT,
                                        PAGE_READWRITE);
 
 #ifdef TOM_INTERNAL
@@ -885,7 +885,7 @@ Main(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLine, s32 nShowCm
 
 #if REPLAY_BUFFERS
     // mapping memory to file
-    for (s32 replay_index {}; replay_index < ArrayCount(state.replay_buffers); ++replay_index) {
+    for (i32 replay_index {}; replay_index < ArrayCount(state.replay_buffers); ++replay_index) {
         Replay_Buffer &replay_buffer = state.replay_buffers[replay_index];
         _stprintf_s(replay_buffer.file_name, sizeof(TCHAR) * 512, _T("replay_%d_state.ti"),
                     replay_index);
@@ -947,11 +947,11 @@ Main(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLine, s32 nShowCm
             printf("ERROR--> Failed to get audio latency\n");
         }
 
-        s32 samples_to_write = 0;
+        i32 samples_to_write = 0;
         UINT32 sound_pad_size;
         if (SUCCEEDED(g_audio_client->GetCurrentPadding(&sound_pad_size))) {
-            s32 maxSampleCnt = s32(sound_output.secondary_buf_size - sound_pad_size);
-            samples_to_write = s32(sound_output.latency_sample_count - sound_pad_size);
+            i32 maxSampleCnt = i32(sound_output.secondary_buf_size - sound_pad_size);
+            samples_to_write = i32(sound_output.latency_sample_count - sound_pad_size);
             if (samples_to_write < 0) samples_to_write = 0;
             // TOM_ASSERT(samplesToWrite < maxSampleCnt);
         }
@@ -1077,7 +1077,7 @@ wWinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _In_ LPWSTR
     HRESULT hr = CoInitializeEx(nullptr, COINITBASE_MULTITHREADED);
     if (FAILED(hr)) return 1;
 
-    s32 ecode = Main(hInstance, hPrevInstance, lpCmdLine, nCmdShow);
+    i32 ecode = Main(hInstance, hPrevInstance, lpCmdLine, nCmdShow);
 
     CoUninitialize();
 

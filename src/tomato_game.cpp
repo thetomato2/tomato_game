@@ -9,12 +9,12 @@ static void
 clear_buffer(Game_Offscreen_Buffer &buffer_, Color_u32 color_ = { 0xff'ff'00'ff })
 {
     auto width = buffer_.width;
-    s32 height = buffer_.height;
+    i32 height = buffer_.height;
 
     byt *row = (byt *)buffer_.memory;
-    for (s32 y = 0; y < height; ++y) {
+    for (i32 y = 0; y < height; ++y) {
         u32 *pixel = (u32 *)row;
-        for (s32 x = 0; x < width; ++x) {
+        for (i32 x = 0; x < width; ++x) {
             *pixel++ = color_.argb;
         }
         row += buffer_.pitch;
@@ -25,10 +25,10 @@ static void
 draw_rect(Game_Offscreen_Buffer &buffer_, f32 f32_min_x_, f32 f_min_y_, f32 f32_max_x_,
           f32 f32_max_y_, Color_u32 color_ = { 0xffffffff })
 {
-    s32 min_x = round_f32_to_s32(f32_min_x_);
-    s32 min_y = round_f32_to_s32(f_min_y_);
-    s32 max_x = round_f32_to_s32(f32_max_x_);
-    s32 max_y = round_f32_to_s32(f32_max_y_);
+    i32 min_x = round_f32_to_i32(f32_min_x_);
+    i32 min_y = round_f32_to_i32(f_min_y_);
+    i32 max_x = round_f32_to_i32(f32_max_x_);
+    i32 max_y = round_f32_to_i32(f32_max_y_);
 
     if (min_x < 0) min_x = 0;
     if (min_y < 0) min_y = 0;
@@ -37,9 +37,9 @@ draw_rect(Game_Offscreen_Buffer &buffer_, f32 f32_min_x_, f32 f_min_y_, f32 f32_
 
     byt *row = ((byt *)buffer_.memory + min_x * buffer_.bytes_per_pixel + min_y * buffer_.pitch);
 
-    for (s32 y = min_y; y < max_y; ++y) {
+    for (i32 y = min_y; y < max_y; ++y) {
         u32 *pixel = (u32 *)row;
-        for (s32 x = min_x; x < max_x; ++x) {
+        for (i32 x = min_x; x < max_x; ++x) {
             *pixel++ = color_.argb;
         }
         row += buffer_.pitch;
@@ -49,19 +49,18 @@ draw_rect(Game_Offscreen_Buffer &buffer_, f32 f32_min_x_, f32 f_min_y_, f32 f32_
 static void
 draw_ARGB(Game_Offscreen_Buffer &buffer_, ARGB_Img &img_, v2 pos_)
 {
-    s32 min_y = round_f32_to_s32(pos_.y - ((f32)img_.height / 2.f));
-    s32 min_x = round_f32_to_s32(pos_.x - ((f32)img_.width / 2.f));
-    s32 max_y = round_f32_to_s32(pos_.y + ((f32)img_.height / 2.f));
-    s32 max_x = round_f32_to_s32(pos_.x + ((f32)img_.width / 2.f));
+    i32 min_y = round_f32_to_i32(pos_.y - ((f32)img_.height / 2.f));
+    i32 min_x = round_f32_to_i32(pos_.x - ((f32)img_.width / 2.f));
+    i32 max_y = round_f32_to_i32(pos_.y + ((f32)img_.height / 2.f));
+    i32 max_x = round_f32_to_i32(pos_.x + ((f32)img_.width / 2.f));
 
-    s32 x_offset_left {}, x_offset_right {}, y_offset {};
+    i32 x_offset_left = 0, x_offset_right = 0, y_offset = 0;
 
     if (min_y < 0) {
         y_offset = min_y * -1;
         min_y    = 0;
     }
     if (min_x < 0) {
-        // x_offset_left = (min_x * -1) + 1;
         x_offset_left = min_x * -1;
         min_x         = 0;
     }
@@ -74,10 +73,10 @@ draw_ARGB(Game_Offscreen_Buffer &buffer_, ARGB_Img &img_, v2 pos_)
     u32 *source = img_.pixel_ptr + (y_offset * img_.width);
     byt *row    = ((byt *)buffer_.memory + min_x * buffer_.bytes_per_pixel + min_y * buffer_.pitch);
 
-    for (s32 y = min_y; y < max_y; ++y) {
+    for (i32 y = min_y; y < max_y; ++y) {
         u32 *dest = (u32 *)row;
         source += x_offset_left;
-        for (s32 x = min_x; x < max_x; ++x) {
+        for (i32 x = min_x; x < max_x; ++x) {
             Color_u32 dest_col { *dest };
             Color_u32 source_col { *source };
             Color_u32 blended_col;
@@ -125,8 +124,8 @@ static void
 game_ouput_sound(Game_Sound_Output_Buffer &sound_buffer_)
 {
     // NOTE: outputs nothing atm
-    s16 sample_value = 0;
-    s16 *sampleOut   = sound_buffer_.samples;
+    i16 sample_value = 0;
+    i16 *sampleOut   = sound_buffer_.samples;
     for (szt sampleIndex = 0; sampleIndex < sound_buffer_.sample_count; ++sampleIndex) {
         *sampleOut++ = sample_value;
         *sampleOut++ = sample_value;
@@ -193,7 +192,7 @@ load_ARGB(Thread_Context *thread_, debug_platform_read_entire_file *read_entire_
 static Player_Actions
 process_keyboard(const Game_Keyboard_Input &keyboard_)
 {
-    Player_Actions result {};
+    Player_Actions result = {};
 
     if (is_key_up(keyboard_.t)) result.start = true;
     if (keyboard_.w.ended_down) result.dir.y += 1.f;
@@ -208,7 +207,7 @@ process_keyboard(const Game_Keyboard_Input &keyboard_)
 static Player_Actions
 process_controller(const Game_Controller_Input &controller_)
 {
-    Player_Actions result {};
+    Player_Actions result = {};
 
     if (is_button_up(controller_.button_start)) result.start = true;
 
@@ -253,7 +252,7 @@ make_entity_high(Game_State &game_state_, u32 low_i_)
 inline void
 make_entity_low(Game_State &game_state_, u32 low_i_)
 {
-    assert(low_i_ < Game_State::s_max_low_cnt);
+    TOM_ASSERT(low_i_ < Game_State::s_max_low_cnt);
     Low_Entity &low_ent = game_state_.low_entities[low_i_];
     u32 high_i          = low_ent.high_i;
     if (high_i) {
@@ -283,7 +282,7 @@ get_low_entity(Game_State &game_state_, u32 low_i_)
 static Entity
 get_high_entity(Game_State &game_state_, u32 low_i_)
 {
-    Entity result {};
+    Entity result = {};
 
     // TODO: allow 0 index and returning a nullptr?
     assert(low_i_ < Game_State::s_max_low_cnt);
@@ -307,11 +306,11 @@ add_low_entity(Game_State &game_state_, Entity_Type type_ = Entity_Type::none)
 }
 
 inline void
-offset_and_check_entities_by_area(Game_State &game_state_, rect_v2 area_, v2 offset_)
+offset_and_check_entities_by_area(Game_State &game_state_, rect_v2 area_, v2 bounds_)
 {
     for (u32 high_i = 1; high_i < game_state_.high_cnt;) {
         High_Entity *high = game_state_.high_entities + high_i;
-        high->pos += offset_;
+        high->pos += bounds_;
         if (is_in_rect_v2(area_, high->pos)) {
             ++high_i;
         } else {
@@ -321,7 +320,7 @@ offset_and_check_entities_by_area(Game_State &game_state_, rect_v2 area_, v2 off
 }
 
 static u32
-add_wall(Game_State &game_state_, u32 abs_x_, u32 abs_y_, u32 abs_z_, ARGB_Img *sprites_ = nullptr)
+add_wall(Game_State &game_state_, i32 abs_x_, i32 abs_y_, i32 abs_z_, ARGB_Img *sprites_ = nullptr)
 {
     u32 wall_i       = add_low_entity(game_state_, Entity_Type::wall);
     Low_Entity *wall = get_low_entity(game_state_, wall_i);
@@ -340,7 +339,7 @@ add_wall(Game_State &game_state_, u32 abs_x_, u32 abs_y_, u32 abs_z_, ARGB_Img *
 }
 
 static u32
-add_stairs(Game_State &game_state_, u32 abs_x_, u32 abs_y_, u32 abs_z_,
+add_stairs(Game_State &game_state_, i32 abs_x_, i32 abs_y_, i32 abs_z_,
            ARGB_Img *sprites_ = nullptr)
 {
     u32 wall_i       = add_low_entity(game_state_, Entity_Type::stairs);
@@ -360,11 +359,11 @@ add_stairs(Game_State &game_state_, u32 abs_x_, u32 abs_y_, u32 abs_z_,
 }
 
 static void
-init_player(Game_State &game_state_, u32 player_i_, u32 abs_x_, u32 abs_y_, u32 abs_z_,
+init_player(Game_State &game_state_, u32 player_i_, i32 abs_x_, i32 abs_y_, i32 abs_z_,
             ARGB_Img *sprites_ = nullptr)
 {
     // NOTE: the first 5 entities are reserved for players
-    assert(player_i_ <= game_state_.player_cnt);
+    TOM_ASSERT(player_i_ <= game_state_.player_cnt);
     if (player_i_ <= game_state_.player_cnt) {
         u32 player_i = add_low_entity(game_state_, Entity_Type::player);
         assert(player_i = player_i_);
@@ -488,6 +487,8 @@ move_player(Entity player_, const Player_Actions &player_actions_, Tile_Map &til
             player_.high->vel -= 1.f * inner(player_.high->vel, wall_nrm) * wall_nrm;
             player_delta -= 1.f * inner(player_delta, wall_nrm) * wall_nrm;
 
+            printf("%d hit %d!\n", player_.low->high_i, hit_ent_ind);
+
             if (player_.high->stair_cd > .5f &&
                 game_state_.low_entities[hit_high->low_i].type == Entity_Type::stairs) {
                 player_.low->virtual_z == 0  ? ++player_.low->pos.abs_tile_z,
@@ -500,8 +501,6 @@ move_player(Entity player_, const Player_Actions &player_actions_, Tile_Map &til
         }
     }
 
-    // player_.high->vel = player_acc * dt_ + player_.high->vel;
-    // entity_check_tile_map(tile_map_, player_);
     player_.high->stair_cd += dt_;
 
     // NOTE: changes the players direction for the sprite
@@ -530,15 +529,15 @@ set_camera(Game_State &game_state_, Tile_Map_Pos new_cam_pos_)
     // offset and make all entities inside camera space high
     v2 test_screen_size { Tile_Map::s_tile_size_meters *
                           v2 { (f32)tile_span_x, (f32)tile_span_y } };
-    rect_v2 cam_bounds = rect_v2_center_half_dim({ 0.f, 0.f }, test_screen_size);
-    v2 ent_offset      = -dif_cam.dif_xy;
-    offset_and_check_entities_by_area(game_state_, cam_bounds, ent_offset);
+    rect_v2 high_bounds = rect_v2_center_half_dim({ 0.f, 0.f }, test_screen_size);
+    v2 ent_offset       = -dif_cam.dif_xy;
+    offset_and_check_entities_by_area(game_state_, high_bounds, ent_offset);
 
     // make all entities outside camera space lowk
-    u32 min_tile_x = new_cam_pos_.abs_tile_x - tile_span_x / 2;
-    u32 min_tile_y = new_cam_pos_.abs_tile_y - tile_span_y / 2;
-    u32 max_tile_x = new_cam_pos_.abs_tile_x + tile_span_x / 2;
-    u32 max_tile_y = new_cam_pos_.abs_tile_y + tile_span_y / 2;
+    i32 min_tile_x = new_cam_pos_.abs_tile_x - tile_span_x / 2;
+    i32 min_tile_y = new_cam_pos_.abs_tile_y - tile_span_y / 2;
+    i32 max_tile_x = new_cam_pos_.abs_tile_x + tile_span_x / 2;
+    i32 max_tile_y = new_cam_pos_.abs_tile_y + tile_span_y / 2;
     for (u32 low_i = 1; low_i < game_state_.low_cnt; ++low_i) {
         Low_Entity *low = game_state_.low_entities + low_i;
         if (low->high_i == 0) {
@@ -615,14 +614,14 @@ GAME_UPDATE_AND_RENDER(game_update_and_render)
         game_state.blue_square_img =
             load_ARGB(thread_, memory_.platfrom_read_entire_file, "blue_square");
 
-        u32 screen_base_x = ((UINT32_MAX / 2) / Game_State::s_num_tiles_per_screen_x) / 2;
-        u32 screen_base_y = ((UINT32_MAX / 2) / Game_State::s_num_tiles_per_screen_y) / 2;
-        u32 screen_base_z = UINT32_MAX / 4;
-        u32 screen_x      = screen_base_x;
-        u32 screen_y      = screen_base_y;
-        u32 screen_z      = screen_base_z;
-        s32 virtual_z     = 0;
-        u32 rng_ind       = 0;
+        i32 screen_base_x = 0;
+        i32 screen_base_y = 0;
+        i32 screen_base_z = 0;
+        i32 screen_x      = screen_base_x;
+        i32 screen_y      = screen_base_y;
+        i32 screen_z      = screen_base_z;
+        i32 virtual_z     = 0;
+        i32 rng_ind       = 0;
 
         // set world render size
         game_state.camera.pos.abs_tile_x = Game_State::s_num_tiles_per_screen_x * screen_x +
@@ -637,7 +636,8 @@ GAME_UPDATE_AND_RENDER(game_update_and_render)
 
         // add the player entites
         for (u32 player_i = 1; player_i <= game_state.player_cnt; ++player_i) {
-            init_player(game_state, player_i, screen_x, screen_y, screen_z,
+            i32 x_off = ((player_i * 2) / 2) + 2;
+            init_player(game_state, player_i, screen_x + x_off, screen_y + 4, screen_z,
                         game_state.player_sprites);
         }
 
@@ -737,6 +737,10 @@ GAME_UPDATE_AND_RENDER(game_update_and_render)
     auto &world  = game_state.world;
     auto &camera = game_state.camera;
 
+    auto p1 = get_high_entity(game_state, 1);
+    printf("%f, %f\n", p1.high->pos.x, p1.high->pos.y);
+    printf("%d, %d\n", p1.low->pos.abs_tile_x, p1.low->pos.abs_tile_y);
+
     for (u32 player_i = 1; player_i <= game_state.player_cnt; ++player_i) {
         Low_Entity *low_player = get_low_entity(game_state, player_i);
         assert(low_player->type == Entity_Type::player);
@@ -804,7 +808,7 @@ GAME_UPDATE_AND_RENDER(game_update_and_render)
     // ===============================================================================================
 
     // NOTE: *not* using PatBlt in the win32 layer
-    Color_u32 clear_color { 0xff'00'00'00 };
+    Color_u32 clear_color = { 0xff'00'00'00 };
     clear_buffer(video_buffer_, clear_color);
 
     u32 *source = game_state.bg_img.pixel_ptr;
@@ -818,11 +822,11 @@ GAME_UPDATE_AND_RENDER(game_update_and_render)
 
     // NOTE: caching for clarity, not perf
 
-    s32 num_draw_tiles = 12;
+    i32 num_draw_tiles = 12;
     v2 screen_center   = { .5f * (f32)video_buffer_.width, .5f * (f32)video_buffer_.height };
 
-    for (s32 rel_y = -1 * num_draw_tiles; rel_y < num_draw_tiles; ++rel_y) {
-        for (s32 rel_x = -1 * num_draw_tiles; rel_x < num_draw_tiles; ++rel_x) {
+    for (i32 rel_y = -1 * num_draw_tiles; rel_y < num_draw_tiles; ++rel_y) {
+        for (i32 rel_x = -1 * num_draw_tiles; rel_x < num_draw_tiles; ++rel_x) {
             u32 x = camera.pos.abs_tile_x + rel_x;
             u32 y = camera.pos.abs_tile_y + rel_y;
 
@@ -857,10 +861,10 @@ GAME_UPDATE_AND_RENDER(game_update_and_render)
 
     for (u32 high_i { 1 }; high_i < game_state.high_cnt; ++high_i) {
         // TODO: seems a bit convoluted...
-        Entity ent {};
-        ent.high  = game_state.high_entities + high_i;
-        ent.low_i = ent.high->low_i;
-        ent.low   = game_state.low_entities + ent.low_i;
+        Entity ent = {};
+        ent.high   = game_state.high_entities + high_i;
+        ent.low_i  = ent.high->low_i;
+        ent.low    = game_state.low_entities + ent.low_i;
 
         // cur_ent.high->pos += ent_offset;
         auto ent_dif = get_tile_diff(ent.low->pos, camera.pos);

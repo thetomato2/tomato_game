@@ -39,8 +39,8 @@ struct Bitmap_Header
     u16 reserved_2;
     u32 bitmap_offset;
     u32 size;
-    s32 width;
-    s32 height;
+    i32 width;
+    i32 height;
     u16 planes;
     u16 bits_per_pixel;
 };
@@ -55,8 +55,8 @@ struct ARGB_Header
 
 struct Bitmap
 {
-    s32 width;
-    s32 height;
+    i32 width;
+    i32 height;
     u32 *pixel_ptr;
 };
 
@@ -69,7 +69,7 @@ struct ARGB_Img
     u32 *pixel_ptr;
 };
 
-enum Dir : s32
+enum Dir : i32
 {
     down = 0,
     right,
@@ -111,7 +111,7 @@ struct High_Entity
 struct Low_Entity
 {
     Tile_Map_Pos pos;
-    s32 virtual_z;
+    i32 virtual_z;
     f32 width, height;
     Color_u32 color;
     ARGB_Img *sprites;
