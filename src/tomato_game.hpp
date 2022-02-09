@@ -1,10 +1,11 @@
+
 #include "tomato_platform.h"
 #include "tomato_intrinsic.hpp"
 #include "tomato_common.hpp"
 
 #include "tomato_math.hpp"
 #include "tomato_utils.hpp"
-#include "tomato_tile.cpp"
+#include "tomato_world.cpp"
 
 struct Player_Actions
 {
@@ -78,14 +79,6 @@ enum Dir : i32
 
 };
 
-enum class Entity_Residence
-{
-    non_existent,
-    dormant,
-    low,
-    high
-};
-
 enum class Entity_Type
 {
     null,
@@ -110,7 +103,7 @@ struct High_Entity
 
 struct Low_Entity
 {
-    Tile_Map_Pos pos;
+    World_Pos pos;
     i32 virtual_z;
     f32 width, height;
     Color_u32 color;
@@ -130,20 +123,21 @@ struct Entity
     High_Entity *high;
 };
 
-struct World
+struct Low_Ent_Chunk_Ref
 {
-    Tile_Map *tile_map;
+    World_Chunk *tile_chunk;
+    u32 i_in_chunk;
 };
 
 struct Camera
 {
-    Tile_Map_Pos pos;
+    World_Pos pos;
 };
 
 struct Game_State
 {
-    static constexpr u32 s_max_low_cnt            = 4096;
-    static constexpr u32 s_max_high_cnt           = 256;
+    static constexpr u32 s_max_low_cnt            = 65536;
+    static constexpr u32 s_max_high_cnt           = 4096;
     static constexpr u32 s_num_screens            = 10;
     static constexpr u32 s_num_tiles_per_screen_x = 20;
     static constexpr u32 s_num_tiles_per_screen_y = 11;
@@ -162,6 +156,7 @@ struct Game_State
 
     u32 low_cnt;
     Low_Entity low_entities[s_max_low_cnt];
+
     u32 high_cnt;
     High_Entity high_entities[s_max_high_cnt];
 
@@ -175,7 +170,7 @@ struct Game_State
     ARGB_Img tree_sprite;
     ARGB_Img stair_sprite;
 
-    Tile_Map_Pos test_pos;
+    World_Pos test_pos;
 };
 
 inline bool

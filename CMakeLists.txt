@@ -9,7 +9,7 @@ set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
-set(CMAKE_UNITY_BUILD ON)
+# set(CMAKE_UNITY_BUILD ON)
 
 set(Source_Dir ${CMAKE_CURRENT_LIST_DIR}/src)
 set(Extern_Dir ${CMAKE_CURRENT_LIST_DIR}/external)
@@ -74,11 +74,11 @@ add_library(Tomato_Game_Lib SHARED
     ${Source_Dir}/tomato_intrinsic.hpp
     ${Source_Dir}/tomato_math.hpp
     ${Source_Dir}/tomato_platform.h
-    ${Source_Dir}/tomato_tile.cpp
-    ${Source_Dir}/tomato_tile.hpp
+    ${Source_Dir}/tomato_world.cpp
+    ${Source_Dir}/tomato_world.hpp
     )
 
-set_source_files_properties(${Source_Dir}/tomato_tile.cpp PROPERTIES HEADER_FILE_ONLY TRUE)
+set_source_files_properties(${Source_Dir}/tomato_world.cpp PROPERTIES HEADER_FILE_ONLY TRUE)
 
 set_target_properties(Tomato_Game_Lib PROPERTIES OUTPUT_NAME tomato_game)
 target_include_directories(Tomato_Game_Lib PUBLIC ${Source_Dir})

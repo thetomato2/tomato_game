@@ -1,7 +1,7 @@
 #include "tomato_game.hpp"
 
-static constexpr u32 gs_tile_size_pixels = 40;
-static constexpr f32 gs_meters_to_pixels = gs_tile_size_pixels / Tile_Map::s_tile_size_meters;
+static constexpr u32 g_tile_size_pixels = 40;
+static constexpr f32 g_meters_to_pixels = g_tile_size_pixels / World::s_tile_size_meters;
 
 #include "rng_nums.h"
 
@@ -97,7 +97,7 @@ draw_ARGB(Game_Offscreen_Buffer &buffer_, ARGB_Img &img_, v2 pos_)
     }
 }
 
-static Tile_Map_Pos
+static World_Pos
 get_entity_center_pos(const Entity &entity_)
 {
     // FIXME: dunno if this is working right
@@ -235,7 +235,7 @@ make_entity_high(Game_State &game_state_, u32 low_i_)
             assert(high_i < Game_State::s_max_high_cnt);
             high_ent = game_state_.high_entities + high_i;
 
-            auto diff           = get_tile_diff(low_ent->pos, game_state_.camera.pos);
+            auto diff           = get_diff(low_ent->pos, game_state_.camera.pos);
             high_ent->pos       = diff.dif_xy;
             high_ent->vel       = { 0.f, 0.f };
             high_ent->direction = 0;
@@ -325,15 +325,15 @@ add_wall(Game_State &game_state_, i32 abs_x_, i32 abs_y_, i32 abs_z_, ARGB_Img *
     u32 wall_i       = add_low_entity(game_state_, Entity_Type::wall);
     Low_Entity *wall = get_low_entity(game_state_, wall_i);
 
-    wall->height         = Tile_Map::s_tile_size_meters;
-    wall->width          = Tile_Map::s_tile_size_meters;
-    wall->pos.abs_tile_x = abs_x_;
-    wall->pos.abs_tile_y = abs_y_;
-    wall->pos.abs_tile_z = abs_z_;
-    wall->color          = { 0xff'dd'dd'dd };
-    wall->sprites        = sprites_;
-    wall->collides       = true;
-    wall->barrier        = true;
+    wall->height   = World::s_tile_size_meters;
+    wall->width    = World::s_tile_size_meters;
+    wall->pos.x    = abs_x_;
+    wall->pos.y    = abs_y_;
+    wall->pos.z    = abs_z_;
+    wall->color    = { 0xff'dd'dd'dd };
+    wall->sprites  = sprites_;
+    wall->collides = true;
+    wall->barrier  = true;
 
     return wall_i;
 }
@@ -345,21 +345,21 @@ add_stairs(Game_State &game_state_, i32 abs_x_, i32 abs_y_, i32 abs_z_,
     u32 wall_i       = add_low_entity(game_state_, Entity_Type::stairs);
     Low_Entity *wall = get_low_entity(game_state_, wall_i);
 
-    wall->height         = Tile_Map::s_tile_size_meters;
-    wall->width          = Tile_Map::s_tile_size_meters;
-    wall->pos.abs_tile_x = abs_x_;
-    wall->pos.abs_tile_y = abs_y_;
-    wall->pos.abs_tile_z = abs_z_;
-    wall->color          = { 0xff'1e'1e'1e };
-    wall->sprites        = sprites_;
-    wall->collides       = true;
-    wall->barrier        = false;
+    wall->height   = World::s_tile_size_meters;
+    wall->width    = World::s_tile_size_meters;
+    wall->pos.x    = abs_x_;
+    wall->pos.y    = abs_y_;
+    wall->pos.z    = abs_z_;
+    wall->color    = { 0xff'1e'1e'1e };
+    wall->sprites  = sprites_;
+    wall->collides = true;
+    wall->barrier  = false;
 
     return wall_i;
 }
 
 static void
-init_player(Game_State &game_state_, u32 player_i_, i32 abs_x_, i32 abs_y_, i32 abs_z_,
+init_player(Game_State &game_state_, u32 player_i_, i32 x_, i32 y_, i32 z_,
             ARGB_Img *sprites_ = nullptr)
 {
     // NOTE: the first 5 entities are reserved for players
@@ -378,21 +378,21 @@ init_player(Game_State &game_state_, u32 player_i_, i32 abs_x_, i32 abs_y_, i32 
             player_high->stair_cd  = 0;
             player_high->vel       = {};
 #endif
-            player->height         = .6f;
-            player->width          = 0.6f * player->height;
-            player->pos.abs_tile_x = abs_x_;
-            player->pos.abs_tile_y = abs_y_;
-            player->pos.abs_tile_z = abs_z_;
-            player->color          = { 0xff'00'00'ff };
-            player->sprites        = sprites_;
-            player->collides       = true;
+            player->height   = .6f;
+            player->width    = 0.6f * player->height;
+            player->pos.x    = x_;
+            player->pos.y    = y_;
+            player->pos.z    = z_;
+            player->color    = { 0xff'00'00'ff };
+            player->sprites  = sprites_;
+            player->collides = true;
         }
     }
 }
 
 static void
-move_player(Entity player_, const Player_Actions &player_actions_, Tile_Map &tile_map_,
-            const f32 dt_, Game_State &game_state_)
+move_player(Entity player_, const Player_Actions &player_actions_, World &world_, const f32 dt_,
+            Game_State &game_state_)
 {
     v2 r          = {};  // reflect vector
     v2 player_acc = { player_actions_.dir };
@@ -491,9 +491,8 @@ move_player(Entity player_, const Player_Actions &player_actions_, Tile_Map &til
 
             if (player_.high->stair_cd > .5f &&
                 game_state_.low_entities[hit_high->low_i].type == Entity_Type::stairs) {
-                player_.low->virtual_z == 0  ? ++player_.low->pos.abs_tile_z,
-                    ++player_.low->virtual_z : --player_.low->pos.abs_tile_z,
-                    --player_.low->virtual_z;
+                player_.low->virtual_z == 0  ? ++player_.low->pos.z,
+                    ++player_.low->virtual_z : --player_.low->pos.z, --player_.low->virtual_z;
                 player_.high->stair_cd = 0.f;
             }
         } else {
@@ -516,34 +515,33 @@ move_player(Entity player_, const Player_Actions &player_actions_, Tile_Map &til
 }
 
 static void
-set_camera(Game_State &game_state_, Tile_Map_Pos new_cam_pos_)
+set_camera(Game_State &game_state_, World_Pos new_cam_pos_)
 {
-    Tile_Map_Pos old_cam_pos = game_state_.camera.pos;
-    Tile_Map_Dif dif_cam     = get_tile_diff(new_cam_pos_, old_cam_pos);
-    game_state_.camera.pos   = new_cam_pos_;
+    World_Pos old_cam_pos  = game_state_.camera.pos;
+    World_Dif dif_cam      = get_diff(new_cam_pos_, old_cam_pos);
+    game_state_.camera.pos = new_cam_pos_;
 
     // NOTE: camera space defined here
     u32 tile_span_x = Game_State::s_num_tiles_per_screen_x * 3;
     u32 tile_span_y = Game_State::s_num_tiles_per_screen_y * 3;
 
     // offset and make all entities inside camera space high
-    v2 test_screen_size { Tile_Map::s_tile_size_meters *
-                          v2 { (f32)tile_span_x, (f32)tile_span_y } };
+    v2 test_screen_size { World::s_tile_size_meters * v2 { (f32)tile_span_x, (f32)tile_span_y } };
     rect_v2 high_bounds = rect_v2_center_half_dim({ 0.f, 0.f }, test_screen_size);
     v2 ent_offset       = -dif_cam.dif_xy;
     offset_and_check_entities_by_area(game_state_, high_bounds, ent_offset);
 
-    // make all entities outside camera space lowk
-    i32 min_tile_x = new_cam_pos_.abs_tile_x - tile_span_x / 2;
-    i32 min_tile_y = new_cam_pos_.abs_tile_y - tile_span_y / 2;
-    i32 max_tile_x = new_cam_pos_.abs_tile_x + tile_span_x / 2;
-    i32 max_tile_y = new_cam_pos_.abs_tile_y + tile_span_y / 2;
+    // make all entities outside camera space low
+    // TODO: speed this up when it becomes a bottleneck
+    i32 min_tile_x = new_cam_pos_.x - tile_span_x / 2;
+    i32 min_tile_y = new_cam_pos_.y - tile_span_y / 2;
+    i32 max_tile_x = new_cam_pos_.x + tile_span_x / 2;
+    i32 max_tile_y = new_cam_pos_.y + tile_span_y / 2;
     for (u32 low_i = 1; low_i < game_state_.low_cnt; ++low_i) {
         Low_Entity *low = game_state_.low_entities + low_i;
         if (low->high_i == 0) {
-            if (low->pos.abs_tile_z == new_cam_pos_.abs_tile_z &&
-                low->pos.abs_tile_x >= min_tile_x && low->pos.abs_tile_x <= max_tile_x &&
-                low->pos.abs_tile_y >= min_tile_y && low->pos.abs_tile_y <= max_tile_y) {
+            if (low->pos.z == new_cam_pos_.z && low->pos.x >= min_tile_x &&
+                low->pos.x <= max_tile_x && low->pos.y >= min_tile_y && low->pos.y <= max_tile_y) {
                 make_entity_high(game_state_, low_i);
             }
         }
@@ -564,7 +562,7 @@ GAME_GET_SOUND_SAMPLES(game_get_sound_samples)
 extern "C" TOM_DLL_EXPORT
 GAME_UPDATE_AND_RENDER(game_update_and_render)
 {
-    assert(sizeof(Game_State) <= memory_.permanent_storage_size);
+    TOM_ASSERT(sizeof(Game_State) <= memory_.permanent_storage_size);
 
     // NOTE: cast to GameState ptr, dereference and cast to GameState reference
     auto &game_state = (Game_State &)(*(Game_State *)memory_.permanent_storage);
@@ -579,10 +577,8 @@ GAME_UPDATE_AND_RENDER(game_update_and_render)
 
         game_state.world = PushStruct(&game_state.world_arena, World);
 
-        World *world       = game_state.world;
-        world->tile_map    = PushStruct(&game_state.world_arena, Tile_Map);
-        Tile_Map *tile_map = world->tile_map;
-        init_tile_map(*tile_map);
+        World *world = game_state.world;
+        init_world(*world);
 
         const char *bg           = "uv_color_squares_960x540";
         const char *player_front = "0001";
@@ -624,14 +620,15 @@ GAME_UPDATE_AND_RENDER(game_update_and_render)
         i32 rng_ind       = 0;
 
         // set world render size
-        game_state.camera.pos.abs_tile_x = Game_State::s_num_tiles_per_screen_x * screen_x +
-                                           Game_State::s_num_tiles_per_screen_x / 2;
-        game_state.camera.pos.abs_tile_y = Game_State::s_num_tiles_per_screen_y * screen_y +
-                                           Game_State::s_num_tiles_per_screen_y / 2;
+        game_state.camera.pos.x = Game_State::s_num_tiles_per_screen_x * screen_x +
+                                  Game_State::s_num_tiles_per_screen_x / 2;
+        game_state.camera.pos.y = Game_State::s_num_tiles_per_screen_y * screen_y +
+                                  Game_State::s_num_tiles_per_screen_y / 2;
 
         // NOTE: entity 0 is the null entity
         add_low_entity(game_state, Entity_Type::null);
-        game_state.player_cnt               = Game_Input::s_input_cnt;
+        // game_state.player_cnt               = Game_Input::s_input_cnt;
+        game_state.player_cnt               = 1;
         game_state.entity_camera_follow_ind = 1;
 
         // add the player entites
@@ -667,8 +664,8 @@ GAME_UPDATE_AND_RENDER(game_update_and_render)
 
             for (u32 tile_y = 0; tile_y < Game_State::s_num_tiles_per_screen_y; ++tile_y) {
                 for (u32 tile_x = 0; tile_x < Game_State::s_num_tiles_per_screen_x; ++tile_x) {
-                    u32 abs_tile_x = screen_x * Game_State::s_num_tiles_per_screen_x + tile_x;
-                    u32 abs_tile_y = screen_y * Game_State::s_num_tiles_per_screen_y + tile_y;
+                    u32 x          = screen_x * Game_State::s_num_tiles_per_screen_x + tile_x;
+                    u32 y          = screen_y * Game_State::s_num_tiles_per_screen_y + tile_y;
                     u32 tile_value = 1;
 
                     if (tile_x == 0 &&
@@ -688,14 +685,11 @@ GAME_UPDATE_AND_RENDER(game_update_and_render)
                         !((tile_x == Game_State::s_num_tiles_per_screen_x / 2) && door_top)) {
                         tile_value = 2;
                     }
-
-                    set_tile_value(&game_state.world_arena, *tile_map, abs_tile_x, abs_tile_y,
-                                   screen_z, tile_value);
+                    if (tile_x == 2) tile_value = 1;
 
                     if (tile_value == 2)
                         // ACTUALLY TREES
-                        add_wall(game_state, abs_tile_x, abs_tile_y, screen_z,
-                                 &game_state.tree_sprite);
+                        add_wall(game_state, x, y, screen_z, &game_state.tree_sprite);
                 }
             }
 
@@ -704,8 +698,6 @@ GAME_UPDATE_AND_RENDER(game_update_and_render)
                                  Game_State::s_num_tiles_per_screen_x / 2;
                 u32 mid_tile_y = screen_y * Game_State::s_num_tiles_per_screen_y +
                                  Game_State::s_num_tiles_per_screen_y / 2;
-                set_tile_value(&game_state.world_arena, *tile_map, mid_tile_x, mid_tile_y, screen_z,
-                               3);
                 add_stairs(game_state, mid_tile_x, mid_tile_y, screen_z, &game_state.stair_sprite);
             }
 
@@ -726,6 +718,13 @@ GAME_UPDATE_AND_RENDER(game_update_and_render)
             stairs     = false;
         }
 
+#if 0
+        i32 tx = 0, ty = 0;
+        while (game_state.low_cnt < Game_State::s_max_low_cnt) {
+            add_wall(game_state, tx++, ty++, 0);
+        }
+#endif
+
         // TODO: this might be more appropriate in the platform layer
         memory_.is_initialized = true;
     }
@@ -739,7 +738,7 @@ GAME_UPDATE_AND_RENDER(game_update_and_render)
 
     auto p1 = get_high_entity(game_state, 1);
     printf("%f, %f\n", p1.high->pos.x, p1.high->pos.y);
-    printf("%d, %d\n", p1.low->pos.abs_tile_x, p1.low->pos.abs_tile_y);
+    printf("%d, %d\n", p1.low->pos.x, p1.low->pos.y);
 
     for (u32 player_i = 1; player_i <= game_state.player_cnt; ++player_i) {
         Low_Entity *low_player = get_low_entity(game_state, player_i);
@@ -761,7 +760,7 @@ GAME_UPDATE_AND_RENDER(game_update_and_render)
         if (low_player->high_i) {
             // TODO: get rid of Entity or make a helper func?
             Entity player_ent = get_high_entity(game_state, player_i);
-            move_player(player_ent, player_action, *world->tile_map, input_.delta_time, game_state);
+            move_player(player_ent, player_action, *world, input_.delta_time, game_state);
         }
     }
 
@@ -779,32 +778,32 @@ GAME_UPDATE_AND_RENDER(game_update_and_render)
 
     Entity cam_ent = get_high_entity(game_state, game_state.entity_camera_follow_ind);
 
-    Tile_Map_Dif entity_dif = get_tile_diff(cam_ent.low->pos, camera.pos);
+    World_Dif entity_dif = get_diff(cam_ent.low->pos, camera.pos);
 
-    camera.pos.abs_tile_z = cam_ent.low->pos.abs_tile_z;
+    camera.pos.z = cam_ent.low->pos.z;
 
-    Tile_Map_Pos new_cam_pos = camera.pos;
+    World_Pos new_cam_pos = camera.pos;
     if (entity_dif.dif_xy.x >
-        (Game_State::s_num_tiles_per_screen_x * Tile_Map::s_tile_size_meters) / 2) {
-        new_cam_pos.abs_tile_x += Game_State::s_num_tiles_per_screen_x / 2;
+        (Game_State::s_num_tiles_per_screen_x * World::s_tile_size_meters) / 2) {
+        new_cam_pos.x += Game_State::s_num_tiles_per_screen_x / 2;
     }
     if (entity_dif.dif_xy.x <
-        (Game_State::s_num_tiles_per_screen_x * Tile_Map::s_tile_size_meters) / -2) {
-        new_cam_pos.abs_tile_x -= Game_State::s_num_tiles_per_screen_x / 2;
+        (Game_State::s_num_tiles_per_screen_x * World::s_tile_size_meters) / -2) {
+        new_cam_pos.x -= Game_State::s_num_tiles_per_screen_x / 2;
     }
     if (entity_dif.dif_xy.y >
-        (Game_State::s_num_tiles_per_screen_y * Tile_Map::s_tile_size_meters) / 2) {
-        new_cam_pos.abs_tile_y += Game_State::s_num_tiles_per_screen_y / 2;
+        (Game_State::s_num_tiles_per_screen_y * World::s_tile_size_meters) / 2) {
+        new_cam_pos.y += Game_State::s_num_tiles_per_screen_y / 2;
     }
     if (entity_dif.dif_xy.y <
-        (Game_State::s_num_tiles_per_screen_y * Tile_Map::s_tile_size_meters) / -2) {
-        new_cam_pos.abs_tile_y -= Game_State::s_num_tiles_per_screen_y / 2;
+        (Game_State::s_num_tiles_per_screen_y * World::s_tile_size_meters) / -2) {
+        new_cam_pos.y -= Game_State::s_num_tiles_per_screen_y / 2;
     }
 
     set_camera(game_state, new_cam_pos);
 
     // ===============================================================================================
-    // #Draw
+    // #DRAW
     // ===============================================================================================
 
     // NOTE: *not* using PatBlt in the win32 layer
@@ -820,44 +819,11 @@ GAME_UPDATE_AND_RENDER(game_update_and_render)
         }
     }
 
-    // NOTE: caching for clarity, not perf
+    draw_ARGB(video_buffer_, game_state.seaside_cliff,
+              { (f32)video_buffer_.width / 2.f, (f32)video_buffer_.height / 2.f });
 
     i32 num_draw_tiles = 12;
     v2 screen_center   = { .5f * (f32)video_buffer_.width, .5f * (f32)video_buffer_.height };
-
-    for (i32 rel_y = -1 * num_draw_tiles; rel_y < num_draw_tiles; ++rel_y) {
-        for (i32 rel_x = -1 * num_draw_tiles; rel_x < num_draw_tiles; ++rel_x) {
-            u32 x = camera.pos.abs_tile_x + rel_x;
-            u32 y = camera.pos.abs_tile_y + rel_y;
-
-            u32 tile = get_tile_value(*world->tile_map, x, y, camera.pos.abs_tile_z);
-            Color_u32 tile_color;
-            if (tile == 3) {
-                tile_color.argb = 0xff'2e'2e'2e;
-            } else if (tile == 2) {
-                tile_color.argb = 0xff'dd'dd'dd;
-            } else if (tile == 1) {
-                // continue;
-                tile_color.argb = 0xff'88'88'88;
-            } else {
-                continue;
-                tile_color.argb = 0xff'ff'00'00;
-            }
-
-            v2 center { (screen_center.x - (camera.pos.offset.x * gs_meters_to_pixels) +
-                         (f32)rel_x * gs_tile_size_pixels),
-                        (screen_center.y + (camera.pos.offset.y * gs_meters_to_pixels) -
-                         (f32)rel_y * gs_tile_size_pixels) };
-
-            v2 min { (center.x - .5f * gs_tile_size_pixels),
-                     (center.y - .5f * gs_tile_size_pixels) };
-
-            v2 max { (center.x + .5f * gs_tile_size_pixels),
-                     (center.y + .5f * gs_tile_size_pixels) };
-
-            draw_rect(video_buffer_, min.x, min.y, max.x, max.y, tile_color);
-        }
-    }
 
     for (u32 high_i { 1 }; high_i < game_state.high_cnt; ++high_i) {
         // TODO: seems a bit convoluted...
@@ -865,44 +831,27 @@ GAME_UPDATE_AND_RENDER(game_update_and_render)
         ent.high   = game_state.high_entities + high_i;
         ent.low_i  = ent.high->low_i;
         ent.low    = game_state.low_entities + ent.low_i;
-
         // cur_ent.high->pos += ent_offset;
-        auto ent_dif = get_tile_diff(ent.low->pos, camera.pos);
-        v2 ent_mid   = { (screen_center.x + (ent_dif.dif_xy.x * gs_meters_to_pixels)),
-                       (screen_center.y - (ent_dif.dif_xy.y * gs_meters_to_pixels)) };
+        auto ent_dif = get_diff(ent.low->pos, camera.pos);
+        v2 ent_mid   = { (screen_center.x + (ent_dif.dif_xy.x * g_meters_to_pixels)),
+                       (screen_center.y - (ent_dif.dif_xy.y * g_meters_to_pixels)) };
         v2 argb_mid  = { ent_mid.x, ent_mid.y - 16 };
 
-        draw_ARGB(video_buffer_, ent.low->sprites[ent.high->direction], argb_mid);
+        if (ent.low->sprites) {
+            draw_ARGB(video_buffer_, ent.low->sprites[ent.high->direction], argb_mid);
+        } else {
+            draw_rect(video_buffer_, ent_mid.x - (ent.low->width * g_meters_to_pixels) / 2.f,
+                      ent_mid.y - (ent.low->height * g_meters_to_pixels) / 2.f,
+                      ent_mid.x + (ent.low->width * g_meters_to_pixels) / 2.f,
+                      ent_mid.y + (ent.low->height * g_meters_to_pixels) / 2.f, { 0xffff00ff });
+        }
     }
 
 #if 0
     // NOTE: hacky way to draw a debug postion
-    auto test_dif = get_tile_diff(game_state.test_pos, camera.pos);
-    v2 test_mid  = { (screen_center.x + (test_dif.dif_xy.x * gs_meters_to_pixels)),
-                  (screen_center.y - (test_dif.dif_xy.y * gs_meters_to_pixels)) };
+    auto test_dif = get_diff(game_state.test_pos, camera.pos);
+    v2 test_mid  = { (screen_center.x + (test_dif.dif_xy.x * g_meters_to_pixels)),
+                  (screen_center.y - (test_dif.dif_xy.y * g_meters_to_pixels)) };
     draw_ARGB(video_buffer_, game_state.crosshair_img, test_mid);
 #endif
 }
-
-#if 0
-    #ifdef TOM_WIN32
-namespace win32
-{
-        #ifndef WIN32_LEAN_AND_MEAN
-            #define WIN32_LEAN_AND_MEAN  // Exclude rarely-used stuff from Windows headers
-        #endif
-        #include <windows.h>
-BOOL APIENTRY DllMain(HMODULE hModule, DWORD ul_reason_for_call, LPVOID lpReserved)
-{
-    switch (ul_reason_for_call) {
-        case DLL_PROCESS_ATTACH:
-        case DLL_THREAD_ATTACH:
-        case DLL_THREAD_DETACH:
-        case DLL_PROCESS_DETACH: break;
-    }
-    return TRUE;
-}
-}  // namespace win32
-
-    #endif
-#endif

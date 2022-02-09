@@ -869,7 +869,7 @@ Main(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLine, i32 nShowCm
 #endif
 
     Game_Mem memory                   = {};
-    memory.permanent_storage_size     = MEGABYTES(64);
+    memory.permanent_storage_size     = MEGABYTES(256);
     memory.transient_storage_size     = GIGABYTES(1);
     memory.platform_free_file_memory  = _debug_platform_free_file_memory;
     memory.platfrom_read_entire_file  = _debug_platform_read_entire_file;
