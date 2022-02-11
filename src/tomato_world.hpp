@@ -5,70 +5,50 @@
 #include "tomato_math.hpp"
 #include "tomato_common.hpp"
 
+namespace tom
+{
 // TODO: change to V3
-struct World_Dif
+struct world_dif
 {
     v2 dif_xy;
     f32 dif_z;
 };
 
-struct World_Pos
+struct world_pos
 {
     // NOTE: these are fixed point positioins. The high bits are the tile
     // chunk index, and the lower bits are the tile index in the chunk
-    i32 x;
-    i32 y;
-    i32 z;
+    s32 chunk_x;
+    s32 chunk_y;
+    s32 chunk_z;
 
+    // NOTE: from the chunk center
     v2 offset;
 };
 
-inline bool
-operator==(const World_Pos &lhs_, const World_Pos &rhs_)
+struct world_entity_block
 {
-    return (lhs_.x == rhs_.x && lhs_.y == rhs_.y && lhs_.z == rhs_.z &&
-            lhs_.offset.x == rhs_.offset.x && lhs_.offset.y == rhs_.offset.y);
-}
-inline bool
-operator!=(const World_Pos &lhs_, const World_Pos &rhs_)
-{
-    return !(lhs_ == rhs_);
-}
-
-struct World_Entity_Block
-{
-    u32 entity_cnt;
-    u32 entity_i[16];
-    World_Entity_Block *next;
+    u32 low_entity_cnt;
+    u32 low_ent_inds[16];
+    world_entity_block *next;
 };
 
-struct World_Chunk
+struct world_chunk
 {
-    i32 x;
-    i32 y;
-    i32 z;
+    s32 x;
+    s32 y;
+    s32 z;
 
-    World_Entity_Block first_block;
+    world_entity_block first_block;
 
-    World_Chunk *next_in_hash;
+    world_chunk *next_in_hash;
 };
 
-struct World
+struct game_world
 {
-    // NOTE: set to 16x16 tiles per chunk
-    static constexpr i32 s_chunk_bit_shift        = 4;
-    static constexpr i32 s_chunk_bit_mask         = (1 << s_chunk_bit_shift) - 1;
-    static constexpr i32 s_chunk_tile_count       = (1 << s_chunk_bit_shift);
-    static constexpr i32 s_chunk_tile_count_total = s_chunk_tile_count * s_chunk_tile_count;
-    static constexpr i32 s_chunk_count            = 128;
-    static constexpr i32 s_chunk_count_z          = 2;
-    static constexpr i32 s_chunk_safe_margin      = INT32_MAX / 64;
+    world_chunk world_chunk_hash[4096];
 
-    static constexpr f32 s_tile_size_meters = 1.4f;
-
-    // TODO:  shold probably switch to a pointer if tile entity blocks
-    //  continue to be stored en masse direclty in the tile chunk
-    World_Chunk world_chunk_hash[4096];
+    world_entity_block *first_free;
 };
-
+}  // namespace tom
 #endif  // TOMATO_WORLD_HPP_

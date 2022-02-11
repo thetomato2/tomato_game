@@ -28,7 +28,7 @@ using wchar_t = uint16_t;
 
 #pragma pack(push, 1)
 
-struct Bitmap_Header
+struct bitmap_header
 {
     u16 file_type;
     u32 file_size;
@@ -36,13 +36,13 @@ struct Bitmap_Header
     u16 reserved_2;
     u32 bitmap_offset;
     u32 size;
-    i32 width;
-    i32 height;
+    s32 width;
+    s32 height;
     u16 planes;
     u16 bits_per_pixel;
 };
 
-struct ARGB_Header
+struct ARGB_header
 {
     u32 width;
     u32 height;
@@ -50,10 +50,10 @@ struct ARGB_Header
 };
 #pragma pack(pop)
 
-struct Bitmap
+struct bitmap
 {
-    i32 width;
-    i32 height;
+    s32 width;
+    s32 height;
     u32 *pixel_ptr;
 };
 
@@ -65,13 +65,13 @@ win32_free_memor(void *memory_)
     }
 }
 
-debug_Read_File_Result
-win32_read_file(const char *file_name_)
+debug_read_file_result
+win32_read_file(const char *file_name)
 {
-    debug_Read_File_Result file = {};
+    debug_read_file_result file = {};
 
     HANDLE file_handle =
-        CreateFileA(file_name_, GENERIC_READ, 0, 0, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, 0);
+        CreateFileA(file_name, GENERIC_READ, 0, 0, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, 0);
     if (file_handle != INVALID_HANDLE_VALUE) {
         LARGE_INTEGER fileSize;
         if (GetFileSizeEx(file_handle, &fileSize)) {
@@ -99,11 +99,11 @@ win32_read_file(const char *file_name_)
 }
 
 bool
-win32_write_file(const char *file_name_, u64 memory_size_, void *memory_)
+win32_write_file(const char *file_name, u64 memory_size_, void *memory_)
 {
     b32 success = false;
 
-    HANDLE file_handle = CreateFileA(file_name_, GENERIC_WRITE, 0, 0, CREATE_ALWAYS, 0, 0);
+    HANDLE file_handle = CreateFileA(file_name, GENERIC_WRITE, 0, 0, CREATE_ALWAYS, 0, 0);
     if (file_handle != INVALID_HANDLE_VALUE) {
         DWORD bytes_written;
         if (WriteFile(file_handle, memory_, (DWORD)memory_size_, &bytes_written, 0)) {
@@ -118,14 +118,14 @@ win32_write_file(const char *file_name_, u64 memory_size_, void *memory_)
     }
     return success;
 }
-Bitmap
-load_bmp(const char *file_name_)
+bitmap
+load_bmp(const char *file_name)
 {
-    debug_Read_File_Result read_result = win32_read_file(file_name_);
-    Bitmap result;
+    debug_read_file_result read_result = win32_read_file(file_name);
+    bitmap result;
 
     if (read_result.content_size != 0) {
-        Bitmap_Header *header = (Bitmap_Header *)read_result.contents;
+        bitmap_header *header = (bitmap_header *)read_result.contents;
         u32 *pixels           = (u32 *)((byt *)read_result.contents + header->bitmap_offset);
         result.width          = header->width;
         result.height         = header->height;
@@ -134,8 +134,8 @@ load_bmp(const char *file_name_)
     return result;
 }
 
-i32
-main(i32 argc, char *argv[])
+s32
+main(s32 argc, char *argv[])
 {
     if (argc != 2) {
         printf("needs a valid path argument!\n");
@@ -149,7 +149,7 @@ main(i32 argc, char *argv[])
 
     // printf("%s\n", img_path_buf);
 
-    i32 width, height, channels;
+    s32 width, height, channels;
     byt *image = stbi_load(argv[1], &width, &height, &channels, 0);
 
     if (!image) {
@@ -159,10 +159,10 @@ main(i32 argc, char *argv[])
         printf("Loaded: \"%s\"\n", argv[1]);
     }
 
-    ARGB_Header argb;
+    ARGB_header argb;
     argb.width      = (u32)width;
     argb.height     = (u32)height;
-    argb.size       = sizeof(ARGB_Header) + sizeof(u32) * (u32)argb.width * (u32)argb.height;
+    argb.size       = sizeof(ARGB_header) + sizeof(u32) * (u32)argb.width * (u32)argb.height;
     auto *pixel_ptr = (u32 *)image;
 
     for (u32 pixel {}; pixel < width * height; ++pixel) {
@@ -185,7 +185,7 @@ main(i32 argc, char *argv[])
         *write_ptr++ = *pixel_ptr++;
     }
 
-    szt input_path_len = get_str_len(argv[1]);
+    szt input_path_len = tom::get_str_len(argv[1]);
     szt path_ind       = input_path_len - 1;
     char *path_str     = argv[1];
     while (path_str[path_ind] != '\\') {

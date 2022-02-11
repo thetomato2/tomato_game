@@ -22,32 +22,32 @@ using wchar_t = uint16_t;
 #include <mmdeviceapi.h>
 #include <audioclient.h>
 
-struct Win_Dim
+struct window_dims
 {
-    i32 width;
-    i32 height;
+    s32 width;
+    s32 height;
 };
 
-struct Offscreen_Buffer
+struct offscreen_buffer
 {
     BITMAPINFO info;
     void *memory;
-    i32 width;
-    i32 height;
-    i32 pitch;
-    i32 bytes_per_pixel;
+    s32 width;
+    s32 height;
+    s32 pitch;
+    s32 bytes_per_pixel;
 };
 
-struct Sound_Output
+struct sound_output
 {
-    i32 samples_per_sec;
+    s32 samples_per_sec;
     u32 running_sample_index;
-    i32 bytes_per_sample;
+    s32 bytes_per_sample;
     DWORD secondary_buf_size;
-    i32 latency_sample_count;
+    s32 latency_sample_count;
 };
 
-struct Replay_Buffer
+struct replay_buffer
 {
     _TCHAR file_name[512];
     HANDLE file_handle;
@@ -55,7 +55,7 @@ struct Replay_Buffer
     void *memory_block;
 };
 
-struct Win32_State
+struct win32_state
 {
     szt total_size;
 
@@ -65,14 +65,14 @@ struct Win32_State
 
 #if REPLAY_BUFFERS
     HANDLE recording_handle;
-    i32 input_recording_index;
+    s32 input_recording_index;
     HANDLE playback_handle;
-    i32 input_playback_index;
-    Replay_Buffer replay_buffers[4];
+    s32 input_playback_index;
+    replay_buffer replay_buffers[4];
 #endif
 };
 
-struct Game_Code
+struct game_code
 {
     HMODULE game_code_DLL;
     FILETIME last_write_time_DLL;
@@ -82,14 +82,14 @@ struct Game_Code
 };
 
 #ifdef TOM_INTERNAL
-struct debug_Sound_Time_Marker
+struct debug_sound_time_marker
 {
     DWORD play_cursor;
     DWORD write_cursor;
 };
 #endif
 
-enum Keys : byt
+enum keys : byt
 {
     none           = 0,
     back           = 0x8,

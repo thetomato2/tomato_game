@@ -38,10 +38,10 @@ extern "C"
 #define local_persist   static
 #define global_variable static
 
-    typedef int8_t i8;
-    typedef int16_t i16;
-    typedef int32_t i32;
-    typedef int64_t i64;
+    typedef int8_t s8;
+    typedef int16_t s16;
+    typedef int32_t s32;
+    typedef int64_t s64;
 
     typedef uint8_t u8;
     typedef uint16_t u16;
@@ -94,61 +94,59 @@ extern "C"
 #define REPLAY_BUFFERS 1
 
     // TODO: implement this
-    typedef struct Thread_Context
+    typedef struct thread_context
     {
-        i32 place_holder;
-    } Thread_Context;
+        s32 place_holder;
+    } thread_context;
 
 // NOTE: services that the platform provides for the game
 #ifdef TOM_INTERNAL
 
-    typedef struct debug_Read_File_Result
+    typedef struct debug_read_file_result
     {
         u32 content_size;
         void *contents;
-    } debug_Read_File_Result;
+    } debug_read_file_result;
 
-    //! all these C shenanigans...
-    // TODO:  C++-ify this
-    #define DEBUG_PLATFORM_FREE_FILE_MEMORY(name) void name(Thread_Context *thread_, void *memory_)
+    #define DEBUG_PLATFORM_FREE_FILE_MEMORY(name) void name(thread_context *thread, void *memory)
     typedef DEBUG_PLATFORM_FREE_FILE_MEMORY(debug_platform_free_file_memory);
 
     #define DEBUG_PLATFORM_READ_ENTIRE_FILE(name) \
-        debug_Read_File_Result name(Thread_Context *thread_, const char *file_name_)
+        debug_read_file_result name(thread_context *thread, const char *file_name)
     typedef DEBUG_PLATFORM_READ_ENTIRE_FILE(debug_platform_read_entire_file);
 
     #define DEBUG_PLATFORM_WRITE_ENTIRE_FILE(name) \
-        b32 name(Thread_Context *thread_, const char *file_name_, u64 memory_size_, void *memory_)
+        b32 name(thread_context *thread, const char *file_name, u64 memory_size, void *memory)
     typedef DEBUG_PLATFORM_WRITE_ENTIRE_FILE(debug_platform_write_entire_file);
 #endif
 
-    typedef struct Game_Offscreen_Buffer
+    typedef struct game_offscreen_buffer
 
     {
         void *memory;
-        i32 width;
-        i32 height;
-        i32 pitch;
-        i32 bytes_per_pixel;
-    } Game_Offscreen_Buffer;
+        s32 width;
+        s32 height;
+        s32 pitch;
+        s32 bytes_per_pixel;
+    } game_offscreen_buffer;
 
-    typedef struct Game_Sound_Output_Buffer
+    typedef struct game_sound_output_buffer
     {
-        i32 samples_per_second;
-        i32 sample_count;
-        i16 *samples;
-        i32 tone_hertz;
-    } Game_Sound_Output_Buffer;
+        s32 samples_per_second;
+        s32 sample_count;
+        s16 *samples;
+        s32 tone_hertz;
+    } game_sound_output_buffer;
 
-    typedef struct Game_Button_State
+    typedef struct game_button_state
     {
-        i32 half_transition_count;
+        s32 half_transition_count;
         b32 ended_down;
-    } Game_Button_State;
+    } game_button_state;
 
-    typedef struct Game_Controller_Input
+    typedef struct game_controller_input
     {
-        static constexpr szt s_button_cnt { 12 };
+        static const szt s_button_cnt = 12;
 
         bool is_connected;
         bool is_analog;
@@ -173,66 +171,66 @@ extern "C"
 
         union
         {
-            Game_Button_State buttons[s_button_cnt];
+            game_button_state buttons[s_button_cnt];
             struct
             {
-                Game_Button_State dpad_up;
-                Game_Button_State dpad_right;
-                Game_Button_State dpad_down;
-                Game_Button_State dpad_left;
-                Game_Button_State button_A;
-                Game_Button_State button_B;
-                Game_Button_State button_X;
-                Game_Button_State button_Y;
-                Game_Button_State button_RB;
-                Game_Button_State button_LB;
-                Game_Button_State button_back;
-                Game_Button_State button_start;
+                game_button_state dpad_up;
+                game_button_state dpad_right;
+                game_button_state dpad_down;
+                game_button_state dpad_left;
+                game_button_state button_A;
+                game_button_state button_B;
+                game_button_state button_X;
+                game_button_state button_Y;
+                game_button_state button_RB;
+                game_button_state button_LB;
+                game_button_state button_back;
+                game_button_state button_start;
             };
         };
-    } Game_Controller_Input;
+    } game_controller_input;
 
-    typedef struct Game_Keyboard_Input
+    typedef struct game_keyboard_input
     {
         static constexpr szt s_key_cnt { 14 };
 
         union
         {
-            Game_Button_State keys[s_key_cnt];
+            game_button_state keys[s_key_cnt];
             struct
             {
-                Game_Button_State enter;
-                Game_Button_State w;
-                Game_Button_State s;
-                Game_Button_State a;
-                Game_Button_State d;
-                Game_Button_State space;
-                Game_Button_State left_shift;
-                Game_Button_State p;
-                Game_Button_State t;
-                Game_Button_State d1;
-                Game_Button_State d2;
-                Game_Button_State d3;
-                Game_Button_State d4;
-                Game_Button_State d5;
+                game_button_state enter;
+                game_button_state w;
+                game_button_state s;
+                game_button_state a;
+                game_button_state d;
+                game_button_state space;
+                game_button_state left_shift;
+                game_button_state p;
+                game_button_state t;
+                game_button_state d1;
+                game_button_state d2;
+                game_button_state d3;
+                game_button_state d4;
+                game_button_state d5;
             };
         };
-    } Game_Keyboard_Input;
+    } game_keyboard_input;
 
-    typedef struct Game_Input
+    typedef struct game_input
     {
-        static constexpr szt s_input_cnt { 5 };
-        static constexpr szt s_mouse_button_cnt { 3 };
+        static const szt s_input_cnt        = 5;
+        static const szt s_mouse_button_cnt = 3;
 
         f32 delta_time;
 
-        Game_Button_State mouse_buttons[3];
-        i32 mouse_x, mouse_y, mouse_z;
-        Game_Keyboard_Input keyboard;
-        Game_Controller_Input controllers[4];
-    } Game_Input;
+        game_button_state mouse_buttons[3];
+        s32 mouse_x, mouse_y, mouse_z;
+        game_keyboard_input keyboard;
+        game_controller_input controllers[4];
+    } game_input;
 
-    typedef struct Game_Mem
+    typedef struct game_memory
     {
         bool is_initialized;
         u64 permanent_storage_size;
@@ -246,23 +244,23 @@ extern "C"
         debug_platform_read_entire_file *platfrom_read_entire_file;
         debug_platform_write_entire_file *platform_write_entire_file;
 #endif
-    } Game_Mem;
+    } game_memory;
 
 #define GAME_UPDATE_AND_RENDER(name)                                          \
-    void name(Thread_Context *thread_, Game_Mem &memory_, Game_Input &input_, \
-              Game_Offscreen_Buffer &video_buffer_, Game_Sound_Output_Buffer &sound_buffer_)
+    void name(thread_context *thread, game_memory &memory, game_input &input, \
+              game_offscreen_buffer &video_buffer, game_sound_output_buffer &sound_buffer)
     typedef GAME_UPDATE_AND_RENDER(game_update_and_render_stub);
 
 #define GAME_GET_SOUND_SAMPLES(name) \
-    void name(Thread_Context *thread_, Game_Mem &memory_, Game_Sound_Output_Buffer &sound_buffer_)
+    void name(thread_context *thread, game_memory &memory, game_sound_output_buffer &sound_buffer)
     typedef GAME_GET_SOUND_SAMPLES(game_get_sound_samples_stub);
 
     inline u32
-    safe_truncate_u32_to_u64(u64 val_)
+    safe_truncate_u32_to_u64(u64 value)
     {
         // TODO: defines for max values
-        TOM_ASSERT(val_ <= 0xFFFFFFFF);
-        u32 result = (u32)val_;
+        TOM_ASSERT(value <= 0xFFFFFFFF);
+        u32 result = (u32)value;
         return result;
     }
 

@@ -2,22 +2,24 @@
 #define TOMATO_UTILS_HPP_
 
 #include "tomato_platform.h"
+namespace tom
+{
 
 inline szt
-get_wstr_len(const wchar *wstr_)
+get_wstr_len(const wchar *wstr)
 {
     szt len;
-    while (*wstr_++) {
+    while (*wstr++) {
         ++len;
     }
     return len;
 }
 
 inline szt
-get_str_len(const char *str_)
+get_str_len(const char *str)
 {
     szt len {};
-    while (*str_++) {
+    while (*str++) {
         ++len;
     }
     return len;
@@ -25,23 +27,23 @@ get_str_len(const char *str_)
 
 // Takes strings length inputs
 inline void
-cat_str(const char *left_, szt left_len_, const char *right_, szt right_len_, char *out_)
+cat_str(const char *left, szt left_len, const char *right, szt right_len, char *out)
 {
-    for (szt i {}; i < left_len_; ++i) {
-        *out_++ = *left_++;
+    for (szt i {}; i < left_len; ++i) {
+        *out++ = *left++;
     }
-    for (szt i {}; i < right_len_; ++i) {
-        *out_++ = *right_++;
+    for (szt i {}; i < right_len; ++i) {
+        *out++ = *right++;
     }
-    *out_ = '\0';
+    *out = '\0';
 }
 
 // calcs the string lengths also
 inline void
-cat_str(const char *left_, const char *right_, char *out_)
+cat_str(const char *left, const char *right, char *out)
 {
-    auto left_len  = get_str_len(left_);
-    auto right_len = get_str_len(right_);
+    auto left_len  = get_str_len(left);
+    auto right_len = get_str_len(right);
 
     if (!left_len || !right_len) {
         printf("Empty strings passed in!");
@@ -49,20 +51,20 @@ cat_str(const char *left_, const char *right_, char *out_)
     }
 
     for (szt i {}; i < left_len; ++i) {
-        *out_++ = *left_++;
+        *out++ = *left++;
     }
     for (szt i {}; i < right_len; ++i) {
-        *out_++ = *right_++;
+        *out++ = *right++;
     }
-    *out_ = '\0';
+    *out = '\0';
 }
 
 // calcs the string lengths also
 inline void
-cat_str(const char *left_, const char *right_, char *out_, szt *len_out_)
+cat_str(const char *left, const char *right, char *out, szt *len_out)
 {
-    auto left_len  = get_str_len(left_);
-    auto right_len = get_str_len(right_);
+    auto left_len  = get_str_len(left);
+    auto right_len = get_str_len(right);
 
     if (!left_len || !right_len) {
         printf("Empty strings passed in!");
@@ -70,59 +72,59 @@ cat_str(const char *left_, const char *right_, char *out_, szt *len_out_)
     }
 
     for (szt i {}; i < left_len; ++i) {
-        *out_++ = *left_++;
+        *out++ = *left++;
     }
     for (szt i {}; i < right_len; ++i) {
-        *out_++ = *right_++;
+        *out++ = *right++;
     }
-    *len_out_ = left_len + right_len;
-    *out_     = '\0';
+    *len_out = left_len + right_len;
+    *out     = '\0';
 }
 
 // #ifdef TOM_WIN32
 #if 0
 // Convert a wide Unicode string to an UTF8 string
 inline szt
-get_wstr_sz(const wchar *wstr_)
+get_wstr_sz(const wchar *wstr)
 {
-    auto len  = get_wstr_len(wstr_);
-    auto size = (szt)WideCharToMultiByte(CP_UTF8, 0, wstr_, (i32)len, NULL, 0, NULL, NULL);
+    auto len  = get_wstr_len(wstr);
+    auto size = (szt)WideCharToMultiByte(CP_UTF8, 0, wstr, (s32)len, NULL, 0, NULL, NULL);
     return size;
 }
 
 inline szt
-get_wstr_sz(const char *str_)
+get_wstr_sz(const char *str)
 {
-    auto len  = get_str_len(str_);
-    auto size = (szt)MultiByteToWideChar(CP_UTF8, 0, str_, (i32)len, NULL, 0);
+    auto len  = get_str_len(str);
+    auto size = (szt)MultiByteToWideChar(CP_UTF8, 0, str, (s32)len, NULL, 0);
     return size;
 }
 
 // FIXME: idk if this is working
 inline void
-wstr_to_str(const wchar *wstr_, char *buf_)
+wstr_to_str(const wchar *wstr, char *buf)
 {
-    auto len  = get_wstr_len(wstr_);
-    auto size = (szt)WideCharToMultiByte(CP_UTF8, 0, wstr_, (i32)len, buf_, 0, NULL, NULL);
+    auto len  = get_wstr_len(wstr);
+    auto size = (szt)WideCharToMultiByte(CP_UTF8, 0, wstr, (s32)len, buf, 0, NULL, NULL);
 }
 
 inline void
-str_to_wstr(const char *str_, wchar *buf_)
+str_to_wstr(const char *str, wchar *buf)
 {
-    auto len  = get_str_len(str_);
-    auto size = (szt)MultiByteToWideChar(CP_UTF8, 0, str_, (i32)len, NULL, 0);
-    MultiByteToWideChar(CP_UTF8, 0, str_, (i32)len, buf_, (i32)size);
+    auto len  = get_str_len(str);
+    auto size = (szt)MultiByteToWideChar(CP_UTF8, 0, str, (s32)len, NULL, 0);
+    MultiByteToWideChar(CP_UTF8, 0, str, (s32)len, buf, (s32)size);
 }
 #else
 inline szt
-get_wstr_sz(const wchar *wstr_)
+get_wstr_sz(const wchar *wstr)
 {
     // TODO: stub
     return -1;
 }
 
 inline szt
-get_wstr_sz(const char *str_)
+get_wstr_sz(const char *str)
 {
     // TODO: stub
     return -1;
@@ -130,16 +132,17 @@ get_wstr_sz(const char *str_)
 
 // FIXME: idk if this is working
 inline void
-wstr_to_str(const wchar *wstr_, char *buf_)
+wstr_to_str(const wchar *wstr, char *buf)
 {
     // TODO: stub
 }
 
 inline void
-str_to_wstr(const char *str_, wchar *buf_)
+str_to_wstr(const char *str, wchar *buf)
 {
     // TODO: stub
 }
 #endif
 
+}  // namespace tom
 #endif  //  TOMATO_UTILS_HPP_

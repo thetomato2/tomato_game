@@ -7,7 +7,9 @@
 #include "tomato_utils.hpp"
 #include "tomato_world.cpp"
 
-struct Player_Actions
+namespace tom
+{
+struct player_actions
 {
     bool start;
 
@@ -16,7 +18,7 @@ struct Player_Actions
     bool sprint;
 };
 
-struct Color_u32
+struct color_u32
 {
     union
     {
@@ -32,7 +34,7 @@ struct Color_u32
 };
 
 #pragma pack(push, 1)
-struct Bitmap_Header
+struct bitmap_header
 {
     u16 file_type;
     u32 file_size;
@@ -40,13 +42,13 @@ struct Bitmap_Header
     u16 reserved_2;
     u32 bitmap_offset;
     u32 size;
-    i32 width;
-    i32 height;
+    s32 width;
+    s32 height;
     u16 planes;
     u16 bits_per_pixel;
 };
 
-struct ARGB_Header
+struct ARGB_header
 {
     u32 width;
     u32 height;
@@ -54,14 +56,14 @@ struct ARGB_Header
 };
 #pragma pack(pop)
 
-struct Bitmap
+struct bitmap_img
 {
-    i32 width;
-    i32 height;
+    s32 width;
+    s32 height;
     u32 *pixel_ptr;
 };
 
-struct ARGB_Img
+struct ARGB_img
 {
     const char *name;
     u32 width;
@@ -70,7 +72,7 @@ struct ARGB_Img
     u32 *pixel_ptr;
 };
 
-enum Dir : i32
+enum entity_direction : s32
 {
     down = 0,
     right,
@@ -79,7 +81,7 @@ enum Dir : i32
 
 };
 
-enum class Entity_Type
+enum class entity_type
 {
     null,
     none,
@@ -88,7 +90,7 @@ enum class Entity_Type
     stairs
 };
 
-struct High_Entity
+struct entity_high
 {
     b32 exists;
 
@@ -101,86 +103,81 @@ struct High_Entity
     u32 low_i;
 };
 
-struct Low_Entity
+struct entity_low
 {
-    World_Pos pos;
-    i32 virtual_z;
+    world_pos pos;
+    s32 virtual_z;
     f32 width, height;
-    Color_u32 color;
-    ARGB_Img *sprites;
+    color_u32 color;
+    ARGB_img *sprites;
 
     b32 collides;
     b32 barrier;
-    Entity_Type type;
+    entity_type type;
 
     u32 high_i;
 };
 
-struct Entity
+struct entity
 {
     u32 low_i;
-    Low_Entity *low;
-    High_Entity *high;
+    entity_low *low;
+    entity_high *high;
 };
 
-struct Low_Ent_Chunk_Ref
+struct entity_low_chunk_ref
 {
-    World_Chunk *tile_chunk;
+    world_chunk *tile_chunk;
     u32 i_in_chunk;
 };
 
-struct Camera
+struct camera
 {
-    World_Pos pos;
+    world_pos pos;
 };
 
-struct Game_State
+struct game_state
 {
-    static constexpr u32 s_max_low_cnt            = 65536;
-    static constexpr u32 s_max_high_cnt           = 4096;
-    static constexpr u32 s_num_screens            = 10;
-    static constexpr u32 s_num_tiles_per_screen_x = 20;
-    static constexpr u32 s_num_tiles_per_screen_y = 11;
-
-    Mem_Arena world_arena;
-    World *world;
+    memory_arena world_arena;
+    game_world *world;
 
     u32 entity_camera_follow_ind;
-    Camera camera;
+    camera camera;
 
-    Bitmap bitmap;
+    bitmap_img bitmap;
 
-    u32 player_controller_ind[Game_Input::s_input_cnt];
+    u32 player_controller_ind[game_input::s_input_cnt];
 
     u32 player_cnt;
 
     u32 low_cnt;
-    Low_Entity low_entities[s_max_low_cnt];
+    entity_low low_entities[global::max_low_cnt];
 
     u32 high_cnt;
-    High_Entity high_entities[s_max_high_cnt];
+    entity_high high_entities[global::max_high_cnt];
 
-    ARGB_Img bg_img;
-    ARGB_Img seaside_cliff;
-    ARGB_Img crosshair_img;
-    ARGB_Img red_square_img;
-    ARGB_Img green_square_img;
-    ARGB_Img blue_square_img;
-    ARGB_Img player_sprites[4];
-    ARGB_Img tree_sprite;
-    ARGB_Img stair_sprite;
+    ARGB_img bg_img;
+    ARGB_img grass_bg;
+    ARGB_img crosshair_img;
+    ARGB_img red_square_img;
+    ARGB_img green_square_img;
+    ARGB_img blue_square_img;
+    ARGB_img player_sprites[4];
+    ARGB_img tree_sprite;
+    ARGB_img stair_sprite;
 
-    World_Pos test_pos;
+    world_pos test_pos;
 };
 
 inline bool
-is_key_up(const Game_Button_State &key_)
+is_key_up(const game_button_state &key)
 {
-    return key_.half_transition_count > 0 && key_.ended_down == 0;
+    return key.half_transition_count > 0 && key.ended_down == 0;
 }
 
 inline bool
-is_button_up(const Game_Button_State &button_)
+is_button_up(const game_button_state &button)
 {
-    return is_key_up(button_);
+    return is_key_up(button);
 }
+}  // namespace tom

@@ -2,7 +2,8 @@
 #define TOMATO_MATH_HPP_
 #include "tomato_platform.h"
 #include "tomato_intrinsic.hpp"
-
+namespace tom
+{
 // ===============================================================================================
 // #VECTOR 2
 // ===============================================================================================
@@ -16,104 +17,107 @@ union v2
 };
 
 inline v2
-operator+(v2 a_, v2 b_)
+operator+(v2 lhs, v2 rhs)
 {
     v2 result;
 
-    result.x = a_.x + b_.x;
-    result.y = a_.y + b_.y;
+    result.x = lhs.x + rhs.x;
+    result.y = lhs.y + rhs.y;
 
     return result;
 }
 
 inline v2 &
-operator+=(v2 &a_, v2 b_)
+operator+=(v2 &lhs, v2 rhs)
 {
-    a_ = a_ + b_;
+    lhs = lhs + rhs;
 
-    return a_;
+    return lhs;
 }
 
 inline v2 &
-operator+=(v2 &a_, f32 b_)
+operator+=(v2 &lhs, f32 rhs)
 {
-    a_.x += b_;
-    a_.y += b_;
+    lhs.x += rhs;
+    lhs.y += rhs;
 
-    return a_;
+    return lhs;
 }
 
 inline v2
-operator-(v2 a_)
+operator-(v2 lhs)
 {
     v2 result;
 
-    result.x = -a_.x;
-    result.y = -a_.y;
+    result.x = -lhs.x;
+    result.y = -lhs.y;
 
     return result;
 }
 inline v2
-operator-(v2 a_, v2 b_)
+operator-(v2 lhs, v2 rhs)
 {
     v2 result;
 
-    result.x = a_.x - b_.x;
-    result.y = a_.y - b_.y;
+    result.x = lhs.x - rhs.x;
+    result.y = lhs.y - rhs.y;
 
     return result;
 }
 
 inline v2 &
-operator-=(v2 &a_, v2 b_)
+operator-=(v2 &lhs, v2 rhs)
 {
-    a_ = a_ - b_;
+    lhs = lhs - rhs;
 
-    return a_;
+    return lhs;
 }
 
 inline v2 &
-operator-=(v2 &a_, f32 b_)
+operator-=(v2 &lhs, f32 rhs)
 {
-    a_.x = b_;
-    a_.y = b_;
+    lhs.x = rhs;
+    lhs.y = rhs;
 
-    return a_;
+    return lhs;
 }
 
 inline v2
-operator*(f32 a_, v2 b_)
+operator*(f32 lhs, v2 rhs)
 {
     v2 result;
 
-    result.x = a_ * b_.x;
-    result.y = a_ * b_.y;
+    result.x = lhs * rhs.x;
+    result.y = lhs * rhs.y;
 
     return result;
 }
 
 inline v2
-operator*(v2 a_, f32 b_)
+operator*(v2 lhs, f32 rhs)
 {
     v2 result;
 
-    result.x = a_.x * b_;
-    result.y = a_.y * b_;
+    result.x = lhs.x * rhs;
+    result.y = lhs.y * rhs;
 
     return result;
 }
 
 inline v2 &
-operator*=(v2 &a_, f32 b_)
+operator*=(v2 &a, f32 rhs)
 {
-    a_.x *= b_;
-    a_.y *= b_;
+    a.x *= rhs;
+    a.y *= rhs;
 
-    return a_;
+    return a;
 }
+
 // ===============================================================================================
 // #RECT_V2
 // ===============================================================================================
+namespace rect
+{
 
 struct rect_v2
 {
@@ -121,101 +125,128 @@ struct rect_v2
     v2 max;
 };
 
+inline v2
+max_corner(rect_v2 rect)
+{
+    v2 result = rect.max;
+    return result;
+}
+
+inline v2
+min_corner(rect_v2 rect)
+{
+    v2 result = rect.min;
+    return result;
+}
+
 inline rect_v2
-rect_v2_min_max(v2 min_, v2 max_)
+min_max(v2 min, v2 max)
 {
     rect_v2 result;
 
-    result.min = min_;
-    result.max = max_;
+    result.min = min;
+    result.max = max;
 
     return result;
 }
 
 inline rect_v2
-rect_v2_min_dim(v2 min_, v2 dim_)
+min_dim(v2 min, v2 dim)
 {
     rect_v2 result;
 
-    result.min = min_;
-    result.max = min_ + dim_;
+    result.min = min;
+    result.max = min + dim;
 
     return result;
 }
 
 inline rect_v2
-rect_v2_center_half_dim(v2 center_, v2 half_dim_)
+center_half_dim(v2 center, v2 half_dim)
 {
     rect_v2 result;
 
-    result.min = center_ - half_dim_;
-    result.max = center_ + half_dim_;
+    result.min = center - half_dim;
+    result.max = center + half_dim;
+
+    return result;
+}
+
+inline v2
+center(rect_v2 rect)
+{
+    v2 result = 0.5f * (rect.min + rect.max);
 
     return result;
 }
 
 inline bool
-is_in_rect_v2(rect_v2 rect_, v2 test_)
+is_inside(rect_v2 rect, v2 test)
 {
-    bool result = ((test_.x >= rect_.min.x) && (test_.y >= rect_.min.y) &&
-                   (test_.x <= rect_.max.x) && (test_.y <= rect_.max.y));
+    bool result = ((test.x >= rect.min.x) && (test.y >= rect.min.y) && (test.x <= rect.max.x) &&
+                   (test.y <= rect.max.y));
+    return result;
+}
+}  // namespace rect
+
+// ===============================================================================================
+// #FREE_FUNCS
+// ===============================================================================================
+
+// NOTE: inner product or dot product
+inline f32
+inner(v2 a, v2 b)
+{
+    f32 result = a.x * b.x + a.y * b.y;
+    return result;
+};
+
+inline f32
+length_sq(const v2 a)
+{
+    f32 result = inner(a, a);
 
     return result;
 }
 
-// NOTE: inner product or dot product
-inline f32
-inner(v2 a_, v2 b_)
-{
-    f32 res = a_.x * b_.x + a_.y * b_.y;
-    return res;
-};
-
-inline f32
-length_sq(const v2 a_)
-{
-    f32 res = inner(a_, a_);
-
-    return res;
-}
-
 template<typename T>
 T
-square(const T val_)
+square(const T val)
 {
-    return val_ * val_;
+    return val * val;
 }
 
 // Returns min or max if input is not in between
 template<typename T>
 T
-check_bounds(const T in_, const T min_, const T max_)
+check_bounds(const T in, const T min, const T max)
 {
-    T res = in_;
+    T result = in;
 
-    if (in_ < min_)
-        res = min_;
-    else if (in_ > max_)
-        res = max_;
+    if (in < min)
+        result = min;
+    else if (in > max)
+        result = max;
 
-    return in_;
+    return in;
 }
 
 template<typename T>
 T
-max(const T a_, const T b_)
+max(const T a, const T b)
 {
-    T res;
-    a_ > b_ ? res = a_ : res = b_;
-    return res;
+    T result;
+    a > b ? result = a : result = b;
+    return result;
 }
 
 template<typename T>
 T
-min(const T a_, const T b_)
+min(const T a, const T b)
 {
-    T res;
-    a_ < b_ ? res = a_ : res = b_;
-    return res;
+    T result;
+    a < b ? result = a : result = b;
+    return result;
 }
+}  // namespace tom
 #endif  // TOMATO_MATH_HPP_

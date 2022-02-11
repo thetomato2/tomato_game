@@ -6,7 +6,23 @@
 ** intellsense,  has nothing to do with the build itself
 */
 
-struct Mem_Arena
+namespace tom
+{
+namespace global
+{
+static constexpr u32 max_low_cnt            = 65536;
+static constexpr u32 max_high_cnt           = 4096;
+static constexpr u32 num_screens            = 10;
+static constexpr u32 num_tiles_per_screen_y = 11;
+static constexpr s32 chunk_safe_margin      = INT32_MAX / 64;
+static constexpr f32 chunk_size_meters      = 22.f;
+static constexpr f32 meters_to_pixels       = 100.f;
+static constexpr f32 screen_size_x          = chunk_size_meters;
+static constexpr f32 screen_size_y          = chunk_size_meters * 9.f / 16.f;
+
+}  // namespace global
+
+struct memory_arena
 {
     mem_ind size;
     u8 *base;
@@ -14,16 +30,16 @@ struct Mem_Arena
 };
 
 inline void *
-push_size(Mem_Arena *arena_, mem_ind size_)
+push_size(memory_arena *arena, mem_ind size)
 {
-    assert((arena_->used + size_) <= arena_->size);
-    void *result = arena_->base + arena_->used;
-    arena_->used += size_;
+    assert((arena->used + size) <= arena->size);
+    void *result = arena->base + arena->used;
+    arena->used += size;
 
     return result;
 }
 
 #define PushStruct(arena, type)       (type *)push_size(arena, sizeof(type))
 #define PushArray(arena, count, type) (type *)push_size(arena, (count * sizeof(type)))
-
+}  // namespace tom
 #endif  // TOMATO_COMMON_HPP_
