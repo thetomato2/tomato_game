@@ -7,3 +7,4 @@ cl_build/
 CMakeSettings.json
 get_cache_vars.cmake
 assets/
+extern
