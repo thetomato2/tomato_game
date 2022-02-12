@@ -1,5 +1,5 @@
 #pragma once
-#include "tomato_platform.h"
+#include "platform.h"
 
 #ifdef _EMACS
 using wchar_t = uint16_t;

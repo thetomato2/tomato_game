@@ -1,11 +1,11 @@
 
-#include "tomato_platform.h"
-#include "tomato_intrinsic.hpp"
-#include "tomato_common.hpp"
+#include "platform.h"
+#include "intrinsic.hpp"
+#include "common.hpp"
 
-#include "tomato_math.hpp"
-#include "tomato_utils.hpp"
-#include "tomato_world.cpp"
+#include "math.hpp"
+#include "utils.hpp"
+#include "world.cpp"
 
 namespace tom
 {
@@ -143,17 +143,13 @@ struct game_state
 
     u32 entity_camera_follow_ind;
     camera camera;
-
     bitmap_img bitmap;
-
     u32 player_controller_ind[game_input::s_input_cnt];
-
     u32 player_cnt;
 
     u32 low_cnt;
-    entity_low low_entities[global::max_low_cnt];
-
     u32 high_cnt;
+    entity_low low_entities[global::max_low_cnt];
     entity_high high_entities[global::max_high_cnt];
 
     ARGB_img bg_img;

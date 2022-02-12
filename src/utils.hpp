@@ -1,7 +1,7 @@
 #ifndef TOMATO_UTILS_HPP_
 #define TOMATO_UTILS_HPP_
 
-#include "tomato_platform.h"
+#include "platform.h"
 namespace tom
 {
 

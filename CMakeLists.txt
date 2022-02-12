@@ -69,16 +69,16 @@ endif()
 
 
 add_library(Tomato_Game_Lib SHARED
-    ${Source_Dir}/tomato_game.cpp
-    ${Source_Dir}/tomato_game.hpp
-    ${Source_Dir}/tomato_intrinsic.hpp
-    ${Source_Dir}/tomato_math.hpp
-    ${Source_Dir}/tomato_platform.h
-    ${Source_Dir}/tomato_world.cpp
-    ${Source_Dir}/tomato_world.hpp
+    ${Source_Dir}/game.cpp
+    ${Source_Dir}/game.hpp
+    ${Source_Dir}/intrinsic.hpp
+    ${Source_Dir}/math.hpp
+    ${Source_Dir}/platform.h
+    ${Source_Dir}/world.cpp
+    ${Source_Dir}/world.hpp
     )
 
-set_source_files_properties(${Source_Dir}/tomato_world.cpp PROPERTIES HEADER_FILE_ONLY TRUE)
+set_source_files_properties(${Source_Dir}/world.cpp PROPERTIES HEADER_FILE_ONLY TRUE)
 
 set_target_properties(Tomato_Game_Lib PROPERTIES OUTPUT_NAME tomato_game)
 target_include_directories(Tomato_Game_Lib PUBLIC ${Source_Dir})
@@ -105,7 +105,7 @@ if (MSVC)
 endif()
 
 add_executable(Win32_Tomato_Game WIN32
-    ${Source_Dir}/win32_tomato.cpp
+    ${Source_Dir}/platform_win32.cpp
     )
 
 target_include_directories(Win32_Tomato_Game PRIVATE ${Source_Dir})

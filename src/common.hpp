@@ -1,10 +1,10 @@
 #ifndef TOMATO_COMMON_HPP_
 #define TOMATO_COMMON_HPP_
-#include "tomato_platform.h"
+#include "platform.h"
 /*
-** Dump stuff here that doesn't go in to tomato_platfrom.h so IDE's don't complain and I can use
-** intellsense,  has nothing to do with the build itself
-*/
+ * Dump stuff here that doesn't go in to tomato_platfrom.h so IDE's don't complain and I can use
+ * intellsense,  has nothing to do with the build itself
+ */
 
 namespace tom
 {

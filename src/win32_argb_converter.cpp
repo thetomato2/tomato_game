@@ -1,4 +1,4 @@
-#include "tomato_platform.h"
+#include "platform.h"
 
 #define STB_IMAGE_IMPLEMENTATION
 #include "../external/stb_image.h"
@@ -24,7 +24,7 @@ using wchar_t = uint16_t;
 #endif
 #include <windows.h>
 
-#include "tomato_utils.hpp"
+#include "utils.hpp"
 
 #pragma pack(push, 1)
 

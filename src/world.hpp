@@ -1,9 +1,9 @@
 #ifndef TOMATO_WORLD_HPP_
 #define TOMATO_WORLD_HPP_
 
-#include "tomato_platform.h"
-#include "tomato_math.hpp"
-#include "tomato_common.hpp"
+#include "platform.h"
+#include "math.hpp"
+#include "common.hpp"
 
 namespace tom
 {

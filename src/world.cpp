@@ -1,4 +1,4 @@
-#include "tomato_world.hpp"
+#include "world.hpp"
 
 #define CHUNK_UNITIALIZED INT32_MAX
 
