@@ -392,7 +392,6 @@ add_wall(game_state &state, const f32 abs_x, const f32 abs_y, const f32 abs_z,
     wall.low->height   = 1.f;
     wall.low->width    = 1.f;
     wall.low->color    = { 0xff'dd'dd'dd };
-    wall.low->sprites  = sprites;
     wall.low->collides = true;
     wall.low->barrier  = true;
 
@@ -410,7 +409,6 @@ add_stairs(game_state &state, const f32 abs_x, const f32 abs_y, const f32 abs_z,
     stairs.low->width       = 1.f;
     stairs.low->pos         = pos;
     stairs.low->color       = { 0xff'1e'1e'1e };
-    stairs.low->sprites     = sprites;
     stairs.low->argb_offset = 16.f;
     stairs.low->collides    = true;
     stairs.low->barrier     = false;
@@ -429,7 +427,6 @@ add_monster(game_state &state, const f32 abs_x, const f32 abs_y, const f32 abs_z
     monster.low->height      = .6f;
     monster.low->width       = .6f * .6f;
     monster.low->color       = { 0xff'dd'dd'dd };
-    monster.low->sprites     = sprites;
     monster.low->argb_offset = 16.f;
     monster.low->collides    = true;
     monster.low->barrier     = true;
@@ -448,7 +445,6 @@ add_cat(game_state &state, const f32 abs_x, const f32 abs_y, const f32 abs_z,
     cat.low->height      = .6f;
     cat.low->width       = .8f;
     cat.low->color       = { 0xff'dd'dd'dd };
-    cat.low->sprites     = sprites;
     cat.low->argb_offset = 5.f;
     cat.low->collides    = true;
     cat.low->barrier     = true;
@@ -478,7 +474,6 @@ init_player(game_state &state, const u32 player_i, const f32 x, const f32 y, con
             player.low->width       = 0.6f * player.low->height;
             player.low->pos         = pos;
             player.low->color       = { 0xff'00'00'ff };
-            player.low->sprites     = sprites;
             player.low->argb_offset = 16.f;
             player.low->collides    = true;
             player.low->barrier     = true;
@@ -712,14 +707,7 @@ GAME_UPDATE_AND_RENDER(game_update_and_render)
         state.monster_sprites[entity_direction::left] =
             load_ARGB(thread, memory.platfrom_read_entire_file, "monster_left");
 
-        state.cat_sprites[entity_direction::down] =
-            load_ARGB(thread, memory.platfrom_read_entire_file, "cat");
-        state.cat_sprites[entity_direction::right] =
-            load_ARGB(thread, memory.platfrom_read_entire_file, "cat");
-        state.cat_sprites[entity_direction::up] =
-            load_ARGB(thread, memory.platfrom_read_entire_file, "cat");
-        state.cat_sprites[entity_direction::left] =
-            load_ARGB(thread, memory.platfrom_read_entire_file, "cat");
+        state.cat_sprite = load_ARGB(thread, memory.platfrom_read_entire_file, "cat");
 
         state.bg_img         = load_ARGB(thread, memory.platfrom_read_entire_file, bg);
         state.grass_bg       = load_ARGB(thread, memory.platfrom_read_entire_file, "grass_bg");
@@ -775,9 +763,9 @@ GAME_UPDATE_AND_RENDER(game_update_and_render)
             }
         }
 
-        add_monster(state, 5.f, 0.f, 0.f, state.monster_sprites);
+        add_monster(state, 5.f, 0.f, 0.f);
 
-        add_cat(state, -1.f, 1.0f, 0.f, state.cat_sprites);
+        add_cat(state, -1.f, 1.0f, 0.f);
 
         // TODO: this might be more appropriate in the platform layer
         memory.is_initialized = true;
@@ -840,17 +828,6 @@ GAME_UPDATE_AND_RENDER(game_update_and_render)
     u32 *source = state.bg_img.pixel_ptr;
     u32 *dest   = (u32 *)video_buffer.memory;
 
-#if 0
-    for (u32 y {}; y < state.bg_img.height; ++y) {
-        for (u32 x {}; x < state.bg_img.width; ++x) {
-            *dest++ = *source++;
-        }
-    }
-
-    draw_ARGB(video_buffer, state.grass_bg,
-              { (f32)video_buffer.width / 2.f, (f32)video_buffer.height / 2.f });
-#endif
-
     s32 num_draw_tiles = 12;
     v2 screen_center   = { .5f * (f32)video_buffer.width, .5f * (f32)video_buffer.height };
 
@@ -860,20 +837,42 @@ GAME_UPDATE_AND_RENDER(game_update_and_render)
         ent.high   = state.high_entities + high_i;
         ent.low_i  = ent.high->low_i;
         ent.low    = state.low_entities + ent.low_i;
-        // cur_ent.high->pos += ent_offset;
+
         auto ent_dif = get_diff(ent.low->pos, camera.pos);
         v2 ent_mid   = { (screen_center.x + (ent_dif.dif_xy.x * global::meters_to_pixels)),
                        (screen_center.y - (ent_dif.dif_xy.y * global::meters_to_pixels)) };
-        v2 argb_mid  = { ent_mid.x, ent_mid.y - ent.low->argb_offset };
 
-        if (ent.low->sprites) {
-            draw_ARGB(video_buffer, ent.low->sprites[ent.high->direction], argb_mid);
-        } else {
-            draw_rect(video_buffer, ent_mid.x - (ent.low->width * global::meters_to_pixels) / 2.f,
-                      ent_mid.y - (ent.low->height * global::meters_to_pixels) / 2.f,
-                      ent_mid.x + (ent.low->width * global::meters_to_pixels) / 2.f,
-                      ent_mid.y + (ent.low->height * global::meters_to_pixels) / 2.f,
-                      { 0xffff00ff });
+        switch (ent.low->type) {
+            case entity_type::none: {
+                draw_rect(
+                    video_buffer, ent_mid.x - (ent.low->width * global::meters_to_pixels) / 2.f,
+                    ent_mid.y - (ent.low->height * global::meters_to_pixels) / 2.f,
+                    ent_mid.x + (ent.low->width * global::meters_to_pixels) / 2.f,
+                    ent_mid.y + (ent.low->height * global::meters_to_pixels) / 2.f, { 0xffff00ff });
+            } break;
+            case entity_type::player: {
+                v2 argb_mid = { ent_mid.x, ent_mid.y - ent.low->argb_offset };
+                draw_ARGB(video_buffer, state.player_sprites[ent.high->direction], argb_mid);
+            } break;
+            case entity_type::wall: {
+                v2 argb_mid = { ent_mid.x, ent_mid.y - ent.low->argb_offset };
+                draw_ARGB(video_buffer, state.tree_sprite, argb_mid);
+            } break;
+            case entity_type::stairs: {
+                v2 argb_mid = { ent_mid.x, ent_mid.y - ent.low->argb_offset };
+                draw_ARGB(video_buffer, state.stair_sprite, argb_mid);
+            } break;
+            case entity_type::familiar: {
+                v2 argb_mid = { ent_mid.x, ent_mid.y - ent.low->argb_offset };
+                draw_ARGB(video_buffer, state.cat_sprite, argb_mid);
+            } break;
+            case entity_type::monster: {
+                v2 argb_mid = { ent_mid.x, ent_mid.y - ent.low->argb_offset };
+                draw_ARGB(video_buffer, state.monster_sprites[ent.high->direction], argb_mid);
+            } break;
+            default: {
+                INVALID_CODE_PATH;
+            } break;
         }
 
         // NOTE:collision box

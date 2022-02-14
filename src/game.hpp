@@ -111,12 +111,9 @@ struct entity_low
     s32 virtual_z;
     f32 width, height;
     color_u32 color;
-    ARGB_img *sprites;
-
     b32 collides;
     b32 barrier;
     entity_type type;
-
     u32 high_i;
     f32 argb_offset;
 };
@@ -163,7 +160,7 @@ struct game_state
     ARGB_img blue_square_img;
     ARGB_img player_sprites[4];
     ARGB_img monster_sprites[4];
-    ARGB_img cat_sprites[4];
+    ARGB_img cat_sprite;
     ARGB_img tree_sprite;
     ARGB_img stair_sprite;
 
