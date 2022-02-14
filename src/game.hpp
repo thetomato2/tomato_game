@@ -83,11 +83,13 @@ enum entity_direction : s32
 
 enum class entity_type
 {
-    null,
+    null = 0,
     none,
     player,
     wall,
-    stairs
+    stairs,
+    familiar,
+    monster
 };
 
 struct entity_high
@@ -116,6 +118,7 @@ struct entity_low
     entity_type type;
 
     u32 high_i;
+    f32 argb_offset;
 };
 
 struct entity
@@ -159,10 +162,14 @@ struct game_state
     ARGB_img green_square_img;
     ARGB_img blue_square_img;
     ARGB_img player_sprites[4];
+    ARGB_img monster_sprites[4];
+    ARGB_img cat_sprites[4];
     ARGB_img tree_sprite;
     ARGB_img stair_sprite;
 
     world_pos test_pos;
+
+    b32 debug_draw_collision;
 };
 
 inline bool

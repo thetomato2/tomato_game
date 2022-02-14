@@ -223,6 +223,7 @@ change_entity_location(memory_arena *arena, game_world &world, const u32 low_i,
                 old_block = PushStruct(arena, world_entity_block);
             }
             *old_block            = *block;
+            block->next           = old_block;
             block->low_entity_cnt = 0;
         }
 

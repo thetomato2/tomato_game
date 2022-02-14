@@ -16,7 +16,7 @@ static constexpr u32 num_screens            = 10;
 static constexpr u32 num_tiles_per_screen_y = 11;
 static constexpr s32 chunk_safe_margin      = INT32_MAX / 64;
 static constexpr f32 chunk_size_meters      = 22.f;
-static constexpr f32 meters_to_pixels       = 100.f;
+static constexpr f32 meters_to_pixels       = 50.f;
 static constexpr f32 screen_size_x          = chunk_size_meters;
 static constexpr f32 screen_size_y          = chunk_size_meters * 9.f / 16.f;
 

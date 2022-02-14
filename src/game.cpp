@@ -47,6 +47,35 @@ draw_rect(game_offscreen_buffer &buffer, f32 f32_min_x, f32 f_min_y, f32 f32_max
 }
 
 static void
+draw_rect_outline(game_offscreen_buffer &buffer, f32 f32_min_x, f32 f_min_y, f32 f32_max_x,
+                  f32 f32_max_y_, s32 thickness, color_u32 color = { 0xffffffff })
+{
+    s32 min_x = round_f32_to_s32(f32_min_x);
+    s32 min_y = round_f32_to_s32(f_min_y);
+    s32 max_x = round_f32_to_s32(f32_max_x);
+    s32 max_y = round_f32_to_s32(f32_max_y_);
+
+    if (min_x < 0) min_x = 0;
+    if (min_y < 0) min_y = 0;
+    if (max_x > buffer.width) max_x = buffer.width;
+    if (max_y > buffer.height) max_y = buffer.height;
+
+    byt *row = ((byt *)buffer.memory + min_x * buffer.bytes_per_pixel + min_y * buffer.pitch);
+
+    for (s32 y = min_y; y < max_y; ++y) {
+        u32 *pixel = (u32 *)row;
+        for (s32 x = min_x; x < max_x; ++x) {
+            if (x <= min_x + thickness || x >= max_x - thickness - 1 || y <= min_y + thickness ||
+                y >= max_y - thickness - 1) {
+                *pixel = color.argb;
+            }
+            ++pixel;
+        }
+        row += buffer.pitch;
+    }
+}
+
+static void
 draw_ARGB(game_offscreen_buffer &buffer, ARGB_img &img, v2 pos)
 {
     s32 min_y = round_f32_to_s32(pos.y - ((f32)img.height / 2.f));
@@ -267,6 +296,7 @@ make_entity_low(game_state &game_state, u32 low_i)
         if (high_i != last_high_ent) {
             entity_high *last_ent = game_state.high_entities + last_high_ent;
             entity_high *del_ent  = game_state.high_entities + high_i;
+            *del_ent              = *last_ent;
             game_state.low_entities[last_ent->low_i].high_i = high_i;
         }
         --game_state.high_cnt;
@@ -299,8 +329,13 @@ get_high_entity(game_state &game_state, u32 low_i)
 
     return result;
 }
+struct add_low_entity_result
+{
+    entity_low *low;
+    u32 low_i;
+};
 
-static u32
+static add_low_entity_result
 add_low_entity(game_state &state, entity_type type = entity_type::none, world_pos pos = {})
 {
     assert(state.low_cnt < global::max_low_cnt);
@@ -314,7 +349,11 @@ add_low_entity(game_state &state, entity_type type = entity_type::none, world_po
     change_entity_location(&state.world_arena, *state.world, low_i, nullptr,
                            &state.low_entities[low_i].pos);
 
-    return low_i;
+    add_low_entity_result result = {};
+    result.low                   = ent_low;
+    result.low_i                 = low_i;
+
+    return result;
 }
 
 static bool
@@ -329,11 +368,11 @@ validate_entity_pairs(const game_state &state)
 }
 
 inline void
-offset_and_check_entities_by_area(game_state &state, rect::rect_v2 area, v2 bounds)
+offset_and_check_entities_by_area(game_state &state, const rect::rect_v2 area, const v2 offset)
 {
     for (u32 high_i = 1; high_i < state.high_cnt;) {
         entity_high *high = state.high_entities + high_i;
-        high->pos += bounds;
+        high->pos += offset;
         if (rect::is_inside(area, high->pos)) {
             ++high_i;
         } else {
@@ -342,42 +381,79 @@ offset_and_check_entities_by_area(game_state &state, rect::rect_v2 area, v2 boun
     }
 }
 
-static u32
+static entity_low *
 add_wall(game_state &state, const f32 abs_x, const f32 abs_y, const f32 abs_z,
          ARGB_img *sprites = nullptr)
 {
-    u32 wall_i       = add_low_entity(state, entity_type::wall);
-    world_pos pos    = abs_pos_to_world_pos(abs_x, abs_y, abs_z);
-    entity_low *wall = get_low_entity(state, wall_i);
+    auto wall     = add_low_entity(state, entity_type::wall);
+    world_pos pos = abs_pos_to_world_pos(abs_x, abs_y, abs_z);
 
-    wall->pos      = pos;
-    wall->height   = 1.f;
-    wall->width    = 1.f;
-    wall->color    = { 0xff'dd'dd'dd };
-    wall->sprites  = sprites;
-    wall->collides = true;
-    wall->barrier  = true;
+    wall.low->pos      = pos;
+    wall.low->height   = 1.f;
+    wall.low->width    = 1.f;
+    wall.low->color    = { 0xff'dd'dd'dd };
+    wall.low->sprites  = sprites;
+    wall.low->collides = true;
+    wall.low->barrier  = true;
 
-    return wall_i;
+    return wall.low;
 }
 
-static u32
+static entity_low *
 add_stairs(game_state &state, const f32 abs_x, const f32 abs_y, const f32 abs_z,
            ARGB_img *sprites = nullptr)
 {
-    u32 wall_i       = add_low_entity(state, entity_type::stairs);
-    entity_low *wall = get_low_entity(state, wall_i);
-    world_pos pos    = abs_pos_to_world_pos(abs_x, abs_y, abs_z);
+    auto stairs   = add_low_entity(state, entity_type::stairs);
+    world_pos pos = abs_pos_to_world_pos(abs_x, abs_y, abs_z);
 
-    wall->height   = 1.f;
-    wall->width    = 1.f;
-    wall->pos      = pos;
-    wall->color    = { 0xff'1e'1e'1e };
-    wall->sprites  = sprites;
-    wall->collides = true;
-    wall->barrier  = false;
+    stairs.low->height      = 1.f;
+    stairs.low->width       = 1.f;
+    stairs.low->pos         = pos;
+    stairs.low->color       = { 0xff'1e'1e'1e };
+    stairs.low->sprites     = sprites;
+    stairs.low->argb_offset = 16.f;
+    stairs.low->collides    = true;
+    stairs.low->barrier     = false;
 
-    return wall_i;
+    return stairs.low;
+}
+
+static entity_low *
+add_monster(game_state &state, const f32 abs_x, const f32 abs_y, const f32 abs_z,
+            ARGB_img *sprites = nullptr)
+{
+    auto monster  = add_low_entity(state, entity_type::monster);
+    world_pos pos = abs_pos_to_world_pos(abs_x, abs_y, abs_z);
+
+    monster.low->pos         = pos;
+    monster.low->height      = .6f;
+    monster.low->width       = .6f * .6f;
+    monster.low->color       = { 0xff'dd'dd'dd };
+    monster.low->sprites     = sprites;
+    monster.low->argb_offset = 16.f;
+    monster.low->collides    = true;
+    monster.low->barrier     = true;
+
+    return monster.low;
+}
+
+static entity_low *
+add_cat(game_state &state, const f32 abs_x, const f32 abs_y, const f32 abs_z,
+        ARGB_img *sprites = nullptr)
+{
+    auto cat      = add_low_entity(state, entity_type::familiar);
+    world_pos pos = abs_pos_to_world_pos(abs_x, abs_y, abs_z);
+
+    cat.low->pos         = pos;
+    cat.low->height      = .6f;
+    cat.low->width       = .8f;
+    cat.low->color       = { 0xff'dd'dd'dd };
+    cat.low->sprites     = sprites;
+    cat.low->argb_offset = 5.f;
+    cat.low->collides    = true;
+    cat.low->barrier     = true;
+
+    return cat.low;
 }
 
 static void
@@ -387,11 +463,10 @@ init_player(game_state &state, const u32 player_i, const f32 x, const f32 y, con
     // NOTE: the first 5 entities are reserved for players
     TOM_ASSERT(player_i <= state.player_cnt);
     if (player_i <= state.player_cnt) {
-        u32 player_low_i = add_low_entity(state, entity_type::player);
-        TOM_ASSERT(player_i == player_low_i);
-        if (player_i == player_low_i) {
-            entity_low *player = get_low_entity(state, player_low_i);
-            world_pos pos      = abs_pos_to_world_pos(x, y, z);
+        auto player = add_low_entity(state, entity_type::player);
+        TOM_ASSERT(player_i == player.low_i);
+        if (player_i == player.low_i) {
+            world_pos pos = abs_pos_to_world_pos(x, y, z);
 #if 0
             make_entity_high(state, player_i);
             entity_high *player_high = state.high_entities + player->high_i;
@@ -399,12 +474,14 @@ init_player(game_state &state, const u32 player_i, const f32 x, const f32 y, con
             player_high->stair_cd  = 0;
             player_high->vel       = {};
 #endif
-            player->height   = .6f;
-            player->width    = 0.6f * player->height;
-            player->pos      = pos;
-            player->color    = { 0xff'00'00'ff };
-            player->sprites  = sprites;
-            player->collides = true;
+            player.low->height      = .6f;
+            player.low->width       = 0.6f * player.low->height;
+            player.low->pos         = pos;
+            player.low->color       = { 0xff'00'00'ff };
+            player.low->sprites     = sprites;
+            player.low->argb_offset = 16.f;
+            player.low->collides    = true;
+            player.low->barrier     = true;
         }
     }
 }
@@ -564,7 +641,7 @@ set_camera(game_state &state, world_pos new_cam_pos)
                 for (world_entity_block *block = &chunk->first_block; block; block = block->next) {
                     for (u32 ent_i = 0; ent_i < block->low_entity_cnt; ++ent_i) {
                         u32 low_i           = block->low_ent_inds[ent_i];
-                        entity_low *low_ent = state.low_entities + block->low_ent_inds[low_i];
+                        entity_low *low_ent = state.low_entities + low_i;
                         if (low_ent->high_i == 0) {
                             v2 cam_space_pos = get_cam_space_pos(state, low_ent);
                             if (rect::is_inside(cam_bounds, cam_space_pos)) {
@@ -612,21 +689,38 @@ GAME_UPDATE_AND_RENDER(game_update_and_render)
         game_world *world = state.world;
         init_world(*world, 1.4f);
 
-        const char *bg           = "uv_color_squares_960x540";
-        const char *player_front = "0001";
-        const char *player_back  = "0003";
-        const char *player_left  = "0004";
-        const char *player_right = "0002";
+        state.debug_draw_collision = false;
+
+        const char *bg = "uv_color_squares_960x540";
 
         // load textures
         state.player_sprites[entity_direction::down] =
-            load_ARGB(thread, memory.platfrom_read_entire_file, player_front);
+            load_ARGB(thread, memory.platfrom_read_entire_file, "player_front");
         state.player_sprites[entity_direction::right] =
-            load_ARGB(thread, memory.platfrom_read_entire_file, player_right);
+            load_ARGB(thread, memory.platfrom_read_entire_file, "player_right");
         state.player_sprites[entity_direction::up] =
-            load_ARGB(thread, memory.platfrom_read_entire_file, player_back);
+            load_ARGB(thread, memory.platfrom_read_entire_file, "player_back");
         state.player_sprites[entity_direction::left] =
-            load_ARGB(thread, memory.platfrom_read_entire_file, player_left);
+            load_ARGB(thread, memory.platfrom_read_entire_file, "player_left");
+
+        state.monster_sprites[entity_direction::down] =
+            load_ARGB(thread, memory.platfrom_read_entire_file, "monster_front");
+        state.monster_sprites[entity_direction::right] =
+            load_ARGB(thread, memory.platfrom_read_entire_file, "monster_right");
+        state.monster_sprites[entity_direction::up] =
+            load_ARGB(thread, memory.platfrom_read_entire_file, "monster_back");
+        state.monster_sprites[entity_direction::left] =
+            load_ARGB(thread, memory.platfrom_read_entire_file, "monster_left");
+
+        state.cat_sprites[entity_direction::down] =
+            load_ARGB(thread, memory.platfrom_read_entire_file, "cat");
+        state.cat_sprites[entity_direction::right] =
+            load_ARGB(thread, memory.platfrom_read_entire_file, "cat");
+        state.cat_sprites[entity_direction::up] =
+            load_ARGB(thread, memory.platfrom_read_entire_file, "cat");
+        state.cat_sprites[entity_direction::left] =
+            load_ARGB(thread, memory.platfrom_read_entire_file, "cat");
+
         state.bg_img         = load_ARGB(thread, memory.platfrom_read_entire_file, bg);
         state.grass_bg       = load_ARGB(thread, memory.platfrom_read_entire_file, "grass_bg");
         state.crosshair_img  = load_ARGB(thread, memory.platfrom_read_entire_file, "crosshair");
@@ -665,10 +759,25 @@ GAME_UPDATE_AND_RENDER(game_update_and_render)
             init_player(state, player_i, 0.f, 0.f, 0.f, state.player_sprites);
         }
 
-        f32 tx = 0, ty = 0;
-        while (state.low_cnt < 50) {
-            add_wall(state, tx++, ty++, 0.f, &state.tree_sprite);
+        f32 x_len = 55.f;
+
+        for (f32 x = -20.f; x < x_len; ++x) {
+            add_wall(state, x, 15, 0.f, &state.tree_sprite);
+            add_wall(state, x, -5, 0.f, &state.tree_sprite);
+            if ((s32)x % 17 == 0) continue;
+            add_wall(state, x, 5, 0.f, &state.tree_sprite);
         }
+
+        for (f32 x = -20.f; x <= x_len; x += 15.f) {
+            for (f32 y = -5; y < 15; ++y) {
+                if ((y == 0.f || y == 10.f) && (x != -20.f && x != 55.f)) continue;
+                add_wall(state, x, y, 0.f, &state.tree_sprite);
+            }
+        }
+
+        add_monster(state, 5.f, 0.f, 0.f, state.monster_sprites);
+
+        add_cat(state, -1.f, 1.0f, 0.f, state.cat_sprites);
 
         // TODO: this might be more appropriate in the platform layer
         memory.is_initialized = true;
@@ -682,7 +791,8 @@ GAME_UPDATE_AND_RENDER(game_update_and_render)
     auto &camera = state.camera;
 
     auto p1 = get_high_entity(state, 1);
-    printf("%f, %f\n", p1.high->pos.x, p1.high->pos.y);
+    printf("%.2f, %.2f\n", p1.high->pos.x, p1.high->pos.y);
+    printf("%.2f, %f\n", p1.low->pos.offset.x, p1.low->pos.offset.y);
     printf("%d, %d\n", p1.low->pos.chunk_x, p1.low->pos.chunk_y);
 
     for (u32 player_i = 1; player_i <= state.player_cnt; ++player_i) {
@@ -708,38 +818,14 @@ GAME_UPDATE_AND_RENDER(game_update_and_render)
             move_player(state, player_ent, player_action, input.delta_time);
         }
     }
+    if (is_key_up(input.keyboard.d1)) state.debug_draw_collision = !state.debug_draw_collision;
 
-    if (input.keyboard.d1.ended_down) {
-        if (state.low_entities[1].high_i) state.entity_camera_follow_ind = 1;
-    } else if (input.keyboard.d2.ended_down) {
-        if (state.low_entities[2].high_i) state.entity_camera_follow_ind = 2;
-    } else if (input.keyboard.d3.ended_down) {
-        if (state.low_entities[3].high_i) state.entity_camera_follow_ind = 3;
-    } else if (input.keyboard.d4.ended_down) {
-        if (state.low_entities[4].high_i) state.entity_camera_follow_ind = 4;
-    } else if (input.keyboard.d5.ended_down) {
-        if (state.low_entities[5].high_i) state.entity_camera_follow_ind = 5;
-    }
-
-    entity cam_ent = get_high_entity(state, state.entity_camera_follow_ind);
-
+    entity cam_ent       = get_high_entity(state, state.entity_camera_follow_ind);
     world_dif entity_dif = get_diff(cam_ent.low->pos, camera.pos);
+    camera.pos.chunk_z   = cam_ent.low->pos.chunk_z;
 
-    camera.pos.chunk_z = cam_ent.low->pos.chunk_z;
-
-    world_pos new_cam_pos = camera.pos;
-    if (entity_dif.dif_xy.x > global::screen_size_x / 2.f) {
-        new_cam_pos.chunk_x += s32(global::screen_size_x / 2.f);
-    }
-    if (entity_dif.dif_xy.x < global::screen_size_x / -2.f) {
-        new_cam_pos.chunk_x -= s32(global::screen_size_x / 2.f);
-    }
-    if (entity_dif.dif_xy.y > global::screen_size_y / 2.f) {
-        new_cam_pos.chunk_y += s32(global::screen_size_y / 2.f);
-    }
-    if (entity_dif.dif_xy.y < global::screen_size_y / -2.f) {
-        new_cam_pos.chunk_y -= s32(global::screen_size_y / 2.f);
-    }
+    // NOTE: camera is following the player
+    world_pos new_cam_pos = p1.low->pos;
 
     set_camera(state, new_cam_pos);
 
@@ -748,20 +834,22 @@ GAME_UPDATE_AND_RENDER(game_update_and_render)
     // ===============================================================================================
 
     // NOTE: *not* using PatBlt in the win32 layer
-    color_u32 clear_color = { 0xff'00'00'00 };
+    color_u32 clear_color = { 0xff'4e'4e'4e };
     clear_buffer(video_buffer, clear_color);
 
     u32 *source = state.bg_img.pixel_ptr;
     u32 *dest   = (u32 *)video_buffer.memory;
 
+#if 0
     for (u32 y {}; y < state.bg_img.height; ++y) {
         for (u32 x {}; x < state.bg_img.width; ++x) {
             *dest++ = *source++;
         }
     }
 
-    // draw_ARGB(video_buffer, state.grass_bg,
-    //           { (f32)video_buffer.width / 2.f, (f32)video_buffer.height / 2.f });
+    draw_ARGB(video_buffer, state.grass_bg,
+              { (f32)video_buffer.width / 2.f, (f32)video_buffer.height / 2.f });
+#endif
 
     s32 num_draw_tiles = 12;
     v2 screen_center   = { .5f * (f32)video_buffer.width, .5f * (f32)video_buffer.height };
@@ -776,7 +864,7 @@ GAME_UPDATE_AND_RENDER(game_update_and_render)
         auto ent_dif = get_diff(ent.low->pos, camera.pos);
         v2 ent_mid   = { (screen_center.x + (ent_dif.dif_xy.x * global::meters_to_pixels)),
                        (screen_center.y - (ent_dif.dif_xy.y * global::meters_to_pixels)) };
-        v2 argb_mid  = { ent_mid.x, ent_mid.y - 16 };
+        v2 argb_mid  = { ent_mid.x, ent_mid.y - ent.low->argb_offset };
 
         if (ent.low->sprites) {
             draw_ARGB(video_buffer, ent.low->sprites[ent.high->direction], argb_mid);
@@ -787,10 +875,15 @@ GAME_UPDATE_AND_RENDER(game_update_and_render)
                       ent_mid.y + (ent.low->height * global::meters_to_pixels) / 2.f,
                       { 0xffff00ff });
         }
-        draw_rect(video_buffer, ent_mid.x - (ent.low->width * global::meters_to_pixels) / 2.f,
-                  ent_mid.y - (ent.low->height * global::meters_to_pixels) / 2.f,
-                  ent_mid.x + (ent.low->width * global::meters_to_pixels) / 2.f,
-                  ent_mid.y + (ent.low->height * global::meters_to_pixels) / 2.f, { 0xffff00ff });
+
+        // NOTE:collision box
+        if (state.debug_draw_collision) {
+            draw_rect_outline(
+                video_buffer, ent_mid.x - (ent.low->width * global::meters_to_pixels) / 2.f,
+                ent_mid.y - (ent.low->height * global::meters_to_pixels) / 2.f,
+                ent_mid.x + (ent.low->width * global::meters_to_pixels) / 2.f,
+                ent_mid.y + (ent.low->height * global::meters_to_pixels) / 2.f, 1, { 0xffff0000 });
+        }
     }
 
 #if 0

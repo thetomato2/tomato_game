@@ -91,7 +91,7 @@ extern "C"
 
 #define INVALID_CODE_PATH TOM_ASSERT(!"Invalid code path!")
 
-#define REPLAY_BUFFERS 1
+#define REPLAY_BUFFERS 0
 
     // TODO: implement this
     typedef struct thread_context
