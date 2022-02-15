@@ -19,6 +19,8 @@ static constexpr f32 chunk_size_meters      = 22.f;
 static constexpr f32 meters_to_pixels       = 50.f;
 static constexpr f32 screen_size_x          = chunk_size_meters;
 static constexpr f32 screen_size_y          = chunk_size_meters * 9.f / 16.f;
+static constexpr f32 jump_vel               = 2.f;
+static constexpr f32 gravitl                = -9.8f;
 
 }  // namespace global
 

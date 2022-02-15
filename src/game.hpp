@@ -9,9 +9,10 @@
 
 namespace tom
 {
-struct player_actions
+struct entity_actions
 {
     bool start;
+    bool jump;
 
     v2 dir;
 
@@ -95,9 +96,12 @@ enum class entity_type
 struct entity_high
 {
     b32 exists;
+    b32 is_jumping;
 
     // NOTE: relative to camera
     v2 pos, vel;
+    f32 vel_z;
+    f32 z;
     u32 abs_tile_z;
     u32 direction;
     f32 stair_cd;
@@ -131,6 +135,20 @@ struct entity_low_chunk_ref
     u32 i_in_chunk;
 };
 
+struct entity_visible_piece
+{
+    ARGB_img *img;
+    v2 mid_p;
+    f32 z;
+    f32 alpha;
+};
+
+struct entity_visible_piece_group
+{
+    u32 piece_cnt;
+    entity_visible_piece pieces[8];
+};
+
 struct camera
 {
     world_pos pos;
@@ -146,6 +164,7 @@ struct game_state
     bitmap_img bitmap;
     u32 player_controller_ind[game_input::s_input_cnt];
     u32 player_cnt;
+    entity_actions player_acts[game_input::s_input_cnt];
 
     u32 low_cnt;
     u32 high_cnt;
