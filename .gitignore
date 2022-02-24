@@ -8,3 +8,4 @@ CMakeSettings.json
 get_cache_vars.cmake
 assets/
 extern
+.vscode
