@@ -24,7 +24,7 @@ static constexpr f32 gravitl                = -9.8f;
 
 }  // namespace global
 
-struct memory_arena
+struct Memory_Arena
 {
     mem_ind size;
     u8 *base;
@@ -32,7 +32,7 @@ struct memory_arena
 };
 
 inline void *
-push_size(memory_arena *arena, mem_ind size)
+push_size(Memory_Arena *arena, mem_ind size)
 {
     assert((arena->used + size) <= arena->size);
     void *result = arena->base + arena->used;

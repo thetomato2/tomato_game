@@ -22,13 +22,13 @@ using wchar_t = uint16_t;
 #include <mmdeviceapi.h>
 #include <audioclient.h>
 
-struct window_dims
+struct Window_Dims
 {
     s32 width;
     s32 height;
 };
 
-struct offscreen_buffer
+struct Offscreen_Buffer
 {
     BITMAPINFO info;
     void *memory;
@@ -38,7 +38,7 @@ struct offscreen_buffer
     s32 bytes_per_pixel;
 };
 
-struct sound_output
+struct Sound_Output
 {
     s32 samples_per_sec;
     u32 running_sample_index;
@@ -47,7 +47,7 @@ struct sound_output
     s32 latency_sample_count;
 };
 
-struct replay_buffer
+struct Replay_Buffer
 {
     _TCHAR file_name[512];
     HANDLE file_handle;
@@ -55,7 +55,7 @@ struct replay_buffer
     void *memory_block;
 };
 
-struct win32_state
+struct Win32_State
 {
     szt total_size;
 
@@ -72,7 +72,7 @@ struct win32_state
 #endif
 };
 
-struct game_code
+struct Game_Code
 {
     HMODULE game_code_DLL;
     FILETIME last_write_time_DLL;
@@ -82,14 +82,14 @@ struct game_code
 };
 
 #ifdef TOM_INTERNAL
-struct debug_sound_time_marker
+struct Debug_Sound_Time_Marker
 {
     DWORD play_cursor;
     DWORD write_cursor;
 };
 #endif
 
-enum keys : byt
+enum Keys : byt
 {
     none           = 0,
     back           = 0x8,

@@ -4,16 +4,16 @@
 
 namespace tom
 {
-struct bit_scan_result
+struct Bitscan_Result
 {
     bool found;
     u32 index;
 };
 
-inline bit_scan_result
+inline Bitscan_Result
 find_least_signifcant_set_bit(u32 val)
 {
-    bit_scan_result result {};
+    Bitscan_Result result {};
 
 #if MSVC
     result.found = _BitScanForward((ul *)&result.index, val);

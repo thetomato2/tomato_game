@@ -9,17 +9,18 @@
 
 namespace tom
 {
-struct entity_actions
+
+struct Enity_Actions
 {
     bool start;
     bool jump;
 
-    v2 dir;
+    V2 dir;
 
     bool sprint;
 };
 
-struct color_u32
+struct Color
 {
     union
     {
@@ -35,7 +36,7 @@ struct color_u32
 };
 
 #pragma pack(push, 1)
-struct bitmap_header
+struct Bitmap_Header
 {
     u16 file_type;
     u32 file_size;
@@ -57,7 +58,7 @@ struct ARGB_header
 };
 #pragma pack(pop)
 
-struct bitmap_img
+struct Bitmap_Img
 {
     s32 width;
     s32 height;
@@ -73,7 +74,7 @@ struct ARGB_img
     u32 *pixel_ptr;
 };
 
-enum entity_direction : s32
+enum Entity_Direction : s32
 {
     down = 0,
     right,
@@ -82,7 +83,7 @@ enum entity_direction : s32
 
 };
 
-enum class entity_type
+enum class Entity_Type
 {
     null = 0,
     none,
@@ -93,13 +94,13 @@ enum class entity_type
     monster
 };
 
-struct entity_high
+struct Entity_High
 {
     b32 exists;
     b32 is_jumping;
 
     // NOTE: relative to camera
-    v2 pos, vel;
+    V2 pos, vel;
     f32 vel_z;
     f32 z;
     u32 abs_tile_z;
@@ -109,67 +110,67 @@ struct entity_high
     u32 low_i;
 };
 
-struct entity_low
+struct Entity_Low
 {
-    world_pos pos;
+    World_Pos pos;
     s32 virtual_z;
     f32 width, height;
-    color_u32 color;
+    Color color;
     b32 collides;
     b32 barrier;
-    entity_type type;
+    Entity_Type type;
     u32 high_i;
     f32 argb_offset;
 };
 
-struct entity
+struct Entity
 {
     u32 low_i;
-    entity_low *low;
-    entity_high *high;
+    Entity_Low *low;
+    Entity_High *high;
 };
 
-struct entity_low_chunk_ref
+struct Entity_Low_Chunk_Ref
 {
-    world_chunk *tile_chunk;
+    World_Chunk *tile_chunk;
     u32 i_in_chunk;
 };
 
-struct entity_visible_piece
+struct Entity_Visible_Piece
 {
     ARGB_img *img;
-    v2 mid_p;
+    V2 mid_p;
     f32 z;
     f32 alpha;
 };
 
-struct entity_visible_piece_group
+struct Entity_Visble_Group_Piece
 {
     u32 piece_cnt;
-    entity_visible_piece pieces[8];
+    Entity_Visible_Piece pieces[8];
 };
 
-struct camera
+struct Camera
 {
-    world_pos pos;
+    World_Pos pos;
 };
 
-struct game_state
+struct Game_State
 {
-    memory_arena world_arena;
-    game_world *world;
+    Memory_Arena world_arena;
+    Game_World *world;
 
     u32 entity_camera_follow_ind;
-    camera camera;
-    bitmap_img bitmap;
-    u32 player_controller_ind[game_input::s_input_cnt];
+    Camera camera;
+    Bitmap_Img bitmap;
+    u32 player_controller_ind[Game_Input::s_input_cnt];
     u32 player_cnt;
-    entity_actions player_acts[game_input::s_input_cnt];
+    Enity_Actions player_acts[Game_Input::s_input_cnt];
 
     u32 low_cnt;
     u32 high_cnt;
-    entity_low low_entities[global::max_low_cnt];
-    entity_high high_entities[global::max_high_cnt];
+    Entity_Low low_entities[global::max_low_cnt];
+    Entity_High high_entities[global::max_high_cnt];
 
     ARGB_img bg_img;
     ARGB_img grass_bg;
@@ -183,19 +184,19 @@ struct game_state
     ARGB_img tree_sprite;
     ARGB_img stair_sprite;
 
-    world_pos test_pos;
+    World_Pos test_pos;
 
     b32 debug_draw_collision;
 };
 
 inline bool
-is_key_up(const game_button_state &key)
+is_key_up(const Game_Button_State &key)
 {
     return key.half_transition_count > 0 && key.ended_down == 0;
 }
 
 inline bool
-is_button_up(const game_button_state &button)
+is_button_up(const Game_Button_State &button)
 {
     return is_key_up(button);
 }

@@ -7,7 +7,7 @@ namespace tom
 // ===============================================================================================
 // #VECTOR 2
 // ===============================================================================================
-union v2
+union V2
 {
     struct
     {
@@ -16,10 +16,10 @@ union v2
     f32 e[2];
 };
 
-inline v2
-operator+(v2 lhs, v2 rhs)
+inline V2
+operator+(V2 lhs, V2 rhs)
 {
-    v2 result;
+    V2 result;
 
     result.x = lhs.x + rhs.x;
     result.y = lhs.y + rhs.y;
@@ -27,16 +27,16 @@ operator+(v2 lhs, v2 rhs)
     return result;
 }
 
-inline v2 &
-operator+=(v2 &lhs, v2 rhs)
+inline V2 &
+operator+=(V2 &lhs, V2 rhs)
 {
     lhs = lhs + rhs;
 
     return lhs;
 }
 
-inline v2 &
-operator+=(v2 &lhs, f32 rhs)
+inline V2 &
+operator+=(V2 &lhs, f32 rhs)
 {
     lhs.x += rhs;
     lhs.y += rhs;
@@ -44,20 +44,20 @@ operator+=(v2 &lhs, f32 rhs)
     return lhs;
 }
 
-inline v2
-operator-(v2 lhs)
+inline V2
+operator-(V2 lhs)
 {
-    v2 result;
+    V2 result;
 
     result.x = -lhs.x;
     result.y = -lhs.y;
 
     return result;
 }
-inline v2
-operator-(v2 lhs, v2 rhs)
+inline V2
+operator-(V2 lhs, V2 rhs)
 {
-    v2 result;
+    V2 result;
 
     result.x = lhs.x - rhs.x;
     result.y = lhs.y - rhs.y;
@@ -65,16 +65,16 @@ operator-(v2 lhs, v2 rhs)
     return result;
 }
 
-inline v2 &
-operator-=(v2 &lhs, v2 rhs)
+inline V2 &
+operator-=(V2 &lhs, V2 rhs)
 {
     lhs = lhs - rhs;
 
     return lhs;
 }
 
-inline v2 &
-operator-=(v2 &lhs, f32 rhs)
+inline V2 &
+operator-=(V2 &lhs, f32 rhs)
 {
     lhs.x = rhs;
     lhs.y = rhs;
@@ -82,10 +82,10 @@ operator-=(v2 &lhs, f32 rhs)
     return lhs;
 }
 
-inline v2
-operator*(f32 lhs, v2 rhs)
+inline V2
+operator*(f32 lhs, V2 rhs)
 {
-    v2 result;
+    V2 result;
 
     result.x = lhs * rhs.x;
     result.y = lhs * rhs.y;
@@ -93,10 +93,10 @@ operator*(f32 lhs, v2 rhs)
     return result;
 }
 
-inline v2
-operator*(v2 lhs, f32 rhs)
+inline V2
+operator*(V2 lhs, f32 rhs)
 {
-    v2 result;
+    V2 result;
 
     result.x = lhs.x * rhs;
     result.y = lhs.y * rhs;
@@ -104,13 +104,13 @@ operator*(v2 lhs, f32 rhs)
     return result;
 }
 
-inline v2 &
-operator*=(v2 &a, f32 rhs)
+inline V2 &
+operator*=(V2 &lhs, f32 rhs)
 {
-    a.x *= rhs;
-    a.y *= rhs;
+    lhs.x *= rhs;
+    lhs.y *= rhs;
 
-    return a;
+    return lhs;
 }
 
 // ===============================================================================================
@@ -119,30 +119,30 @@ operator*=(v2 &a, f32 rhs)
 namespace rect
 {
 
-struct rect_v2
+struct Rect_V2
 {
-    v2 min;
-    v2 max;
+    V2 min;
+    V2 max;
 };
 
-inline v2
-max_corner(rect_v2 rect)
+inline V2
+max_corner(Rect_V2 rect)
 {
-    v2 result = rect.max;
+    V2 result = rect.max;
     return result;
 }
 
-inline v2
-min_corner(rect_v2 rect)
+inline V2
+min_corner(Rect_V2 rect)
 {
-    v2 result = rect.min;
+    V2 result = rect.min;
     return result;
 }
 
-inline rect_v2
-min_max(v2 min, v2 max)
+inline Rect_V2
+min_max(V2 min, V2 max)
 {
-    rect_v2 result;
+    Rect_V2 result;
 
     result.min = min;
     result.max = max;
@@ -150,10 +150,10 @@ min_max(v2 min, v2 max)
     return result;
 }
 
-inline rect_v2
-min_dim(v2 min, v2 dim)
+inline Rect_V2
+min_dim(V2 min, V2 dim)
 {
-    rect_v2 result;
+    Rect_V2 result;
 
     result.min = min;
     result.max = min + dim;
@@ -161,10 +161,10 @@ min_dim(v2 min, v2 dim)
     return result;
 }
 
-inline rect_v2
-center_half_dim(v2 center, v2 half_dim)
+inline Rect_V2
+center_half_dim(V2 center, V2 half_dim)
 {
-    rect_v2 result;
+    Rect_V2 result;
 
     result.min = center - half_dim;
     result.max = center + half_dim;
@@ -172,16 +172,16 @@ center_half_dim(v2 center, v2 half_dim)
     return result;
 }
 
-inline v2
-center(rect_v2 rect)
+inline V2
+center(Rect_V2 rect)
 {
-    v2 result = 0.5f * (rect.min + rect.max);
+    V2 result = 0.5f * (rect.min + rect.max);
 
     return result;
 }
 
 inline bool
-is_inside(rect_v2 rect, v2 test)
+is_inside(Rect_V2 rect, V2 test)
 {
     bool result = ((test.x >= rect.min.x) && (test.y >= rect.min.y) && (test.x <= rect.max.x) &&
                    (test.y <= rect.max.y));
@@ -195,14 +195,14 @@ is_inside(rect_v2 rect, v2 test)
 
 // NOTE: inner product or dot product
 inline f32
-inner(v2 a, v2 b)
+inner(V2 a, V2 b)
 {
     f32 result = a.x * b.x + a.y * b.y;
     return result;
 };
 
 inline f32
-length_sq(const v2 a)
+length_sq(const V2 a)
 {
     f32 result = inner(a, a);
 

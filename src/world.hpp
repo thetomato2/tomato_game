@@ -8,13 +8,13 @@
 namespace tom
 {
 // TODO: change to V3
-struct world_dif
+struct World_Dif
 {
-    v2 dif_xy;
+    V2 dif_xy;
     f32 dif_z;
 };
 
-struct world_pos
+struct World_Pos
 {
     // NOTE: these are fixed point positioins. The high bits are the tile
     // chunk index, and the lower bits are the tile index in the chunk
@@ -23,32 +23,32 @@ struct world_pos
     s32 chunk_z;
 
     // NOTE: from the chunk center
-    v2 offset;
+    V2 offset;
 };
 
-struct world_entity_block
+struct World_Entity_Block
 {
     u32 low_entity_cnt;
     u32 low_ent_inds[16];
-    world_entity_block *next;
+    World_Entity_Block *next;
 };
 
-struct world_chunk
+struct World_Chunk
 {
     s32 x;
     s32 y;
     s32 z;
 
-    world_entity_block first_block;
+    World_Entity_Block first_block;
 
-    world_chunk *next_in_hash;
+    World_Chunk *next_in_hash;
 };
 
-struct game_world
+struct Game_World
 {
-    world_chunk world_chunk_hash[4096];
+    World_Chunk world_chunk_hash[4096];
 
-    world_entity_block *first_free;
+    World_Entity_Block *first_free;
 };
 }  // namespace tom
 #endif  // TOMATO_WORLD_HPP_
