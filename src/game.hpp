@@ -134,7 +134,7 @@ struct Entity_Visible_Piece
     Color color;
 };
 
-struct Entity_Visble_Group_Piece
+struct Entity_Visble_Piece_Group
 {
     u32 piece_cnt;
     Entity_Visible_Piece pieces[64];

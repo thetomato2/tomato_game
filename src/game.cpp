@@ -159,7 +159,7 @@ draw_ARGB(Game_Offscreen_Buffer &buffer, const ARGB_img &img, const v2 pos)
 }
 
 static void
-push_piece(Entity_Visble_Group_Piece *group, ARGB_img *img, const v2 mid_p, const f32 z_offset,
+push_piece(Entity_Visble_Piece_Group *group, ARGB_img *img, const v2 mid_p, const f32 z_offset,
            const f32 alpha = 1.0f)
 {
     TomAssert(group->piece_cnt < ArrayCount(group->pieces));
@@ -172,7 +172,7 @@ push_piece(Entity_Visble_Group_Piece *group, ARGB_img *img, const v2 mid_p, cons
 }
 
 static void
-push_piece(Entity_Visble_Group_Piece *group, const f32 width, const f32 height, const Color color,
+push_piece(Entity_Visble_Piece_Group *group, const f32 width, const f32 height, const Color color,
            const v2 mid_p, const f32 z_offset, const f32 alpha = 1.0f)
 {
     TomAssert(group->piece_cnt < ArrayCount(group->pieces));
@@ -531,13 +531,15 @@ add_monster(Game_State &state, const f32 abs_x, const f32 abs_y, const f32 abs_z
     auto monster { add_low_entity(state, Entity_Type::monster) };
     World_Pos pos { abs_pos_to_world_pos(abs_x, abs_y, abs_z) };
 
-    monster.low->pos         = pos;
-    monster.low->height      = .6f;
-    monster.low->width       = .6f * .6f;
-    monster.low->color       = { 0xff'dd'dd'dd };
-    monster.low->argb_offset = 16.f;
-    monster.low->collides    = true;
-    monster.low->barrier     = true;
+    monster.low->pos            = pos;
+    monster.low->height         = .6f;
+    monster.low->width          = .6f * .6f;
+    monster.low->color          = { 0xff'dd'dd'dd };
+    monster.low->argb_offset    = 16.f;
+    monster.low->collides       = true;
+    monster.low->barrier        = true;
+    monster.low->max_hit_points = 6;
+    monster.low->hit_points     = monster.low->max_hit_points;
 
     return monster.low;
 }
@@ -956,7 +958,7 @@ GAME_UPDATE_AND_RENDER(game_update_and_render)
     World_Pos new_cam_pos { p1.low->pos };
     set_camera(state, new_cam_pos);
     v2 screen_center { .5f * (f32)video_buffer.width, .5f * (f32)video_buffer.height };
-    Entity_Visble_Group_Piece piece_group {};
+    Entity_Visble_Piece_Group piece_group {};
 
     // NOTE: *not* using PatBlt in the win32 layer
     Color clear_color { 0xff'4e'4e'4e };
@@ -969,6 +971,17 @@ GAME_UPDATE_AND_RENDER(game_update_and_render)
         auto ent_dif { get_diff(ent.low->pos, camera.pos) };
         v2 ent_mid { (screen_center.x + (ent_dif.dif_xy.x * global::meters_to_pixels)),
                      (screen_center.y - (ent_dif.dif_xy.y * global::meters_to_pixels)) };
+
+        // TODO: pull this out
+        auto push_hp { [](Entity_Visble_Piece_Group &piece_group, Entity ent, v2 argb_mid) {
+            for (u32 i {}; i < ent.low->hit_points; ++i) {
+                push_piece(&piece_group, 3.f, 6.f, { colors::red },
+                           v2 { argb_mid.x - (ent.low->width / 2.f) * global::meters_to_pixels -
+                                    10.f + scast(f32, i) * 4.f,
+                                argb_mid.y - ent.low->height * global::meters_to_pixels - 15.f },
+                           ent.high->z);
+            }
+        } };
 
         switch (ent.low->type) {
             case Entity_Type::none: {
@@ -984,15 +997,7 @@ GAME_UPDATE_AND_RENDER(game_update_and_render)
                 v2 argb_mid { ent_mid.x, ent_mid.y - ent.low->argb_offset };
                 push_piece(&piece_group, &state.player_sprites[ent.high->direction], argb_mid,
                            ent.high->z);
-
-                for (u32 i {}; i < ent.low->hit_points; ++i) {
-                    push_piece(
-                        &piece_group, 3.f, 6.f, { colors::red },
-                        v2 { argb_mid.x - (ent.low->width / 2.f) * global::meters_to_pixels - 10.f +
-                                 scast(f32, i) * 4.f,
-                             argb_mid.y - ent.low->height * global::meters_to_pixels - 15.f },
-                        ent.high->z);
-                }
+                push_hp(piece_group, ent, argb_mid);
 
             } break;
             case Entity_Type::wall: {
@@ -1013,6 +1018,7 @@ GAME_UPDATE_AND_RENDER(game_update_and_render)
                 v2 argb_mid { ent_mid.x, ent_mid.y - ent.low->argb_offset };
                 push_piece(&piece_group, &state.monster_sprites[ent.high->direction], argb_mid,
                            ent.high->z);
+                push_hp(piece_group, ent, argb_mid);
             } break;
             default: {
                 INVALID_CODE_PATH;
