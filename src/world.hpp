@@ -18,10 +18,7 @@ struct World_Pos
 {
     // NOTE: these are fixed point positioins. The high bits are the tile
     // chunk index, and the lower bits are the tile index in the chunk
-    s32 chunk_x;
-    s32 chunk_y;
-    s32 chunk_z;
-
+    s32 chunk_x, chunk_y, chunk_z;
     // NOTE: from the chunk center
     v2 offset;
 };
@@ -35,19 +32,14 @@ struct World_Entity_Block
 
 struct World_Chunk
 {
-    s32 x;
-    s32 y;
-    s32 z;
-
+    s32 x, y, z;
     World_Entity_Block first_block;
-
     World_Chunk *next_in_hash;
 };
 
-struct Game_World
+struct World
 {
     World_Chunk world_chunk_hash[4096];
-
     World_Entity_Block *first_free;
 };
 }  // namespace tom

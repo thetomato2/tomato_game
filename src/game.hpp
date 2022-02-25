@@ -20,21 +20,6 @@ struct Entity_Actions
     bool sprint;
 };
 
-struct Color
-{
-    union
-    {
-        u32 argb;
-        struct
-        {
-            u8 b;
-            u8 g;
-            u8 r;
-            u8 a;
-        };
-    };
-};
-
 #pragma pack(push, 1)
 struct Bitmap_Header
 {
@@ -116,7 +101,7 @@ struct Entity_Low
     b32 collides;
     b32 barrier;
     u32 high_i;
-    u32 hit_points;
+    s32 hit_points;
     u32 max_hit_points;
     s32 virtual_z;
     f32 width, height;
@@ -163,14 +148,14 @@ struct Camera
 struct Game_State
 {
     Memory_Arena world_arena;
-    Game_World *world;
+    World *world;
 
     u32 entity_camera_follow_ind;
     Camera camera;
     Bitmap_Img bitmap;
-    u32 player_controller_ind[Game_Input::s_input_cnt];
+    u32 player_controller_ind[5];
     u32 player_cnt;
-    Entity_Actions player_acts[Game_Input::s_input_cnt];
+    Entity_Actions player_acts[5];
 
     u32 low_cnt;
     u32 high_cnt;

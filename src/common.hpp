@@ -10,29 +10,42 @@ namespace tom
 {
 namespace global
 {
-static constexpr u32 max_low_cnt            = 65536;
-static constexpr u32 max_high_cnt           = 4096;
-static constexpr u32 num_screens            = 10;
-static constexpr u32 num_tiles_per_screen_y = 11;
-static constexpr s32 chunk_safe_margin      = INT32_MAX / 64;
-static constexpr f32 chunk_size_meters      = 22.f;
-static constexpr f32 meters_to_pixels       = 50.f;
-static constexpr f32 screen_size_x          = chunk_size_meters;
-static constexpr f32 screen_size_y          = chunk_size_meters * 9.f / 16.f;
-static constexpr f32 jump_vel               = 2.f;
-static constexpr f32 gravitl                = -9.8f;
-
+static constexpr u32 max_low_cnt { 65536 };
+static constexpr u32 max_high_cnt { 4096 };
+static constexpr u32 num_screens { 10 };
+static constexpr u32 num_tiles_per_screen_y { 11 };
+static constexpr s32 chunk_safe_margin { INT32_MAX / 64 };
+static constexpr f32 chunk_size_meters { 22.f };
+static constexpr f32 meters_to_pixels { 50.f };
+static constexpr f32 screen_size_x { chunk_size_meters };
+static constexpr f32 screen_size_y { chunk_size_meters * 9.f / 16.f };
+static constexpr f32 jump_vel { 2.f };
+static constexpr f32 gravitl { -9.8f };
 }  // namespace global
+
+struct Color
+{
+    union
+    {
+        u32 argb;
+        struct
+        {
+            u8 b;
+            u8 g;
+            u8 r;
+            u8 a;
+        };
+    };
+};
 
 namespace colors
 {
 // NOTE: ARGB
-static constexpr u32 red   = 0xFF'FF'00'00;
-static constexpr u32 green = 0xFF'00'FF'00;
-static constexpr u32 blue  = 0xFF'00'00'FF;
-static constexpr u32 pink  = 0xFF'FF'00'FF;
-static constexpr u32 black = 0xFF'FF'FF'FF;
-
+static constexpr Color red { 0xFF'FF'00'00 };
+static constexpr Color green { 0xFF'00'FF'00 };
+static constexpr Color blue { 0xFF'00'00'FF };
+static constexpr Color pink { 0xFF'FF'00'FF };
+static constexpr Color black { 0xFF'FF'FF'FF };
 }  // namespace colors
 
 struct Memory_Arena

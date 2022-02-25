@@ -4,14 +4,14 @@
 // #GLOBALS
 // ===============================================================================================
 
-static constexpr u32 g_game_update_hertz        = 60;
-static constexpr f32 g_target_frames_per_second = 1.f / (f32)g_game_update_hertz;
+static constexpr u32 g_game_update_hertz { 60 };
+static constexpr f32 g_target_frames_per_second { 1.f / scast(f32, g_game_update_hertz) };
 
 static bool running;
 static bool g_pause;
 
-static WINDOWPLACEMENT g_win_pos    = { sizeof(g_win_pos) };
-static const TCHAR *g_game_DLL_name = _T("tomato_game.dll");
+static WINDOWPLACEMENT g_win_pos { sizeof(g_win_pos) };
+static const TCHAR *g_game_DLL_name { _T("tomato_game.dll") };
 static bool g_debug_show_cursor;
 
 static Offscreen_Buffer g_back_buffer;
@@ -19,7 +19,7 @@ static Window_Dims g_win_dim;
 static s64 g_performance_counter_frequency;
 
 // TODO: the sleep precision issue is keeping this above 1 frame... I think
-static constexpr f32 g_frames_of_audio_latency = (1.1f / 30) * g_game_update_hertz;
+static constexpr f32 g_frames_of_audio_latency { (1.1f / 30) * g_game_update_hertz };
 static IAudioClient *g_audio_client;
 static IAudioRenderClient *g_audio_render_client;
 static IAudioClock *g_audio_clock;
@@ -31,7 +31,7 @@ XINPUT_GET_STATE(_xinput_get_state)
 {
     return (ERROR_DEVICE_NOT_CONNECTED);
 }
-static xinput_get_state *XInputGetState_ = _xinput_get_state;
+static xinput_get_state *XInputGetState_ { _xinput_get_state };
 
 #define XINPUT_SET_STATE(name) DWORD WINAPI name(DWORD dwUserIndex, XINPUT_VIBRATION *pVibration)
 typedef XINPUT_SET_STATE(xinput_set_state);
@@ -39,7 +39,7 @@ XINPUT_SET_STATE(_xinput_set_state)
 {
     return (ERROR_DEVICE_NOT_CONNECTED);
 }
-static xinput_set_state *XInputSetState_ = _xinput_set_state;
+static xinput_set_state *XInputSetState_ { _xinput_set_state };
 
 #define XInputGetState XInputGetState_
 #define XInputSetState XInputSetState_
@@ -54,15 +54,15 @@ DEBUG_PLATFORM_FREE_FILE_MEMORY(_debug_platform_free_file_memory)
 
 DEBUG_PLATFORM_READ_ENTIRE_FILE(_debug_platform_read_entire_file)
 {
-    Debug_Read_File_Result file = {};
+    Debug_Read_File_Result file {};
 
-    HANDLE file_handle =
-        CreateFileA(file_name, GENERIC_READ, 0, 0, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, 0);
+    HANDLE file_handle { CreateFileA(file_name, GENERIC_READ, 0, 0, OPEN_EXISTING,
+                                     FILE_ATTRIBUTE_NORMAL, 0) };
     if (file_handle != INVALID_HANDLE_VALUE) {
         LARGE_INTEGER fileSize;
         if (GetFileSizeEx(file_handle, &fileSize)) {
-            u32 fileSize32 = safe_truncate_u32_to_u64(fileSize.QuadPart);
-            file.contents  = VirtualAlloc(0, fileSize32, MEM_RESERVE | MEM_COMMIT, PAGE_READWRITE);
+            u32 fileSize32 { safe_truncate_u32_to_u64(fileSize.QuadPart) };
+            file.contents = VirtualAlloc(0, fileSize32, MEM_RESERVE | MEM_COMMIT, PAGE_READWRITE);
             if (file.contents) {
                 DWORD bytesRead;
                 if (ReadFile(file_handle, file.contents, (DWORD)fileSize.QuadPart, &bytesRead, 0) &&
@@ -85,9 +85,9 @@ DEBUG_PLATFORM_READ_ENTIRE_FILE(_debug_platform_read_entire_file)
 
 DEBUG_PLATFORM_WRITE_ENTIRE_FILE(_debug_platform_write_entire_file)
 {
-    b32 success = false;
+    b32 success {};
 
-    HANDLE file_handle = CreateFileA(file_name, GENERIC_WRITE, 0, 0, CREATE_ALWAYS, 0, 0);
+    HANDLE file_handle { CreateFileA(file_name, GENERIC_WRITE, 0, 0, CREATE_ALWAYS, 0, 0) };
     if (file_handle != INVALID_HANDLE_VALUE) {
         DWORD bytes_written;
         if (WriteFile(file_handle, memory, (DWORD)memory_size, &bytes_written, 0)) {
@@ -107,9 +107,9 @@ DEBUG_PLATFORM_WRITE_ENTIRE_FILE(_debug_platform_write_entire_file)
 static void
 toggle_fullscreen(HWND hwnd)
 {
-    DWORD dwStyle = GetWindowLong(hwnd, GWL_STYLE);
+    DWORD dwStyle { scast(DWORD, GetWindowLong(hwnd, GWL_STYLE)) };
     if (dwStyle & WS_OVERLAPPEDWINDOW) {
-        MONITORINFO mi = { sizeof(mi) };
+        MONITORINFO mi { sizeof(mi) };
         if (GetWindowPlacement(hwnd, &g_win_pos) &&
             GetMonitorInfo(MonitorFromWindow(hwnd, MONITOR_DEFAULTTOPRIMARY), &mi)) {
             SetWindowLong(hwnd, GWL_STYLE, dwStyle & ~WS_OVERLAPPEDWINDOW);
@@ -134,7 +134,7 @@ get_last_write_time(const TCHAR *file_name)
 #if 0
     // NOTE: old way with a handle
     WIN32_FIND_DATA find_data;
-    HANDLE find_handle = FindFirstFile(fileName, &findData);
+    HANDLE find_handle  { FindFirstFile(fileName, &findData) };
     if (find_handle != INVALID_HANDLE_VALUE) {
         last_write_time = findData.ftLastWriteTime;
         FindClose(find_handle);
@@ -154,7 +154,7 @@ static Game_Code
 load_game_code(const TCHAR *dll_name)
 {
     Game_Code code {};
-    const TCHAR *dll_copy = _T("loaded_gamecode_copy.dll");
+    const TCHAR *dll_copy { _T("loaded_gamecode_copy.dll") };
 
     code.last_write_time_DLL = get_last_write_time(dll_name);
 
@@ -195,9 +195,9 @@ static void
 load_Xinput()
 {
     // TODO: test this on other windows version
-    HMODULE XInputLibrary = LoadLibraryA("xinput1_4.dll");
+    HMODULE XInputLibrary { LoadLibraryA("xinput1_4.dll") };
     if (!XInputLibrary) {
-        HMODULE XInputLibrary = LoadLibraryA("xinput1_3.dll");
+        HMODULE XInputLibrary { LoadLibraryA("xinput1_3.dll") };
     }
     if (XInputLibrary) {
         XInputGetState = (xinput_get_state *)GetProcAddress(XInputLibrary, "XInputGetState");
@@ -214,13 +214,13 @@ init_WASAPI(s32 samples_per_second, s32 buffer_size_in_samples)
         INVALID_CODE_PATH;
     }
 
-    IMMDeviceEnumerator *enumerator;
+    IMMDeviceEnumerator *enumerator {};
     if (FAILED(CoCreateInstance(__uuidof(MMDeviceEnumerator), nullptr, CLSCTX_ALL,
                                 IID_PPV_ARGS(&enumerator)))) {
         INVALID_CODE_PATH;
     }
 
-    IMMDevice *device;
+    IMMDevice *device {};
     if (FAILED(enumerator->GetDefaultAudioEndpoint(eRender, eConsole, &device))) {
         INVALID_CODE_PATH;
     }
@@ -230,13 +230,12 @@ init_WASAPI(s32 samples_per_second, s32 buffer_size_in_samples)
         INVALID_CODE_PATH;
     }
 
-    WAVEFORMATEXTENSIBLE wave_format;
-
+    WAVEFORMATEXTENSIBLE wave_format {};
     wave_format.Format.cbSize         = sizeof(wave_format);
     wave_format.Format.wFormatTag     = WAVE_FORMAT_EXTENSIBLE;
     wave_format.Format.wBitsPerSample = 16;
     wave_format.Format.nChannels      = 2;
-    wave_format.Format.nSamplesPerSec = (DWORD)samples_per_second;
+    wave_format.Format.nSamplesPerSec = scast(DWORD, samples_per_second);
     wave_format.Format.nBlockAlign =
         (WORD)(wave_format.Format.nChannels * wave_format.Format.wBitsPerSample / 8);
     wave_format.Format.nAvgBytesPerSec =
@@ -245,8 +244,10 @@ init_WASAPI(s32 samples_per_second, s32 buffer_size_in_samples)
     wave_format.dwChannelMask               = KSAUDIO_SPEAKER_STEREO;
     wave_format.SubFormat                   = KSDATAFORMAT_SUBTYPE_PCM;
 
-    REFERENCE_TIME buffer_duration = 10000000ULL * buffer_size_in_samples /
-                                     samples_per_second;  // buffer size in 100 nanoseconds
+    REFERENCE_TIME buffer_duration {
+        scast(REFERENCE_TIME, 10000000ULL * buffer_size_in_samples / samples_per_second)
+    };  // buffer size in 100 nanoseconds
+
     if (FAILED(g_audio_client->Initialize(AUDCLNT_SHAREMODE_SHARED, AUDCLNT_STREAMFLAGS_NOPERSIST,
                                           buffer_duration, 0, &wave_format.Format, nullptr))) {
         TomAssert(false);
@@ -267,7 +268,7 @@ init_WASAPI(s32 samples_per_second, s32 buffer_size_in_samples)
 
     // Check if we got what we requested (better would to pass this value back
     // as real buffer size)
-    TomAssert(buffer_size_in_samples <= (s32)sound_frame_cnt);
+    TomAssert(buffer_size_in_samples <= scast(s32, sound_frame_cnt));
 }
 
 static void
@@ -275,17 +276,18 @@ fill_sound_buffer(Sound_Output &sound_output, s32 samples_to_write,
                   Game_Sound_Output_Buffer &source_buffer)
 {
     {
-        BYTE *soundBufDat;
-        if (SUCCEEDED(g_audio_render_client->GetBuffer((UINT32)samples_to_write, &soundBufDat))) {
-            s16 *sourceSample = source_buffer.samples;
-            s16 *destSample   = (s16 *)soundBufDat;
+        BYTE *sound_buf_dat;
+        if (SUCCEEDED(g_audio_render_client->GetBuffer(scast(UINT32, samples_to_write),
+                                                       &sound_buf_dat))) {
+            s16 *sourceSample { source_buffer.samples };
+            s16 *destSample { rcast(s16 *, sound_buf_dat) };
             for (szt i = 0; i < samples_to_write; ++i) {
                 *destSample++ = *sourceSample++;
                 *destSample++ = *sourceSample++;
                 ++sound_output.running_sample_index;
             }
 
-            g_audio_render_client->ReleaseBuffer((UINT32)samples_to_write, 0);
+            g_audio_render_client->ReleaseBuffer(scast(UINT32, samples_to_write), 0);
         }
     }
 }
@@ -294,11 +296,11 @@ static Window_Dims
 Get_window_dimensions(HWND hwnd)
 {
     RECT client_rect;
-    Window_Dims WinDim;
+    Window_Dims win_dim;
     GetClientRect(hwnd, &client_rect);
-    WinDim.width  = client_rect.right - client_rect.left;
-    WinDim.height = client_rect.bottom - client_rect.top;
-    return WinDim;
+    win_dim.width  = client_rect.right - client_rect.left;
+    win_dim.height = client_rect.bottom - client_rect.top;
+    return win_dim;
 }
 
 static void
@@ -321,8 +323,8 @@ resize_DIB_section(Offscreen_Buffer &buffer, s32 width, s32 height)
     buffer.info.bmiHeader.biBitCount    = 32;
     buffer.info.bmiHeader.biCompression = BI_RGB;
 
-    s32 bytes_per_pixel    = 4;
-    s32 bitmap_memory_size = (width * height) * bytes_per_pixel;
+    s32 bytes_per_pixel { 4 };
+    s32 bitmap_memory_size { (width * height) * bytes_per_pixel };
     buffer.memory = VirtualAlloc(0, bitmap_memory_size, MEM_RESERVE | MEM_COMMIT, PAGE_READWRITE);
 
     buffer.pitch = width * buffer.bytes_per_pixel;
@@ -335,19 +337,17 @@ display_buffer_in_window(HDC hdc, Offscreen_Buffer &buffer, s32 x, s32 y, s32 wi
         ::StretchDIBits(hdc, 0, 0, width, height, 0, 0, buffer.width, buffer.height, buffer.memory,
                         &buffer.info, DIB_RGB_COLORS, SRCCOPY);
     } else {
-        s32 offset_x = 0;
-        s32 offset_y = 0;
+        s32 offset_x {};
+        s32 offset_y {};
 
 #if 0
-    // NOTE: this causes screen flickering - out of sync with screen refresh rate?
-    ::PatBlt(hdc, 0, 0, width, offset_y, BLACKNESS);
-    ::PatBlt(hdc, 0, offset_y + buffer.height, width, height, BLACKNESS);
-    ::PatBlt(hdc, 0, 0, offset_x, height, BLACKNESS);
-    ::PatBlt(hdc, offset_x + buffer.width, 0, width, height, BLACKNESS);
+        // NOTE: this causes screen flickering - out of sync with screen refresh rate?
+        ::PatBlt(hdc, 0, 0, width, offset_y, BLACKNESS);
+        ::PatBlt(hdc, 0, offset_y + buffer.height, width, height, BLACKNESS);
+        ::PatBlt(hdc, 0, 0, offset_x, height, BLACKNESS);
+        ::PatBlt(hdc, offset_x + buffer.width, 0, width, height, BLACKNESS);
 
 #endif
-        // s32 x_offset = 0;
-        // s32 y_offset = 0;
 
         // NOTE: this is matches the windows dimensions
         ::StretchDIBits(hdc, offset_x, offset_y, buffer.width, buffer.height, 0, 0, buffer.width,
@@ -389,7 +389,7 @@ do_controller_input(Game_Input &old_input, Game_Input &new_input, HWND hwnd)
     process_keyboard_message(new_input.mouse_buttons[1], ::GetKeyState(VK_RBUTTON) & (1 << 15));
     process_keyboard_message(new_input.mouse_buttons[2], ::GetKeyState(VK_MBUTTON) & (1 << 15));
 
-    for (szt key = 0; key < ArrayCount(old_input.keyboard.keys); ++key) {
+    for (szt key {}; key < ArrayCount(old_input.keyboard.keys); ++key) {
         if (old_input.keyboard.keys[key].half_transition_count > 0 &&
             old_input.keyboard.keys[key].ended_down == 0)
             old_input.keyboard.keys[key].half_transition_count = 0;
@@ -414,19 +414,19 @@ do_controller_input(Game_Input &old_input, Game_Input &new_input, HWND hwnd)
 
     // controller
     // poll the input device
-    s32 max_controller_count = XUSER_MAX_COUNT;
+    s32 max_controller_count { XUSER_MAX_COUNT };
     if (max_controller_count > 4) {
         max_controller_count = 4;
     }
 
-    for (DWORD controller_index = 0; controller_index < XUSER_MAX_COUNT; controller_index++) {
+    for (DWORD controller_index {}; controller_index < XUSER_MAX_COUNT; controller_index++) {
         Game_Controller_Input &old_controller = old_input.controllers[controller_index];
         Game_Controller_Input &new_controller = new_input.controllers[controller_index];
 
         XINPUT_STATE controller_state;
         if (XInputGetState(controller_index, &controller_state) == ERROR_SUCCESS) {
             //! the controller is plugged in
-            XINPUT_GAMEPAD &pad = controller_state.Gamepad;
+            XINPUT_GAMEPAD &pad { controller_state.Gamepad };
 
             new_controller.is_connected = true;
 
@@ -437,22 +437,22 @@ do_controller_input(Game_Input &old_input, Game_Input &new_input, HWND hwnd)
             //  no rmal stick input
             auto normalize = [](SHORT val) -> f32 {
                 if (val < 0)
-                    return (f32)val / 32768.0f;
+                    return scast(f32, val) / 32768.0f;
                 else
-                    return (f32)val / 32767.0f;
+                    return scast(f32, val) / 32767.0f;
             };
 
-            f32 stick_left_x  = normalize(pad.sThumbLX);
-            f32 stick_left_y  = normalize(pad.sThumbLY);
-            f32 stick_right_x = normalize(pad.sThumbRX);
-            f32 stick_right_y = normalize(pad.sThumbRY);
+            f32 stick_left_x { normalize(pad.sThumbLX) };
+            f32 stick_left_y { normalize(pad.sThumbLY) };
+            f32 stick_right_x { normalize(pad.sThumbRX) };
+            f32 stick_right_y { normalize(pad.sThumbRY) };
 
             new_controller.min_x = new_controller.max_x = new_controller.end_left_stick_x =
                 stick_left_x;
             new_controller.min_y = new_controller.max_y = new_controller.end_left_stick_y =
                 stick_left_y;
 
-            for (szt button = 0; button < ArrayCount(old_controller.buttons); ++button) {
+            for (szt button {}; button < ArrayCount(old_controller.buttons); ++button) {
                 if (!old_controller.buttons[button].ended_down)
                     old_controller.buttons[button].half_transition_count = 0;
             }
@@ -508,7 +508,8 @@ get_wall_clock()
 static f32
 get_seconds_elapsed(LARGE_INTEGER start, LARGE_INTEGER end)
 {
-    f32 seconds = f32(end.QuadPart - start.QuadPart) / f32(g_performance_counter_frequency);
+    f32 seconds { scast(f32, end.QuadPart - start.QuadPart) /
+                  scast(f32, g_performance_counter_frequency) };
     return seconds;
 }
 
@@ -520,7 +521,7 @@ get_seconds_elapsed(LARGE_INTEGER start, LARGE_INTEGER end)
 static void
 get_input_file_path(Win32_State &state, b32 is_input_stream)
 {
-    int x = 0;
+    int x {};
 }
 
 static Replay_Buffer &
@@ -559,7 +560,7 @@ end_recording_input(Win32_State &state)
 static void
 begin_input_playback(Win32_State &state, s32 input_playback_index_)
 {
-    auto &replay_buffer = get_replay_buffer(state, input_playback_index_);
+    auto &replay_buffer { get_replay_buffer(state, input_playback_index_) };
     if (replay_buffer.memory_block) {
         printf("Input Playback started...\n");
         state.input_playback_index = input_playback_index_;
@@ -639,7 +640,7 @@ process_pending_messages(Win32_State &state, Game_Input &input)
             case WM_SYSKEYUP:
             case WM_KEYDOWN:
             case WM_KEYUP: {
-                u32 VKCode        = (u32)msg.wParam;
+                u32 VKCode        = scast(u32, msg.wParam);
                 bool was_down     = ((msg.lParam & (1 << 30)) != 0);
                 bool is_down      = ((msg.lParam & (1 << 29)) == 0);
                 bool alt_key_down = (msg.lParam & (1 << 29));
@@ -718,11 +719,11 @@ WndProc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
         case WM_ACTIVATEAPP: break;
         case WM_PAINT: {
             PAINTSTRUCT paint;
-            HDC device_context = BeginPaint(hwnd, &paint);
-            s32 x              = paint.rcPaint.left;
-            s32 y              = paint.rcPaint.right;
-            s32 height         = paint.rcPaint.bottom - paint.rcPaint.top;
-            s32 width          = paint.rcPaint.right - paint.rcPaint.left;
+            HDC device_context { BeginPaint(hwnd, &paint) };
+            s32 x { paint.rcPaint.left };
+            s32 y { paint.rcPaint.right };
+            s32 height { paint.rcPaint.bottom - paint.rcPaint.top };
+            s32 width { paint.rcPaint.right - paint.rcPaint.left };
             display_buffer_in_window(device_context, g_back_buffer, x, y, width, height);
             EndPaint(hwnd, &paint);
         } break;
@@ -744,12 +745,12 @@ Main(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLine, s32 nShowCm
     // Init
 
     // WARN
-    const TCHAR *icon_path = _T("T:\\data\\tomato.ico");
-    auto icon              = (HICON)(LoadImage(NULL, icon_path, IMAGE_ICON, 0, 0,
-                                               LR_LOADFROMFILE | LR_DEFAULTSIZE | LR_SHARED));
+    const TCHAR *icon_path { _T("T:\\data\\tomato.ico") };
+    auto icon { (HICON)(LoadImage(NULL, icon_path, IMAGE_ICON, 0, 0,
+                                  LR_LOADFROMFILE | LR_DEFAULTSIZE | LR_SHARED)) };
 
     init_console();
-    HWND cons_hwnd = GetConsoleWindow();
+    HWND cons_hwnd { GetConsoleWindow() };
     TomAssert(cons_hwnd);
     SendMessage(cons_hwnd, WM_SETICON, NULL, (LPARAM)icon);
 
@@ -757,7 +758,7 @@ Main(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLine, s32 nShowCm
 
     Win32_State state {};
 
-    DWORD exe_path_len = GetModuleFileNameA(NULL, state.exe_path, sizeof(state.exe_path));
+    DWORD exe_path_len { GetModuleFileNameA(NULL, state.exe_path, sizeof(state.exe_path)) };
     printf("exe path %s\n", state.exe_path);
 
 #if _CPPUWIND
@@ -768,7 +769,7 @@ Main(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLine, s32 nShowCm
     QueryPerformanceFrequency(&performance_query_result);
     g_performance_counter_frequency = performance_query_result.QuadPart;
 
-    auto code = load_game_code(g_game_DLL_name);
+    Game_Code code { load_game_code(g_game_DLL_name) };
     load_Xinput();
 
 #ifdef TOM_INTERNAL
@@ -777,19 +778,20 @@ Main(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLine, s32 nShowCm
     debug_show_cursor   = false;
 #endif
 
-    WNDCLASS window_class = {};  // should init to 0n
-
-    static constexpr s32 win_width  = 960;
-    static constexpr s32 win_height = 540;
+    static constexpr s32 win_width { 960 };
+    static constexpr s32 win_height { 540 };
 
     resize_DIB_section(g_back_buffer, win_width, win_height);
 
-    window_class.style         = CS_HREDRAW | CS_VREDRAW | CS_OWNDC;
-    window_class.lpfnWndProc   = WndProc;
-    window_class.hInstance     = hInstance;
-    window_class.hCursor       = LoadCursor(NULL, IDC_ARROW);
-    window_class.hIcon         = icon;
-    window_class.lpszClassName = _T("TomatoWinCls");
+    WNDCLASS window_class {
+
+        .style         = CS_HREDRAW | CS_VREDRAW | CS_OWNDC,
+        .lpfnWndProc   = WndProc,
+        .hInstance     = hInstance,
+        .hIcon         = icon,
+        .hCursor       = LoadCursor(NULL, IDC_ARROW),
+        .lpszClassName = _T("TomatoWinCls")
+    };
 
     if (!RegisterClass(&window_class)) {
         printf("ERROR--> Failed to register window class!\n");
@@ -797,23 +799,19 @@ Main(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLine, s32 nShowCm
         return 0;
     }
 
-    DWORD dw_style = WS_OVERLAPPEDWINDOW | WS_VISIBLE;
+    DWORD dw_style { WS_OVERLAPPEDWINDOW | WS_VISIBLE };
     // DWORD dw_style = WS_OVERLAPPED | WS_MINIMIZEBOX | WS_SYSMENU;
 
-    RECT wr;
-    wr.left   = 0;
-    wr.top    = 0;
-    wr.right  = win_width + wr.left;
-    wr.bottom = win_height + wr.top;
+    RECT wr { .left = 0, .top = 0, .right = win_width + wr.left, .bottom = win_height + wr.top };
 
     if (AdjustWindowRect(&wr, dw_style, false) == 0) {
         printf("ERROR--> Failed to adjust window rect");
         TomAssert(false);
     }
 
-    HWND hwnd = CreateWindowEx(0, window_class.lpszClassName, _T("TomatoGame"), dw_style,
+    HWND hwnd { CreateWindowEx(0, window_class.lpszClassName, _T("TomatoGame"), dw_style,
                                CW_USEDEFAULT, CW_USEDEFAULT, wr.right - wr.left, wr.bottom - wr.top,
-                               NULL, NULL, hInstance, NULL);
+                               NULL, NULL, hInstance, NULL) };
 
     if (!hwnd) {
         printf("Failed to create window!\n");
@@ -837,44 +835,44 @@ Main(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLine, s32 nShowCm
 
     // NOTE: Set the windows schedule granularity to 1ms
     // so sleep will be more granular
-    UINT desired_scheduler_MS = 1;
-    b32 is_sleep_granular     = (timeBeginPeriod(desired_scheduler_MS) == TIMERR_NOERROR);
-    is_sleep_granular         = false;
+    UINT desired_scheduler_MS { 1 };
+    b32 is_sleep_granular { (timeBeginPeriod(desired_scheduler_MS) == TIMERR_NOERROR) };
+    is_sleep_granular = false;
 
-    HDC device_context            = GetDC(hwnd);
+    HDC device_context { GetDC(hwnd) };
     running                       = true;
     g_pause                       = false;
     g_back_buffer.bytes_per_pixel = 4;
 
-    s32 monitor_refresh_rate = GetDeviceCaps(device_context, VREFRESH);
+    s32 monitor_refresh_rate { GetDeviceCaps(device_context, VREFRESH) };
     printf("Monitor Refresh Rate: %d\n", monitor_refresh_rate);
 
-    Sound_Output sound_output         = {};
-    sound_output.samples_per_sec      = 48000;
-    sound_output.bytes_per_sample     = sizeof(s16) * 2;
-    sound_output.secondary_buf_size   = sound_output.samples_per_sec;
-    sound_output.latency_sample_count = s32(
-        g_frames_of_audio_latency * f32(sound_output.samples_per_sec / (f32)g_game_update_hertz));
+    Sound_Output sound_output { .samples_per_sec    = 48000,
+                                .bytes_per_sample   = sizeof(s16) * 2,
+                                .secondary_buf_size = scast(DWORD, sound_output.samples_per_sec),
+                                .latency_sample_count =
+                                    scast(s32, g_frames_of_audio_latency *
+                                                   scast(f32, (sound_output.samples_per_sec /
+                                                               scast(f32, g_game_update_hertz)))) };
 
     init_WASAPI(sound_output.samples_per_sec, sound_output.secondary_buf_size);
     g_audio_client->Start();
 
     // TODO: Pool with bitmap VirtualAlloc
-    s16 *samples = (s16 *)VirtualAlloc(0, sound_output.secondary_buf_size, MEM_RESERVE | MEM_COMMIT,
-                                       PAGE_READWRITE);
+    s16 *samples { scast(s16 *, VirtualAlloc(0, sound_output.secondary_buf_size,
+                                             MEM_RESERVE | MEM_COMMIT, PAGE_READWRITE)) };
 
 #ifdef TOM_INTERNAL
-    LPVOID base_address = (LPVOID)TERABYTES((u64)2);
+    LPVOID base_address = rcast(LPVOID, TERABYTES(scast(u64, 2)));
 #else
     LPVOID base_address = 0;
 #endif
 
-    Game_Memory memory {};
-    memory.permanent_storage_size     = MEGABYTES(256);
-    memory.transient_storage_size     = GIGABYTES(1);
-    memory.platform_free_file_memory  = _debug_platform_free_file_memory;
-    memory.platfrom_read_entire_file  = _debug_platform_read_entire_file;
-    memory.platform_write_entire_file = _debug_platform_write_entire_file;
+    Game_Memory memory { .permanent_storage_size     = MEGABYTES(256),
+                         .transient_storage_size     = GIGABYTES(1),
+                         .platform_free_file_memory  = _debug_platform_free_file_memory,
+                         .platfrom_read_entire_file  = _debug_platform_read_entire_file,
+                         .platform_write_entire_file = _debug_platform_write_entire_file };
 
     state.total_size = memory.permanent_storage_size + memory.transient_storage_size;
     // TODO: use large pages
@@ -882,12 +880,13 @@ Main(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLine, s32 nShowCm
         VirtualAlloc(base_address, state.total_size, MEM_RESERVE | MEM_COMMIT, PAGE_READWRITE);
     memory.permanent_storage = state.game_memory_block;
 
-    memory.transient_storage = ((u8 *)memory.permanent_storage + memory.permanent_storage_size);
+    memory.transient_storage =
+        (scast(u8 *, memory.permanent_storage) + memory.permanent_storage_size);
 
 #if REPLAY_BUFFERS
     // mapping memory to file
-    for (s32 replay_index = 0; replay_index < ArrayCount(state.replay_buffers); ++replay_index) {
-        replay_buffer &replay_buffer = state.replay_buffers[replay_index];
+    for (s32 replay_index {}; replay_index < ArrayCount(state.replay_buffers); ++replay_index) {
+        replay_buffer &replay_buffer { state.replay_buffers[replay_index] };
         _stprintf_s(replay_buffer.file_name, sizeof(TCHAR) * 512, _T("replay_%d_state.ti"),
                     replay_index);
 
@@ -900,22 +899,22 @@ Main(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLine, s32 nShowCm
         replay_buffer.memory_map =
             CreateFileMapping(replay_buffer.file_handle, NULL, PAGE_READWRITE, max_size.HighPart,
                               max_size.LowPart, NULL);
-        DWORD error = GetLastError();
+        DWORD error { GetLastError() };
         replay_buffer.memory_block =
             MapViewOfFile(replay_buffer.memory_map, FILE_MAP_ALL_ACCESS, 0, 0, state.total_size);
         TomAssert(replay_buffer.memory_block);
     }
 #endif
 
-    Game_Input input[2]   = {};
-    Game_Input *new_input = &input[0];
-    Game_Input *old_input = &input[1];
+    Game_Input input[2] {};
+    Game_Input *new_input { &input[0] };
+    Game_Input *old_input { &input[1] };
 
-    LARGE_INTEGER last_counter = get_wall_clock();
-    u64 last_cycle_count       = __rdtsc();
+    LARGE_INTEGER last_counter { get_wall_clock() };
+    u64 last_cycle_count { __rdtsc() };
 
-    bool is_sound_valid      = true;
-    bool is_game_code_loaded = true;
+    bool is_sound_valid { true };
+    bool is_game_code_loaded { true };
     DWORD last_play_cursor {};
     DWORD last_write_cursor {};
 
@@ -928,7 +927,7 @@ Main(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLine, s32 nShowCm
         // NOTE: this isn't calculated and needs to be for a varaible framerate
         new_input->delta_time = g_target_frames_per_second;
 
-        auto dllWriteTime = get_last_write_time(g_game_DLL_name);
+        FILETIME dllWriteTime { get_last_write_time(g_game_DLL_name) };
         if (CompareFileTime(&dllWriteTime, &code.last_write_time_DLL)) {
             unload_game_code(code);
             code = load_game_code(g_game_DLL_name);
@@ -948,27 +947,25 @@ Main(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLine, s32 nShowCm
             printf("ERROR--> Failed to get audio latency\n");
         }
 
-        s32 samples_to_write = 0;
+        s32 samples_to_write {};
         UINT32 sound_pad_size;
         if (SUCCEEDED(g_audio_client->GetCurrentPadding(&sound_pad_size))) {
-            s32 maxSampleCnt = s32(sound_output.secondary_buf_size - sound_pad_size);
-            samples_to_write = s32(sound_output.latency_sample_count - sound_pad_size);
+            s32 maxSampleCnt { scast(s32, sound_output.secondary_buf_size - sound_pad_size) };
+            samples_to_write = scast(s32, sound_output.latency_sample_count - sound_pad_size);
             if (samples_to_write < 0) samples_to_write = 0;
             // TomAssert(samplesToWrite < maxSampleCnt);
         }
 
-        Game_Sound_Output_Buffer sound_buffer {};
-        sound_buffer.samples_per_second = sound_output.samples_per_sec;
-        sound_buffer.sample_count       = samples_to_write;
-        sound_buffer.samples            = samples;
+        Game_Sound_Output_Buffer sound_buffer { .samples_per_second = sound_output.samples_per_sec,
+                                                .sample_count       = samples_to_write,
+                                                .samples            = samples };
 
         // video
-        Game_Offscreen_Buffer buffer {};
-        buffer.memory          = g_back_buffer.memory;
-        buffer.width           = g_back_buffer.width;
-        buffer.height          = g_back_buffer.height;
-        buffer.bytes_per_pixel = 4;
-        buffer.pitch           = g_back_buffer.pitch;
+        Game_Offscreen_Buffer buffer { .memory          = g_back_buffer.memory,
+                                       .width           = g_back_buffer.width,
+                                       .height          = g_back_buffer.height,
+                                       .pitch           = g_back_buffer.pitch,
+                                       .bytes_per_pixel = 4 };
 
 #if REPLAY_BUFFERS
         if (state.input_recording_index) {
@@ -983,7 +980,7 @@ Main(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLine, s32 nShowCm
         // isGameCodeLoaded = false;
 
         // NOTE: dummy thread context, for now
-        Thread_Context thread = {};
+        Thread_Context thread {};
 
         if (is_game_code_loaded) {
             code.update_and_render(&thread, memory, *input, buffer, sound_buffer);
@@ -993,20 +990,20 @@ Main(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLine, s32 nShowCm
         fill_sound_buffer(sound_output, samples_to_write, sound_buffer);
 
         // clock stuffs
-        auto work_counter        = get_wall_clock();
-        f32 work_seconds_elapsed = get_seconds_elapsed(last_counter, work_counter);
+        auto work_counter { get_wall_clock() };
+        f32 work_seconds_elapsed { get_seconds_elapsed(last_counter, work_counter) };
 
-        f32 seconds_elapsed_for_frame = work_seconds_elapsed;
+        f32 seconds_elapsed_for_frame { work_seconds_elapsed };
         if (seconds_elapsed_for_frame < g_target_frames_per_second) {
             if (is_sleep_granular) {
-                auto sleepMs =
-                    DWORD(1000.f * (g_target_frames_per_second - seconds_elapsed_for_frame));
+                auto sleepMs { scast(
+                    DWORD, 1000.f * (g_target_frames_per_second - seconds_elapsed_for_frame)) };
                 if (sleepMs > 0) {
                     ::Sleep(sleepMs);
                 }
             }
-            f32 test_seconds_elapsed_for_frame =
-                get_seconds_elapsed(last_counter, get_wall_clock());
+            f32 test_seconds_elapsed_for_frame { get_seconds_elapsed(last_counter,
+                                                                     get_wall_clock()) };
             while (seconds_elapsed_for_frame < g_target_frames_per_second) {
                 seconds_elapsed_for_frame = get_seconds_elapsed(last_counter, get_wall_clock());
             }
@@ -1014,8 +1011,8 @@ Main(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLine, s32 nShowCm
             printf("WARNING--> missed frame timing!!!\n");
         }
 
-        auto end_counter = get_wall_clock();
-        f32 ms_per_frame = 1000.f * get_seconds_elapsed(last_counter, end_counter);
+        LARGE_INTEGER end_counter { get_wall_clock() };
+        f32 ms_per_frame { 1000.f * get_seconds_elapsed(last_counter, end_counter) };
         // printf("%f\n", ms_per_frame);
 
         last_counter = end_counter;
@@ -1034,23 +1031,23 @@ Main(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLine, s32 nShowCm
         g_audio_clock->GetPosition(&units_posisition, 0);
 
         play_cursor =
-            (DWORD)(sound_output.samples_per_sec * units_posisition / frequency_position) %
+            scast(DWORD, sound_output.samples_per_sec * units_posisition / frequency_position) %
             sound_output.samples_per_sec;
         write_cursor =
-            (DWORD)(sound_output.samples_per_sec * units_posisition / frequency_position) %
+            scast(DWORD, sound_output.samples_per_sec * units_posisition / frequency_position) %
                 sound_output.samples_per_sec +
             sound_pad_size;
         if (write_cursor > sound_output.secondary_buf_size) {
             write_cursor -= sound_output.secondary_buf_size;
         }
 
-        Game_Input *temp_input = new_input;
-        new_input              = old_input;
-        old_input              = temp_input;
+        Game_Input *temp_input { new_input };
+        new_input = old_input;
+        old_input = temp_input;
 
-        u64 end_cycle_count = __rdtsc();
-        u64 cycles_elapsed  = end_cycle_count - last_cycle_count;
-        last_cycle_count    = end_cycle_count;
+        u64 end_cycle_count { __rdtsc() };
+        u64 cycles_elapsed { end_cycle_count - last_cycle_count };
+        last_cycle_count = end_cycle_count;
     }
 
     return 0;
@@ -1075,10 +1072,10 @@ wWinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _In_ LPWSTR
     UNREFERENCED_PARAMETER(hPrevInstance);
     UNREFERENCED_PARAMETER(lpCmdLine);
 
-    HRESULT hr = CoInitializeEx(nullptr, COINITBASE_MULTITHREADED);
+    HRESULT hr { CoInitializeEx(nullptr, COINITBASE_MULTITHREADED) };
     if (FAILED(hr)) return 1;
 
-    s32 ecode = Main(hInstance, hPrevInstance, lpCmdLine, nCmdShow);
+    s32 ecode { Main(hInstance, hPrevInstance, lpCmdLine, nCmdShow) };
 
     CoUninitialize();
 
