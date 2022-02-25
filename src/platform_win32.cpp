@@ -389,7 +389,7 @@ do_controller_input(Game_Input &old_input, Game_Input &new_input, HWND hwnd)
     process_keyboard_message(new_input.mouse_buttons[1], ::GetKeyState(VK_RBUTTON) & (1 << 15));
     process_keyboard_message(new_input.mouse_buttons[2], ::GetKeyState(VK_MBUTTON) & (1 << 15));
 
-    for (szt key {}; key < game_keyboard_input::s_key_cnt; ++key) {
+    for (szt key = 0; key < ArrayCount(old_input.keyboard.keys); ++key) {
         if (old_input.keyboard.keys[key].half_transition_count > 0 &&
             old_input.keyboard.keys[key].ended_down == 0)
             old_input.keyboard.keys[key].half_transition_count = 0;
@@ -452,7 +452,7 @@ do_controller_input(Game_Input &old_input, Game_Input &new_input, HWND hwnd)
             new_controller.min_y = new_controller.max_y = new_controller.end_left_stick_y =
                 stick_left_y;
 
-            for (szt button {}; button < game_controller_input::s_button_cnt; ++button) {
+            for (szt button = 0; button < ArrayCount(old_controller.buttons); ++button) {
                 if (!old_controller.buttons[button].ended_down)
                     old_controller.buttons[button].half_transition_count = 0;
             }
@@ -869,7 +869,7 @@ Main(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLine, s32 nShowCm
     LPVOID base_address = 0;
 #endif
 
-    Game_Memory memory                = {};
+    Game_Memory memory {};
     memory.permanent_storage_size     = MEGABYTES(256);
     memory.transient_storage_size     = GIGABYTES(1);
     memory.platform_free_file_memory  = _debug_platform_free_file_memory;
@@ -886,7 +886,7 @@ Main(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLine, s32 nShowCm
 
 #if REPLAY_BUFFERS
     // mapping memory to file
-    for (s32 replay_index {}; replay_index < ArrayCount(state.replay_buffers); ++replay_index) {
+    for (s32 replay_index = 0; replay_index < ArrayCount(state.replay_buffers); ++replay_index) {
         replay_buffer &replay_buffer = state.replay_buffers[replay_index];
         _stprintf_s(replay_buffer.file_name, sizeof(TCHAR) * 512, _T("replay_%d_state.ti"),
                     replay_index);
@@ -957,18 +957,18 @@ Main(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLine, s32 nShowCm
             // TomAssert(samplesToWrite < maxSampleCnt);
         }
 
-        game_sound_output_buffer sound_buffer {};
+        Game_Sound_Output_Buffer sound_buffer {};
         sound_buffer.samples_per_second = sound_output.samples_per_sec;
         sound_buffer.sample_count       = samples_to_write;
         sound_buffer.samples            = samples;
 
         // video
-        game_offscreen_buffer buffer = {};
-        buffer.memory                = g_back_buffer.memory;
-        buffer.width                 = g_back_buffer.width;
-        buffer.height                = g_back_buffer.height;
-        buffer.bytes_per_pixel       = 4;
-        buffer.pitch                 = g_back_buffer.pitch;
+        Game_Offscreen_Buffer buffer {};
+        buffer.memory          = g_back_buffer.memory;
+        buffer.width           = g_back_buffer.width;
+        buffer.height          = g_back_buffer.height;
+        buffer.bytes_per_pixel = 4;
+        buffer.pitch           = g_back_buffer.pitch;
 
 #if REPLAY_BUFFERS
         if (state.input_recording_index) {

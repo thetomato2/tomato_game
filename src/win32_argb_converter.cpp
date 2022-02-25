@@ -28,7 +28,7 @@ using wchar_t = uint16_t;
 
 #pragma pack(push, 1)
 
-struct bitmap_header
+struct Bitmap_Header
 {
     u16 file_type;
     u32 file_size;
@@ -42,7 +42,7 @@ struct bitmap_header
     u16 bits_per_pixel;
 };
 
-struct ARGB_header
+struct ARGB_Header
 {
     u32 width;
     u32 height;
@@ -50,7 +50,7 @@ struct ARGB_header
 };
 #pragma pack(pop)
 
-struct bitmap
+struct Bitmap_Img
 {
     s32 width;
     s32 height;
@@ -68,7 +68,7 @@ win32_free_memor(void *memory_)
 debug_read_file_result
 win32_read_file(const char *file_name)
 {
-    debug_read_file_result file = {};
+    Debug_Read_File_Result file = {};
 
     HANDLE file_handle =
         CreateFileA(file_name, GENERIC_READ, 0, 0, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, 0);
@@ -118,14 +118,14 @@ win32_write_file(const char *file_name, u64 memory_size_, void *memory_)
     }
     return success;
 }
-bitmap
+Bitmap_Img
 load_bmp(const char *file_name)
 {
     debug_read_file_result read_result = win32_read_file(file_name);
-    bitmap result;
+    Bitmap_Img result;
 
     if (read_result.content_size != 0) {
-        bitmap_header *header = (bitmap_header *)read_result.contents;
+        Bitmap_Header *header = (Bitmap_Header *)read_result.contents;
         u32 *pixels           = (u32 *)((byt *)read_result.contents + header->bitmap_offset);
         result.width          = header->width;
         result.height         = header->height;
@@ -159,10 +159,10 @@ main(s32 argc, char *argv[])
         printf("Loaded: \"%s\"\n", argv[1]);
     }
 
-    ARGB_header argb;
+    ARGB_Header argb;
     argb.width      = (u32)width;
     argb.height     = (u32)height;
-    argb.size       = sizeof(ARGB_header) + sizeof(u32) * (u32)argb.width * (u32)argb.height;
+    argb.size       = sizeof(ARGB_Header) + sizeof(u32) * (u32)argb.width * (u32)argb.height;
     auto *pixel_ptr = (u32 *)image;
 
     for (u32 pixel {}; pixel < width * height; ++pixel) {

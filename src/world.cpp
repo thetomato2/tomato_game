@@ -22,7 +22,7 @@ is_canonical(f32 rel_coord)
 }
 
 inline bool
-is_canonical(V2 rel_coord)
+is_canonical(v2 rel_coord)
 {
     return is_canonical(rel_coord.x) && is_canonical(rel_coord.y);
 }
@@ -50,7 +50,7 @@ is_same_chunk(const World_Pos a, const World_Pos b)
 }
 
 static World_Pos
-map_into_chunk_space(const World_Pos &pos, const V2 offset)
+map_into_chunk_space(const World_Pos &pos, const v2 offset)
 {
     auto result = pos;
 
@@ -113,7 +113,7 @@ get_diff(const World_Pos &pos_a, const World_Pos &pos_b)
 {
     World_Dif result;
 
-    V2 diff_xy;
+    v2 diff_xy;
     diff_xy.x = (f32)pos_a.chunk_x - (f32)pos_b.chunk_x;
     diff_xy.y = (f32)pos_a.chunk_y - (f32)pos_b.chunk_y;
     f32 dif_z = (f32)pos_a.chunk_z - (f32)pos_b.chunk_z;
@@ -191,7 +191,8 @@ change_entity_location(Memory_Arena *arena, Game_World &world, const u32 low_i,
                      block                     = block->next) {
                     for (u32 i = 0; i < block->low_entity_cnt; ++i) {
                         if (block->low_ent_inds[i] == low_i) {
-                            TomAssert(first_block->low_entity_cnt > 0) block->low_ent_inds[i] =
+                            TomAssert(first_block->low_entity_cnt > 0);
+                            block->low_ent_inds[i] =
                                 first_block->low_ent_inds[--first_block->low_entity_cnt];
                             if (first_block->low_entity_cnt == 0) {
                                 if (first_block->next) {

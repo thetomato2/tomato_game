@@ -88,14 +88,12 @@ extern "C"
     #define TOM_DLL_EXPORT
 #endif
 #ifdef TOM_INTERNAL
-    #define TomAssert(x)                                                    \
-        {                                                                   \
-            if (!(x)) {                                                     \
-                printf("FAILED ASSERT -> %s at :%d\n", __FILE__, __LINE__); \
-                __debugbreak();                                             \
-            }                                                               \
-            assert(x);                                                      \
-        }
+    #define TomAssert(x)                                                \
+        if (!(x)) {                                                     \
+            printf("FAILED ASSERT -> %s at :%d\n", __FILE__, __LINE__); \
+            __debugbreak();                                             \
+        }                                                               \
+        assert(x)
 #else
     #define TomAssert(x)
 #endif
@@ -105,7 +103,7 @@ extern "C"
 #define REPLAY_BUFFERS 0
 
     // TODO: implement this
-    typedef struct thread_context
+    typedef struct _thread_context
     {
         s32 place_holder;
     } Thread_Context;
@@ -119,19 +117,19 @@ extern "C"
         void *contents;
     } Debug_Read_File_Result;
 
-    #define DEBUG_PLATFORM_FREE_FILE_MEMORY(name) void name(thread_context *thread, void *memory)
+    #define DEBUG_PLATFORM_FREE_FILE_MEMORY(name) void name(Thread_Context *thread, void *memory)
     typedef DEBUG_PLATFORM_FREE_FILE_MEMORY(debug_platform_free_file_memory);
 
     #define DEBUG_PLATFORM_READ_ENTIRE_FILE(name) \
-        debug_read_file_result name(thread_context *thread, const char *file_name)
+        debug_read_file_result name(Thread_Context *thread, const char *file_name)
     typedef DEBUG_PLATFORM_READ_ENTIRE_FILE(debug_platform_read_entire_file);
 
     #define DEBUG_PLATFORM_WRITE_ENTIRE_FILE(name) \
-        b32 name(thread_context *thread, const char *file_name, u64 memory_size, void *memory)
+        b32 name(Thread_Context *thread, const char *file_name, u64 memory_size, void *memory)
     typedef DEBUG_PLATFORM_WRITE_ENTIRE_FILE(debug_platform_write_entire_file);
 #endif
 
-    typedef struct game_offscreen_buffer
+    typedef struct _game_offscreen_buffer
 
     {
         void *memory;
@@ -141,7 +139,7 @@ extern "C"
         s32 bytes_per_pixel;
     } Game_Offscreen_Buffer;
 
-    typedef struct game_sound_output_buffer
+    typedef struct _game_sound_output_buffer
     {
         s32 samples_per_second;
         s32 sample_count;
@@ -149,16 +147,14 @@ extern "C"
         s32 tone_hertz;
     } Game_Sound_Output_Buffer;
 
-    typedef struct game_button_state
+    typedef struct _game_button_state
     {
         s32 half_transition_count;
         b32 ended_down;
     } Game_Button_State;
 
-    typedef struct game_controller_input
+    typedef struct _game_controller_input
     {
-        static const szt s_button_cnt = 12;
-
         bool is_connected;
         bool is_analog;
 
@@ -182,7 +178,7 @@ extern "C"
 
         union
         {
-            Game_Button_State buttons[s_button_cnt];
+            Game_Button_State buttons[12];
             struct
             {
                 Game_Button_State dpad_up;
@@ -201,13 +197,11 @@ extern "C"
         };
     } Game_Controller_Input;
 
-    typedef struct game_keyboard_input
+    typedef struct _game_keyboard_input
     {
-        static const szt s_key_cnt = 14;
-
         union
         {
-            Game_Button_State keys[s_key_cnt];
+            Game_Button_State keys[14];
             struct
             {
                 Game_Button_State enter;
@@ -228,7 +222,7 @@ extern "C"
         };
     } Game_Keyboard_Input;
 
-    typedef struct game_input
+    typedef struct _game_input
     {
         static const szt s_input_cnt        = 5;
         static const szt s_mouse_button_cnt = 3;
@@ -241,7 +235,7 @@ extern "C"
         Game_Controller_Input controllers[4];
     } Game_Input;
 
-    typedef struct game_memory
+    typedef struct _game_memory
     {
         bool is_initialized;
         u64 permanent_storage_size;

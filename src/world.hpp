@@ -10,7 +10,7 @@ namespace tom
 // TODO: change to V3
 struct World_Dif
 {
-    V2 dif_xy;
+    v2 dif_xy;
     f32 dif_z;
 };
 
@@ -23,7 +23,7 @@ struct World_Pos
     s32 chunk_z;
 
     // NOTE: from the chunk center
-    V2 offset;
+    v2 offset;
 };
 
 struct World_Entity_Block

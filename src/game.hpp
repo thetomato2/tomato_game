@@ -10,12 +10,12 @@
 namespace tom
 {
 
-struct Enity_Actions
+struct Entity_Actions
 {
     bool start;
     bool jump;
 
-    V2 dir;
+    v2 dir;
 
     bool sprint;
 };
@@ -100,27 +100,30 @@ struct Entity_High
     b32 is_jumping;
 
     // NOTE: relative to camera
-    V2 pos, vel;
+    v2 pos, vel;
     f32 vel_z;
     f32 z;
     u32 abs_tile_z;
     u32 direction;
     f32 stair_cd;
+    f32 hit_cd;
 
     u32 low_i;
 };
 
 struct Entity_Low
 {
-    World_Pos pos;
-    s32 virtual_z;
-    f32 width, height;
-    Color color;
     b32 collides;
     b32 barrier;
-    Entity_Type type;
     u32 high_i;
+    u32 hit_points;
+    u32 max_hit_points;
+    s32 virtual_z;
+    f32 width, height;
     f32 argb_offset;
+    World_Pos pos;
+    Color color;
+    Entity_Type type;
 };
 
 struct Entity
@@ -139,15 +142,17 @@ struct Entity_Low_Chunk_Ref
 struct Entity_Visible_Piece
 {
     ARGB_img *img;
-    V2 mid_p;
+    v2 mid_p;
     f32 z;
     f32 alpha;
+    rect::Rect_v2 rect;
+    Color color;
 };
 
 struct Entity_Visble_Group_Piece
 {
     u32 piece_cnt;
-    Entity_Visible_Piece pieces[8];
+    Entity_Visible_Piece pieces[64];
 };
 
 struct Camera
@@ -165,7 +170,7 @@ struct Game_State
     Bitmap_Img bitmap;
     u32 player_controller_ind[Game_Input::s_input_cnt];
     u32 player_cnt;
-    Enity_Actions player_acts[Game_Input::s_input_cnt];
+    Entity_Actions player_acts[Game_Input::s_input_cnt];
 
     u32 low_cnt;
     u32 high_cnt;

@@ -24,6 +24,17 @@ static constexpr f32 gravitl                = -9.8f;
 
 }  // namespace global
 
+namespace colors
+{
+// NOTE: ARGB
+static constexpr u32 red   = 0xFF'FF'00'00;
+static constexpr u32 green = 0xFF'00'FF'00;
+static constexpr u32 blue  = 0xFF'00'00'FF;
+static constexpr u32 pink  = 0xFF'FF'00'FF;
+static constexpr u32 black = 0xFF'FF'FF'FF;
+
+}  // namespace colors
+
 struct Memory_Arena
 {
     mem_ind size;
