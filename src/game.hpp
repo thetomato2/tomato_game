@@ -14,6 +14,7 @@ struct Entity_Actions
 {
     bool start;
     bool jump;
+    bool attack;
 
     v2 dir;
 
@@ -61,11 +62,10 @@ struct ARGB_img
 
 enum Entity_Direction : s32
 {
-    down = 0,
-    right,
-    up,
-    left
-
+    north = 0,
+    east,
+    south,
+    west
 };
 
 enum class Entity_Type
@@ -76,31 +76,37 @@ enum class Entity_Type
     wall,
     stairs,
     familiar,
-    monster
+    monster,
+    sword
 };
 
 struct Entity_High
 {
-    b32 exists;
     b32 is_jumping;
+    b32 is_attacking;
 
     // NOTE: relative to camera
     v2 pos, vel;
     f32 vel_z;
     f32 z;
     u32 abs_tile_z;
-    u32 direction;
+    Entity_Direction dir;
     f32 stair_cd;
     f32 hit_cd;
+    f32 attack_cd;
 
     u32 low_i;
 };
 
 struct Entity_Low
 {
+    b32 active;
     b32 collides;
     b32 barrier;
+    b32 hurtbox;
     u32 high_i;
+    u32 weapon_i;
+    u32 parent_i;
     s32 hit_points;
     u32 max_hit_points;
     s32 virtual_z;
@@ -109,6 +115,7 @@ struct Entity_Low
     World_Pos pos;
     Color color;
     Entity_Type type;
+    ARGB_img *sprite;
 };
 
 struct Entity
@@ -163,14 +170,11 @@ struct Game_State
     Entity_High high_entities[global::max_high_cnt];
 
     ARGB_img bg_img;
-    ARGB_img grass_bg;
     ARGB_img crosshair_img;
-    ARGB_img red_square_img;
-    ARGB_img green_square_img;
-    ARGB_img blue_square_img;
     ARGB_img player_sprites[4];
     ARGB_img monster_sprites[4];
-    ARGB_img cat_sprite;
+    ARGB_img sword_sprites[4];
+    ARGB_img cat_sprites[2];
     ARGB_img tree_sprite;
     ARGB_img stair_sprite;
 
