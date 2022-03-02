@@ -4,30 +4,28 @@
 
 namespace tom
 {
-static void
-init_world(World &world, f32 tile_sizes_in_meters)
-{
-    world.first_free = nullptr;
-    for (s32 chunk_i {}; chunk_i < ArrayCount(world.world_chunk_hash); ++chunk_i) {
-        world.world_chunk_hash[chunk_i].x = CHUNK_UNITIALIZED;  // null chunk
-        world.world_chunk_hash[chunk_i].first_block.low_entity_cnt = 0;
-    }
-}
 
-inline bool
+// ===============================================================================================
+// #PRIVATE
+// ===============================================================================================
+
+namespace
+{
+
+bool
 is_canonical(f32 rel_coord)
 {
     return rel_coord >= global::chunk_size_meters * -.5f &&
            rel_coord <= global::chunk_size_meters * .5f;
 }
 
-inline bool
+bool
 is_canonical(v2 rel_coord)
 {
     return is_canonical(rel_coord.x) && is_canonical(rel_coord.y);
 }
 
-static void
+void
 recanonicalize_coord(s32 &coord, f32 &rel_coord)
 {
     // NOTE: world is assumed to be toroidal (torus shaped world),
@@ -40,7 +38,7 @@ recanonicalize_coord(s32 &coord, f32 &rel_coord)
     TomAssert(is_canonical(rel_coord));
 }
 
-inline bool
+bool
 is_same_chunk(const World_Pos a, const World_Pos b)
 {
     TomAssert(is_canonical(a.offset));
@@ -49,7 +47,51 @@ is_same_chunk(const World_Pos a, const World_Pos b)
     return (a.chunk_x == b.chunk_x && a.chunk_y == b.chunk_y && a.chunk_z == b.chunk_z);
 }
 
-static World_Pos
+World_Pos
+get_centered_point(const s32 x, const s32 y, const s32 z)
+{
+    World_Pos result;
+
+    result.chunk_x = x;
+    result.chunk_y = y;
+    result.chunk_z = z;
+
+    return result;
+}
+
+}  // namespace
+
+// ===============================================================================================
+// #PUBLIC
+// ===============================================================================================
+
+void
+init_world(World &world, f32 tile_sizes_in_meters)
+{
+    world.first_free = nullptr;
+    for (s32 chunk_i {}; chunk_i < ArrayCount(world.world_chunk_hash); ++chunk_i) {
+        world.world_chunk_hash[chunk_i].x = CHUNK_UNITIALIZED;  // null chunk
+        world.world_chunk_hash[chunk_i].first_block.low_entity_cnt = 0;
+    }
+}
+
+World_Dif
+get_world_diff(const World_Pos &pos_a, const World_Pos &pos_b)
+{
+    World_Dif result;
+
+    v2 diff_xy;
+    diff_xy.x = (f32)pos_a.chunk_x - (f32)pos_b.chunk_x;
+    diff_xy.y = (f32)pos_a.chunk_y - (f32)pos_b.chunk_y;
+    f32 dif_z = (f32)pos_a.chunk_z - (f32)pos_b.chunk_z;
+
+    result.dif_xy = global::chunk_size_meters * diff_xy + (pos_a.offset - pos_b.offset);
+    result.dif_z  = 0.f;
+
+    return result;
+}
+
+World_Pos
 map_into_chunk_space(const World_Pos &pos, const v2 offset)
 {
     auto result { pos };
@@ -62,9 +104,9 @@ map_into_chunk_space(const World_Pos &pos, const v2 offset)
     return result;
 }
 
-static World_Chunk *
+World_Chunk *
 get_world_chunk(World &world, const s32 chunk_x, const s32 chunk_y, const s32 chunk_z,
-                Memory_Arena *arena = nullptr)
+                Memory_Arena *arena)
 {
     TomAssert(chunk_x > -global::chunk_safe_margin);
     TomAssert(chunk_y > -global::chunk_safe_margin);
@@ -108,35 +150,7 @@ get_world_chunk(World &world, const s32 chunk_x, const s32 chunk_y, const s32 ch
     return chunk;
 }
 
-static World_Dif
-get_diff(const World_Pos &pos_a, const World_Pos &pos_b)
-{
-    World_Dif result;
-
-    v2 diff_xy;
-    diff_xy.x = (f32)pos_a.chunk_x - (f32)pos_b.chunk_x;
-    diff_xy.y = (f32)pos_a.chunk_y - (f32)pos_b.chunk_y;
-    f32 dif_z = (f32)pos_a.chunk_z - (f32)pos_b.chunk_z;
-
-    result.dif_xy = global::chunk_size_meters * diff_xy + (pos_a.offset - pos_b.offset);
-    result.dif_z  = 0.f;
-
-    return result;
-}
-
-static World_Pos
-get_centered_point(const s32 x, const s32 y, const s32 z)
-{
-    World_Pos result;
-
-    result.chunk_x = x;
-    result.chunk_y = y;
-    result.chunk_z = z;
-
-    return result;
-}
-
-static World_Pos
+World_Pos
 abs_pos_to_world_pos(f32 abs_x, f32 abs_y, f32 abs_z)
 {
     World_Pos result;
@@ -151,7 +165,7 @@ abs_pos_to_world_pos(f32 abs_x, f32 abs_y, f32 abs_z)
     return result;
 }
 
-static void
+void
 change_entity_location(Memory_Arena *arena, World &world, const u32 low_i, const World_Pos *old_pos,
                        World_Pos *new_pos)
 {

@@ -3,26 +3,27 @@
 // ===============================================================================================
 // #GLOBALS
 // ===============================================================================================
+namespace
+{
+constexpr u32 g_game_update_hertz { 60 };
+constexpr f32 g_target_frames_per_second { 1.f / scast(f32, g_game_update_hertz) };
 
-static constexpr u32 g_game_update_hertz { 60 };
-static constexpr f32 g_target_frames_per_second { 1.f / scast(f32, g_game_update_hertz) };
+bool running;
+bool g_pause;
 
-static bool running;
-static bool g_pause;
+WINDOWPLACEMENT g_win_pos { sizeof(g_win_pos) };
+const TCHAR *g_game_DLL_name { _T("tomato_game.dll") };
+bool g_debug_show_cursor;
 
-static WINDOWPLACEMENT g_win_pos { sizeof(g_win_pos) };
-static const TCHAR *g_game_DLL_name { _T("tomato_game.dll") };
-static bool g_debug_show_cursor;
-
-static Offscreen_Buffer g_back_buffer;
-static Window_Dims g_win_dim;
-static s64 g_performance_counter_frequency;
+Offscreen_Buffer g_back_buffer;
+Window_Dims g_win_dim;
+s64 g_performance_counter_frequency;
 
 // TODO: the sleep precision issue is keeping this above 1 frame... I think
-static constexpr f32 g_frames_of_audio_latency { (1.1f / 30) * g_game_update_hertz };
-static IAudioClient *g_audio_client;
-static IAudioRenderClient *g_audio_render_client;
-static IAudioClock *g_audio_clock;
+constexpr f32 g_frames_of_audio_latency { (1.1f / 30) * g_game_update_hertz };
+IAudioClient *g_audio_client;
+IAudioRenderClient *g_audio_render_client;
+IAudioClock *g_audio_clock;
 
 //! this is a roundabout way of extracting a method out of a header...
 #define XINPUT_GET_STATE(name) DWORD WINAPI name(DWORD dwUserIndex, XINPUT_STATE *pState)
@@ -31,7 +32,7 @@ XINPUT_GET_STATE(_xinput_get_state)
 {
     return (ERROR_DEVICE_NOT_CONNECTED);
 }
-static xinput_get_state *XInputGetState_ { _xinput_get_state };
+xinput_get_state *XInputGetState_ { _xinput_get_state };
 
 #define XINPUT_SET_STATE(name) DWORD WINAPI name(DWORD dwUserIndex, XINPUT_VIBRATION *pVibration)
 typedef XINPUT_SET_STATE(xinput_set_state);
@@ -39,7 +40,7 @@ XINPUT_SET_STATE(_xinput_set_state)
 {
     return (ERROR_DEVICE_NOT_CONNECTED);
 }
-static xinput_set_state *XInputSetState_ { _xinput_set_state };
+xinput_set_state *XInputSetState_ { _xinput_set_state };
 
 #define XInputGetState XInputGetState_
 #define XInputSetState XInputSetState_
@@ -104,7 +105,7 @@ DEBUG_PLATFORM_WRITE_ENTIRE_FILE(_debug_platform_write_entire_file)
 
 #endif
 
-static void
+void
 toggle_fullscreen(HWND hwnd)
 {
     DWORD dwStyle { scast(DWORD, GetWindowLong(hwnd, GWL_STYLE)) };
@@ -126,7 +127,7 @@ toggle_fullscreen(HWND hwnd)
     }
 }
 
-static FILETIME
+FILETIME
 get_last_write_time(const TCHAR *file_name)
 {
     FILETIME last_write_time {};
@@ -150,7 +151,7 @@ get_last_write_time(const TCHAR *file_name)
     return last_write_time;
 }
 
-static Game_Code
+Game_Code
 load_game_code(const TCHAR *dll_name)
 {
     Game_Code code {};
@@ -180,7 +181,7 @@ load_game_code(const TCHAR *dll_name)
     return code;
 }
 
-static void
+void
 unload_game_code(Game_Code &game_code)
 {
     if (game_code.game_code_DLL) {
@@ -191,7 +192,7 @@ unload_game_code(Game_Code &game_code)
     printf("Game code unloaded.");
 }
 
-static void
+void
 load_Xinput()
 {
     // TODO: test this on other windows version
@@ -207,7 +208,7 @@ load_Xinput()
     }
 }
 
-static void
+void
 init_WASAPI(s32 samples_per_second, s32 buffer_size_in_samples)
 {
     if (FAILED(CoInitializeEx(0, COINIT_SPEED_OVER_MEMORY))) {
@@ -271,7 +272,7 @@ init_WASAPI(s32 samples_per_second, s32 buffer_size_in_samples)
     TomAssert(buffer_size_in_samples <= scast(s32, sound_frame_cnt));
 }
 
-static void
+void
 fill_sound_buffer(Sound_Output &sound_output, s32 samples_to_write,
                   Game_Sound_Output_Buffer &source_buffer)
 {
@@ -292,7 +293,7 @@ fill_sound_buffer(Sound_Output &sound_output, s32 samples_to_write,
     }
 }
 
-static Window_Dims
+Window_Dims
 Get_window_dimensions(HWND hwnd)
 {
     RECT client_rect;
@@ -303,7 +304,7 @@ Get_window_dimensions(HWND hwnd)
     return win_dim;
 }
 
-static void
+void
 resize_DIB_section(Offscreen_Buffer &buffer, s32 width, s32 height)
 {
     // TODO: bulletproof this
@@ -330,7 +331,7 @@ resize_DIB_section(Offscreen_Buffer &buffer, s32 width, s32 height)
     buffer.pitch = width * buffer.bytes_per_pixel;
 }
 
-static void
+void
 display_buffer_in_window(HDC hdc, Offscreen_Buffer &buffer, s32 x, s32 y, s32 width, s32 height)
 {
     if (width == buffer.width * 2 && height == buffer.height * 2) {
@@ -355,7 +356,7 @@ display_buffer_in_window(HDC hdc, Offscreen_Buffer &buffer, s32 x, s32 y, s32 wi
     }
 }
 
-static void
+void
 process_keyboard_message(Game_Button_State &new_state, const b32 is_down)
 {
     if (new_state.ended_down != (is_down != 0)) {
@@ -364,7 +365,7 @@ process_keyboard_message(Game_Button_State &new_state, const b32 is_down)
     }
 }
 
-static void
+void
 process_Xinput_digital_button(DWORD Xinput_button_state_, Game_Button_State &old_state_,
                               DWORD button_bit_, Game_Button_State &new_state)
 {
@@ -373,7 +374,7 @@ process_Xinput_digital_button(DWORD Xinput_button_state_, Game_Button_State &old
         new_state.half_transition_count = ++old_state_.half_transition_count;
 }
 
-static void
+void
 do_controller_input(Game_Input &old_input, Game_Input &new_input, HWND hwnd)
 {
     // mouse cursor
@@ -497,7 +498,7 @@ do_controller_input(Game_Input &old_input, Game_Input &new_input, HWND hwnd)
     }
 }
 
-static LARGE_INTEGER
+LARGE_INTEGER
 get_wall_clock()
 {
     LARGE_INTEGER time;
@@ -505,7 +506,7 @@ get_wall_clock()
     return time;
 }
 
-static f32
+f32
 get_seconds_elapsed(LARGE_INTEGER start, LARGE_INTEGER end)
 {
     f32 seconds { scast(f32, end.QuadPart - start.QuadPart) /
@@ -518,20 +519,20 @@ get_seconds_elapsed(LARGE_INTEGER start, LARGE_INTEGER end)
 // ===============================================================================================
 
 #if REPLAY_BUFFERS == 1
-static void
+void
 get_input_file_path(Win32_State &state, b32 is_input_stream)
 {
     int x {};
 }
 
-static Replay_Buffer &
+Replay_Buffer &
 get_replay_buffer(Win32_State &state, szt index_)
 {
     TomAssert(index_ < ArrayCount(state.replay_buffers));
     return state.replay_buffers[index_];
 }
 
-static void
+void
 begin_recording_input(Win32_State &state, s32 input_recording_index_)
 {
     auto &replay_buffer = get_replay_buffer(state, input_recording_index_);
@@ -549,7 +550,7 @@ begin_recording_input(Win32_State &state, s32 input_recording_index_)
     }
 }
 
-static void
+void
 end_recording_input(Win32_State &state)
 {
     printf("Recording ended.\n");
@@ -557,7 +558,7 @@ end_recording_input(Win32_State &state)
     state.input_recording_index = 0;
 }
 
-static void
+void
 begin_input_playback(Win32_State &state, s32 input_playback_index_)
 {
     auto &replay_buffer { get_replay_buffer(state, input_playback_index_) };
@@ -574,7 +575,7 @@ begin_input_playback(Win32_State &state, s32 input_playback_index_)
     }
 }
 
-static void
+void
 end_input_playback(Win32_State &state)
 {
     printf("Input playback ended.\n");
@@ -582,14 +583,14 @@ end_input_playback(Win32_State &state)
     state.input_playback_index = 0;
 }
 
-static void
+void
 record_input(Win32_State &state, Game_Input &new_input)
 {
     DWORD bytes_written;
     WriteFile(state.recording_handle, &new_input, sizeof(new_input), &bytes_written, 0);
 }
 
-static void
+void
 playback_input(Win32_State &state, Game_Input &new_input)
 {
     DWORD bytes_read;
@@ -605,7 +606,7 @@ playback_input(Win32_State &state, Game_Input &new_input)
 }
 #endif
 
-static void
+void
 init_console()
 {
     bool is_initialized = AllocConsole();
@@ -629,7 +630,7 @@ init_console()
     }
 }
 
-static void
+void
 process_pending_messages(Win32_State &state, Game_Input &input)
 {
     MSG msg;
@@ -778,8 +779,8 @@ Main(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLine, s32 nShowCm
     debug_show_cursor   = false;
 #endif
 
-    static constexpr s32 win_width { 960 };
-    static constexpr s32 win_height { 540 };
+    constexpr s32 win_width { 960 };
+    constexpr s32 win_height { 540 };
 
     resize_DIB_section(g_back_buffer, win_width, win_height);
 
@@ -1052,7 +1053,7 @@ Main(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLine, s32 nShowCm
 
     return 0;
 }
-
+}  // namespace
 //========================================================================================
 // ENTRY POINT
 //========================================================================================

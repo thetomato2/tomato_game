@@ -1,9 +1,11 @@
 #ifndef TOMATO_COMMON_HPP_
 #define TOMATO_COMMON_HPP_
 #include "platform.h"
+#include "math.hpp"
+#include "utils.hpp"
 /*
  * Dump stuff here that doesn't go in to tomato_platfrom.h so IDE's don't complain and I can use
- * intellsense,  has nothing to do with the build itself
+ * my preciouis intellsense
  */
 
 namespace tom

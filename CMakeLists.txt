@@ -18,6 +18,7 @@ set(Build_Dir ${CMAKE_CURRENT_LIST_DIR}/build)
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${Build_Dir})
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${Build_Dir})
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${Build_Dir})
+set(CMAKE_SUPPRESS_REGENERATION true) #feck off ZERO_CHECK
 
 option(Emacs "Emacs" OFF)
 option(argb_converter "ARGB_Converter" OFF)
@@ -30,7 +31,7 @@ if (MSVC)
         # -Gm-
         -GR-
         # -GS
-        -EHsc
+        # -EHsc
         # -Od
         # -Oi
         -WX
@@ -48,7 +49,6 @@ if (MSVC)
 
     list(APPEND Common_Compile_Defs
         TOM_INTERNAL
-        _HAS_EXCEPTIONS=0
         )
 
     list(APPEND Common_Linker_Flags
@@ -69,16 +69,28 @@ endif()
 
 
 add_library(Tomato_Game_Lib SHARED
+    ${Source_Dir}/common.hpp
+    ${Source_Dir}/entity.hpp
+    ${Source_Dir}/image.hpp
+    ${Source_Dir}/intrinsic.hpp
     ${Source_Dir}/game.cpp
     ${Source_Dir}/game.hpp
-    ${Source_Dir}/intrinsic.hpp
     ${Source_Dir}/math.hpp
     ${Source_Dir}/platform.h
+    ${Source_Dir}/sim_region.cpp
+    ${Source_Dir}/sim_region.hpp
     ${Source_Dir}/world.cpp
     ${Source_Dir}/world.hpp
+    ${Source_Dir}/utils.hpp
     )
 
-set_source_files_properties(${Source_Dir}/world.cpp PROPERTIES HEADER_FILE_ONLY TRUE)
+# because I have a real unity build going on,
+# without this cmake will shove the cpp files into a unity.cpp
+# HACK: fix these or leave it?
+# set_source_files_properties(
+#     ${Source_Dir}/world.cpp
+#     ${Source_Dir}/sim_region.cpp
+#     PROPERTIES HEADER_FILE_ONLY TRUE)
 
 set_target_properties(Tomato_Game_Lib PROPERTIES OUTPUT_NAME tomato_game)
 target_include_directories(Tomato_Game_Lib PUBLIC ${Source_Dir})

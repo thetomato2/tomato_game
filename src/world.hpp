@@ -1,8 +1,5 @@
 #ifndef TOMATO_WORLD_HPP_
 #define TOMATO_WORLD_HPP_
-
-#include "platform.h"
-#include "math.hpp"
 #include "common.hpp"
 
 namespace tom
@@ -42,5 +39,27 @@ struct World
     World_Chunk world_chunk_hash[4096];
     World_Entity_Block *first_free;
 };
+
+void
+init_world(World &world, f32 tile_sizes_in_meters);
+
+World_Dif
+get_world_diff(const World_Pos &pos_a, const World_Pos &pos_b);
+
+World_Pos
+map_into_chunk_space(const World_Pos &pos, const v2 offset);
+
+World_Chunk *
+get_world_chunk(World &world, const s32 chunk_x, const s32 chunk_y, const s32 chunk_z,
+                Memory_Arena *arena = nullptr);
+
+World_Pos
+abs_pos_to_world_pos(f32 abs_x, f32 abs_y, f32 abs_z);
+
+void
+change_entity_location(Memory_Arena *arena, World &world, const u32 low_i, const World_Pos *old_pos,
+                       World_Pos *new_pos);
+
 }  // namespace tom
+
 #endif  // TOMATO_WORLD_HPP_

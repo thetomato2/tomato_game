@@ -138,85 +138,10 @@ union v4
 };
 
 // ===============================================================================================
-// #RECT_V2
+// #VECTOR FUNCS
 // ===============================================================================================
-namespace rect
+namespace vec
 {
-
-struct Rect_v2
-{
-    v2 min;
-    v2 max;
-};
-
-inline v2
-max_corner(Rect_v2 rect)
-{
-    v2 result = rect.max;
-    return result;
-}
-
-inline v2
-min_corner(Rect_v2 rect)
-{
-    v2 result = rect.min;
-    return result;
-}
-
-inline Rect_v2
-min_max(v2 min, v2 max)
-{
-    Rect_v2 result;
-
-    result.min = min;
-    result.max = max;
-
-    return result;
-}
-
-inline Rect_v2
-min_dim(v2 min, v2 dim)
-{
-    Rect_v2 result;
-
-    result.min = min;
-    result.max = min + dim;
-
-    return result;
-}
-
-inline Rect_v2
-center_half_dim(v2 center, v2 half_dim)
-{
-    Rect_v2 result;
-
-    result.min = center - half_dim;
-    result.max = center + half_dim;
-
-    return result;
-}
-
-inline v2
-center(Rect_v2 rect)
-{
-    v2 result = 0.5f * (rect.min + rect.max);
-
-    return result;
-}
-
-inline bool
-is_inside(Rect_v2 rect, v2 test)
-{
-    bool result = ((test.x >= rect.min.x) && (test.y >= rect.min.y) && (test.x <= rect.max.x) &&
-                   (test.y <= rect.max.y));
-    return result;
-}
-}  // namespace rect
-
-// ===============================================================================================
-// #FREE_FUNCS
-// ===============================================================================================
-
 // NOTE: inner product or dot product
 inline f32
 inner(v2 a, v2 b)
@@ -232,6 +157,88 @@ length_sq(const v2 a)
 
     return result;
 }
+}  // namespace vec
+
+// ===============================================================================================
+// #RECT_V2
+// ===============================================================================================
+
+struct Rect
+{
+    v2 min;
+    v2 max;
+};
+
+namespace rect
+{
+
+inline v2
+max_corner(Rect rect)
+{
+    v2 result = rect.max;
+    return result;
+}
+
+inline v2
+min_corner(Rect rect)
+{
+    v2 result = rect.min;
+    return result;
+}
+
+inline Rect
+min_max(v2 min, v2 max)
+{
+    Rect result;
+
+    result.min = min;
+    result.max = max;
+
+    return result;
+}
+
+inline Rect
+min_dim(v2 min, v2 dim)
+{
+    Rect result;
+
+    result.min = min;
+    result.max = min + dim;
+
+    return result;
+}
+
+inline Rect
+center_half_dim(v2 center, v2 half_dim)
+{
+    Rect result;
+
+    result.min = center - half_dim;
+    result.max = center + half_dim;
+
+    return result;
+}
+
+inline v2
+center(Rect rect)
+{
+    v2 result = 0.5f * (rect.min + rect.max);
+
+    return result;
+}
+
+inline bool
+is_inside(Rect rect, v2 test)
+{
+    bool result = ((test.x >= rect.min.x) && (test.y >= rect.min.y) && (test.x <= rect.max.x) &&
+                   (test.y <= rect.max.y));
+    return result;
+}
+}  // namespace rect
+
+// ===============================================================================================
+// #FREE_FUNCS
+// ===============================================================================================
 
 template<typename T>
 T

@@ -45,10 +45,6 @@ extern "C"
     #pragma intrinsic(_BitScanForward)
 #endif
 
-#define internal        static
-#define local_persist   static
-#define global_variable static
-
     typedef int8_t s8;
     typedef int16_t s16;
     typedef int32_t s32;
