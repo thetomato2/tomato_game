@@ -5,40 +5,33 @@
 namespace tom
 {
 
-// ===============================================================================================
-// #PRIVATE
-// ===============================================================================================
-
-namespace
-{
-
-bool
+static bool
 is_canonical(f32 rel_coord)
 {
     return rel_coord >= global::chunk_size_meters * -.5f &&
            rel_coord <= global::chunk_size_meters * .5f;
 }
 
-bool
+static bool
 is_canonical(v2 rel_coord)
 {
     return is_canonical(rel_coord.x) && is_canonical(rel_coord.y);
 }
 
-void
+static void
 recanonicalize_coord(s32 &coord, f32 &rel_coord)
 {
     // NOTE: world is assumed to be toroidal (torus shaped world),
     // if you step off one end where you wrap around
-    s32 offset { round_f32_to_s32(rel_coord / (f32)global::chunk_size_meters) };
+    s32 offset { round_f32_to_s32(rel_coord / scast(f32, global::chunk_size_meters)) };
 
     coord += offset;
-    rel_coord -= offset * (f32)global::chunk_size_meters;
+    rel_coord -= offset * scast(f32, global::chunk_size_meters);
 
     TomAssert(is_canonical(rel_coord));
 }
 
-bool
+static bool
 is_same_chunk(const World_Pos a, const World_Pos b)
 {
     TomAssert(is_canonical(a.offset));
@@ -47,7 +40,7 @@ is_same_chunk(const World_Pos a, const World_Pos b)
     return (a.chunk_x == b.chunk_x && a.chunk_y == b.chunk_y && a.chunk_z == b.chunk_z);
 }
 
-World_Pos
+static World_Pos
 get_centered_point(const s32 x, const s32 y, const s32 z)
 {
     World_Pos result;
@@ -58,12 +51,6 @@ get_centered_point(const s32 x, const s32 y, const s32 z)
 
     return result;
 }
-
-}  // namespace
-
-// ===============================================================================================
-// #PUBLIC
-// ===============================================================================================
 
 void
 init_world(World &world, f32 tile_sizes_in_meters)
@@ -81,9 +68,9 @@ get_world_diff(const World_Pos &pos_a, const World_Pos &pos_b)
     World_Dif result;
 
     v2 diff_xy;
-    diff_xy.x = (f32)pos_a.chunk_x - (f32)pos_b.chunk_x;
-    diff_xy.y = (f32)pos_a.chunk_y - (f32)pos_b.chunk_y;
-    f32 dif_z = (f32)pos_a.chunk_z - (f32)pos_b.chunk_z;
+    diff_xy.x = scast(f32, pos_a.chunk_x) - scast(f32, pos_b.chunk_x);
+    diff_xy.y = scast(f32, pos_a.chunk_y) - scast(f32, pos_b.chunk_y);
+    f32 dif_z = scast(f32, pos_a.chunk_z) - scast(f32, pos_b.chunk_z);
 
     result.dif_xy = global::chunk_size_meters * diff_xy + (pos_a.offset - pos_b.offset);
     result.dif_z  = 0.f;
@@ -148,6 +135,8 @@ get_world_chunk(World &world, const s32 chunk_x, const s32 chunk_y, const s32 ch
     } while (chunk);
 
     return chunk;
+    u32 low_ent_inds[16];
+    World_Entity_Block *next;
 }
 
 World_Pos

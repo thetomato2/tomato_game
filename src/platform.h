@@ -70,12 +70,31 @@ extern "C"
 
     typedef int32_t b32;
 
+#ifdef __cplusplus
+    static_assert(sizeof(s8) == 1, "s8 isn't 1 byte!");
+    static_assert(sizeof(s16) == 2, "s16 isn't 2 byte!s");
+    static_assert(sizeof(s32) == 4, "s32 isn't 4 byte!s");
+    static_assert(sizeof(s64) == 8, "s64 isn't 8 byte!s");
+    static_assert(sizeof(u8) == 1, "u8 isn't 1 byte!");
+    static_assert(sizeof(u16) == 2, "u16 isn't 2 byte!s");
+    static_assert(sizeof(u32) == 4, "u32 isn't 4 byte!s");
+    static_assert(sizeof(u64) == 8, "u64 isn't 8 byte!s");
+    static_assert(sizeof(f32) == 4, "f32 isn't 4 byte!s");
+    static_assert(sizeof(f64) == 8, "f64 isn't 8 byte!s");
+    static_assert(sizeof(b32) == 4, "b32 isn't 4 byte!s");
+#endif
+
 #define KILOBYTES(val) ((val)*1024)
 #define MEGABYTES(val) (KILOBYTES(val) * 1024)
 #define GIGABYTES(val) (MEGABYTES(val) * 1024)
 #define TERABYTES(val) (GIGABYTES(val) * 1024)
 
 #define ArrayCount(Array) (sizeof((Array)) / sizeof((Array)[0]))
+
+// NOTE: this breaks tree-sitter >:|
+#define internal      static
+#define local_persist static
+#define global_var    static
 
 #define TOM_WIN32
 #ifdef TOM_WIN32

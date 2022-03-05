@@ -3,9 +3,7 @@
 
 namespace tom
 {
-namespace
-{
-void
+static void
 clear_buffer(Game_Offscreen_Buffer &buffer, const Color color = colors::pink)
 {
     const s32 width { buffer.width };
@@ -21,7 +19,7 @@ clear_buffer(Game_Offscreen_Buffer &buffer, const Color color = colors::pink)
     }
 }
 
-void
+static void
 draw_rect(Game_Offscreen_Buffer &buffer, const f32 min_x_f32, const f32 min_y_f32,
           const f32 max_x_f32, const f32 max_y_f32, const Color color = colors::pink)
 {
@@ -47,7 +45,7 @@ draw_rect(Game_Offscreen_Buffer &buffer, const f32 min_x_f32, const f32 min_y_f3
     }
 }
 
-void
+static void
 draw_rect(Game_Offscreen_Buffer &buffer, const Rect rect, const Color color = colors::pink)
 {
     s32 min_x { round_f32_to_s32(rect.min.x) };
@@ -72,7 +70,7 @@ draw_rect(Game_Offscreen_Buffer &buffer, const Rect rect, const Color color = co
     }
 }
 
-void
+static void
 draw_rect_outline(Game_Offscreen_Buffer &buffer, const f32 min_x_f32, const f32 min_y_f32,
                   const f32 max_x_f32, const f32 max_y_f32, const s32 thickness,
                   const Color color = colors::pink)
@@ -103,7 +101,7 @@ draw_rect_outline(Game_Offscreen_Buffer &buffer, const f32 min_x_f32, const f32 
     }
 }
 
-void
+static void
 draw_ARGB(Game_Offscreen_Buffer &buffer, const ARGB_img &img, const v2 pos)
 {
     s32 min_y { round_f32_to_s32(pos.y - (scast(f32, img.height) / 2.f)) };
@@ -158,7 +156,7 @@ draw_ARGB(Game_Offscreen_Buffer &buffer, const ARGB_img &img, const v2 pos)
     }
 }
 
-void
+static void
 push_piece(Entity_Visble_Piece_Group *group, ARGB_img *img, const v2 mid_p, const f32 z_offset,
            const f32 alpha = 1.0f)
 {
@@ -171,7 +169,7 @@ push_piece(Entity_Visble_Piece_Group *group, ARGB_img *img, const v2 mid_p, cons
     piece->alpha = alpha;
 }
 
-void
+static void
 push_piece(Entity_Visble_Piece_Group *group, const f32 width, const f32 height, const Color color,
            const v2 mid_p, const f32 z_offset, const f32 alpha = 1.0f)
 {
@@ -189,7 +187,7 @@ push_piece(Entity_Visble_Piece_Group *group, const f32 width, const f32 height, 
     piece->color      = color;
 }
 
-void
+static void
 game_output_sound(Game_Sound_Output_Buffer &sound_buffer)
 {
     // NOTE: outputs nothing atm
@@ -201,7 +199,7 @@ game_output_sound(Game_Sound_Output_Buffer &sound_buffer)
     }
 }
 
-void
+static void
 init_arena(Memory_Arena *arena, const mem_ind size, byt *base)
 {
     arena->size = size;
@@ -209,7 +207,7 @@ init_arena(Memory_Arena *arena, const mem_ind size, byt *base)
     arena->used = 0;
 }
 
-Bitmap_Img
+static Bitmap_Img
 load_bmp(Thread_Context *thread, debug_platform_read_entire_file *read_entire_file,
          const char *file_name)
 {
@@ -227,7 +225,7 @@ load_bmp(Thread_Context *thread, debug_platform_read_entire_file *read_entire_fi
     return result;
 }
 
-ARGB_img
+static ARGB_img
 load_ARGB(Thread_Context *thread, debug_platform_read_entire_file *read_entire_file,
           const char *file_name, const char *name = nullptr)
 {
@@ -262,7 +260,7 @@ load_ARGB(Thread_Context *thread, debug_platform_read_entire_file *read_entire_f
     return result;
 }
 
-void
+static void
 process_keyboard(const Game_Keyboard_Input &keyboard, Entity_Actions *entity_action)
 {
     if (entity_action) {
@@ -276,7 +274,7 @@ process_keyboard(const Game_Keyboard_Input &keyboard, Entity_Actions *entity_act
     }
 }
 
-void
+static void
 process_controller(const Game_Controller_Input &controller, Entity_Actions *entity_action)
 {
     if (entity_action) {
@@ -292,7 +290,7 @@ process_controller(const Game_Controller_Input &controller, Entity_Actions *enti
     }
 }
 
-inline void
+static void
 make_entity_low(Game_State &game_state, u32 low_i)
 {
     TomAssert(low_i < global::max_low_cnt);
@@ -311,7 +309,7 @@ make_entity_low(Game_State &game_state, u32 low_i)
     }
 }
 
-Entity_Low *
+static Entity_Low *
 get_low_entity(Game_State &game_state, u32 low_i)
 {
     Entity_Low *result {};
@@ -323,7 +321,7 @@ get_low_entity(Game_State &game_state, u32 low_i)
     return result;
 }
 
-Entity
+static Entity
 force_entity_into_high(Game_State &state, u32 low_i)
 {
     Entity result {};
@@ -337,7 +335,7 @@ force_entity_into_high(Game_State &state, u32 low_i)
     return result;
 }
 
-Entity
+static Entity
 get_entity_from_high_i(Game_State &state, u32 high_i)
 {
     Entity result {};
@@ -353,7 +351,7 @@ get_entity_from_high_i(Game_State &state, u32 high_i)
     return result;
 }
 
-Entity
+static Entity
 get_entity_from_low_i(Game_State &state, u32 low_i)
 {
     Entity result {};
@@ -374,7 +372,7 @@ struct Add_Low_Entity_Result
     u32 low_i;
 };
 
-Add_Low_Entity_Result
+static Add_Low_Entity_Result
 add_low_entity(Game_State &state, Entity_Type type = Entity_Type::none, World_Pos pos = {},
                bool start_active = true)
 {
@@ -398,7 +396,7 @@ add_low_entity(Game_State &state, Entity_Type type = Entity_Type::none, World_Po
     return result;
 }
 
-void
+static void
 add_hit_points(Entity entity, s32 hp)
 {
     entity.low->hit_points += hp;
@@ -406,7 +404,7 @@ add_hit_points(Entity entity, s32 hp)
         entity.low->hit_points = entity.low->max_hit_points;
 }
 
-void
+static void
 subtract_hit_points(Entity entity, s32 hp)
 {
     entity.low->hit_points -= hp;
@@ -416,7 +414,7 @@ subtract_hit_points(Entity entity, s32 hp)
     }
 }
 
-void
+static void
 offset_and_check_entities_by_area(Game_State &state, const Rect area, const v2 offset)
 {
     for (u32 high_i { 1 }; high_i < state.high_cnt;) {
@@ -430,14 +428,14 @@ offset_and_check_entities_by_area(Game_State &state, const Rect area, const v2 o
     }
 }
 
-void
+static void
 init_hit_points(Entity_Low *ent_low, const u32 hp)
 {
     ent_low->max_hit_points = hp;
     ent_low->hit_points     = ent_low->max_hit_points;
 }
 
-Add_Low_Entity_Result
+static Add_Low_Entity_Result
 add_wall(Game_State &state, const f32 abs_x, const f32 abs_y, const f32 abs_z)
 {
     auto wall { add_low_entity(state, Entity_Type::wall) };
@@ -454,7 +452,7 @@ add_wall(Game_State &state, const f32 abs_x, const f32 abs_y, const f32 abs_z)
     return wall;
 }
 
-Add_Low_Entity_Result
+static Add_Low_Entity_Result
 add_stairs(Game_State &state, const f32 abs_x, const f32 abs_y, const f32 abs_z)
 {
     auto stairs { add_low_entity(state, Entity_Type::stairs) };
@@ -472,7 +470,7 @@ add_stairs(Game_State &state, const f32 abs_x, const f32 abs_y, const f32 abs_z)
     return stairs;
 }
 
-Add_Low_Entity_Result
+static Add_Low_Entity_Result
 add_monster(Game_State &state, const f32 abs_x, const f32 abs_y, const f32 abs_z)
 {
     auto monster { add_low_entity(state, Entity_Type::monster) };
@@ -492,7 +490,7 @@ add_monster(Game_State &state, const f32 abs_x, const f32 abs_y, const f32 abs_z
     return monster;
 }
 
-Add_Low_Entity_Result
+static Add_Low_Entity_Result
 add_cat(Game_State &state, const f32 abs_x, const f32 abs_y, const f32 abs_z)
 {
     auto cat { add_low_entity(state, Entity_Type::familiar) };
@@ -510,7 +508,7 @@ add_cat(Game_State &state, const f32 abs_x, const f32 abs_y, const f32 abs_z)
     return cat;
 }
 
-Add_Low_Entity_Result
+static Add_Low_Entity_Result
 add_sword(Game_State &state, ARGB_img *sprite = nullptr)
 {
     auto sword { add_low_entity(state, Entity_Type::sword, {}, false) };
@@ -527,7 +525,7 @@ add_sword(Game_State &state, ARGB_img *sprite = nullptr)
     return sword;
 }
 
-void
+static void
 add_player(Game_State &state, const u32 player_i, const f32 x, const f32 y, const f32 z,
            ARGB_img *sprite)
 {
@@ -563,13 +561,13 @@ struct Entity_Move_Spec
     f32 drag;
 };
 
-Entity_Move_Spec
+static Entity_Move_Spec
 get_default_move_spec()
 {
     return { 10.0f, 10.0f };
 }
 
-void
+static void
 move_entity(Game_State &state, Entity entity, const Entity_Actions &entity_actions,
             Entity_Move_Spec move_spec, const f32 dt)
 {
@@ -736,8 +734,7 @@ move_entity(Game_State &state, Entity entity, const Entity_Actions &entity_actio
     entity.low->pos = new_pos;
 }
 
-void
-set_camera(Game_State &state, World_Pos new_cam_pos)
+void static set_camera(Game_State &state, World_Pos new_cam_pos)
 {
     World_Pos old_cam_pos { state.camera.pos };
     World_Dif dif_cam { get_world_diff(new_cam_pos, old_cam_pos) };
@@ -754,7 +751,7 @@ set_camera(Game_State &state, World_Pos new_cam_pos)
     simulate_region(state, new_cam_pos, cam_bounds);
 }
 
-void
+static void
 update_familiar(Game_State &state, Entity fam, const f32 dt)
 {
     Entity closest_player {};
@@ -787,7 +784,7 @@ update_familiar(Game_State &state, Entity fam, const f32 dt)
     }
 }
 
-void
+static void
 update_sword(Game_State &state, Entity sword, const f32 dt)
 {
     Entity_Actions sword_acts {};
@@ -816,12 +813,12 @@ update_sword(Game_State &state, Entity sword, const f32 dt)
     move_entity(state, sword, sword_acts, move_spec, dt);
 }
 
-void
+static void
 update_monster(Game_State &state, Entity monster, f32 dt)
 {
 }
 
-void
+static void
 update_player(Game_State &state, Entity player, f32 dt)
 {
     auto move_spec { get_default_move_spec() };
@@ -843,7 +840,6 @@ update_player(Game_State &state, Entity player, f32 dt)
         } break;
     }
 }
-}  // namespace
 
 // ===============================================================================================
 // #EXPORT
@@ -1088,7 +1084,6 @@ GAME_UPDATE_AND_RENDER(game_update_and_render)
         // ===============================================================================================
         // #DRAW
         // ===============================================================================================
-        //
 
         for (u32 piece_i {}; piece_i < piece_group.piece_cnt; ++piece_i) {
             Entity_Visible_Piece *piece { &piece_group.pieces[piece_i] };
