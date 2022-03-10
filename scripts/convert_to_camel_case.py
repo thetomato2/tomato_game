@@ -8,18 +8,21 @@ file_list = [
     if os.path.splitext(x)[1] in (".h", "hpp", ".cpp")
 ]
 
+REG = r"(.*?)_([a-zA-Z])"
 
-def convert(match):
-    return match.group(1) + match.group(2).upper()
+
+def to_camel(word):
+    comps = word.split("_")
+    return comps[0] + "".join(x.title() for x in comps[1:])
 
 
 for file in file_list:
     print("processing {}...".format(file))
     old_file = open(file).read()
-    new_file = open(file, "w")
     for word in old_file.split():
-        converted_word = "".join(word.title() for word in word.split("_"))
+        converted_word = to_camel(word)
         old_file = old_file.replace(word, converted_word)
+    new_file = open(file, "w")
     new_file.write(old_file)
 
 
