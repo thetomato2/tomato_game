@@ -1,12 +1,12 @@
 #ifndef ENTITY_HPP_
 #define ENTITY_HPP_
-#include "common.hpp"
-#include "world.hpp"
-#include "image.hpp"
+#include "Common.hpp"
+#include "World.hpp"
+#include "Image.hpp"
 
 namespace tom
 {
-struct Entity_Actions
+struct EntityActions
 {
     bool start;
     bool jump;
@@ -17,7 +17,7 @@ struct Entity_Actions
     bool sprint;
 };
 
-enum Entity_Direction : s32
+enum EntityDirection : s32
 {
     north = 0,
     east,
@@ -25,7 +25,7 @@ enum Entity_Direction : s32
     west
 };
 
-enum class Entity_Type
+enum class EntityType
 {
     null = 0,
     none,
@@ -37,69 +37,69 @@ enum class Entity_Type
     sword
 };
 
-struct Entity_Low_Chunk_Ref
+struct EntityLowChunkRef
 {
-    World_Chunk *tile_chunk;
-    u32 i_in_chunk;
+    WorldChunk *tileChunk;
+    u32 chunkInd;
 };
 
-struct Entity_Visible_Piece
+struct EntityVisiblePiece
 {
-    ARGB_img *img;
-    v2 mid_p;
+    ArgbImg *img;
+    v2 midP;
     f32 z;
     f32 alpha;
     Rect rect;
     Color color;
 };
 
-struct Entity_Visble_Piece_Group
+struct EntityVisblePieceGroup
 {
-    u32 piece_cnt;
-    Entity_Visible_Piece pieces[64];
+    u32 pieceCnt;
+    EntityVisiblePiece pieces[64];
 };
 
-struct Sim_Entity;
+struct SimEntity;
 
-union Entity_Ref
+union EntityRef
 {
-    Sim_Entity *ptr;
+    SimEntity *ptr;
     u32 ind;
 };
 
-struct Sim_Entity
+struct SimEntity
 {
     v2 pos;
     v2 vel;
-    u32 chunk_z;
+    u32 chunkZ;
     f32 z;
-    f32 vel_z;
+    f32 velZ;
 
     b32 active;
     b32 collides;
     b32 barrier;
     b32 hurtbox;
-    s32 hit_points;
-    u32 max_hit_points;
-    s32 virtual_z;
+    s32 hitPoints;
+    u32 maxHitPoints;
+    s32 virtualZ;
     f32 width, height;
-    f32 argb_offset;
+    f32 argbOffset;
 
-    u32 stored_i;
+    u32 storedInd;
 
-    Entity_Ref weapon_i;
-    Entity_Ref parent_i;
+    EntityRef weaponInd;
+    EntityRef parentInd;
 
     Color color;
-    Entity_Type type;
-    Entity_Direction direction;
-    ARGB_img *sprite;
+    EntityType type;
+    EntityDirection direction;
+    ArgbImg *sprite;
 };
 
-struct Stored_Entity
+struct StoredEntity
 {
-    Sim_Entity sim;
-    World_Pos world_pos;
+    SimEntity sim;
+    WorldPos worldPos;
 };
 
 }  // namespace tom

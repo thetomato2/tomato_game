@@ -1,12 +1,12 @@
 #ifndef TOMATO_UTILS_HPP_
 #define TOMATO_UTILS_HPP_
 
-#include "platform.h"
+#include "Platform.h"
 namespace tom
 {
 
 inline szt
-get_wstr_len(const wchar *wstr)
+getWstrLen(const wchar *wstr)
 {
     szt len;
     while (*wstr++) {
@@ -16,7 +16,7 @@ get_wstr_len(const wchar *wstr)
 }
 
 inline szt
-get_str_len(const char *str)
+getStrLen(const char *str)
 {
     szt len {};
     while (*str++) {
@@ -27,12 +27,12 @@ get_str_len(const char *str)
 
 // Takes strings length inputs
 inline void
-cat_str(const char *left, szt left_len, const char *right, szt right_len, char *out)
+catStr(const char *left, szt leftLen, const char *right, szt rightLen, char *out)
 {
-    for (szt i {}; i < left_len; ++i) {
+    for (szt i {}; i < leftLen; ++i) {
         *out++ = *left++;
     }
-    for (szt i {}; i < right_len; ++i) {
+    for (szt i {}; i < rightLen; ++i) {
         *out++ = *right++;
     }
     *out = '\0';
@@ -40,20 +40,20 @@ cat_str(const char *left, szt left_len, const char *right, szt right_len, char *
 
 // calcs the string lengths also
 inline void
-cat_str(const char *left, const char *right, char *out)
+catStr(const char *left, const char *right, char *out)
 {
-    auto left_len  = get_str_len(left);
-    auto right_len = get_str_len(right);
+    auto leftLen  = getStrLen(left);
+    auto rightLen = getStrLen(right);
 
-    if (!left_len || !right_len) {
+    if (!leftLen || !rightLen) {
         printf("Empty strings passed in!");
         return;
     }
 
-    for (szt i {}; i < left_len; ++i) {
+    for (szt i {}; i < leftLen; ++i) {
         *out++ = *left++;
     }
-    for (szt i {}; i < right_len; ++i) {
+    for (szt i {}; i < rightLen; ++i) {
         *out++ = *right++;
     }
     *out = '\0';
@@ -61,31 +61,31 @@ cat_str(const char *left, const char *right, char *out)
 
 // calcs the string lengths also
 inline void
-cat_str(const char *left, const char *right, char *out, szt *len_out)
+catStr(const char *left, const char *right, char *out, szt *lenOut)
 {
-    auto left_len  = get_str_len(left);
-    auto right_len = get_str_len(right);
+    auto leftLen  = getStrLen(left);
+    auto rightLen = getStrLen(right);
 
-    if (!left_len || !right_len) {
+    if (!leftLen || !rightLen) {
         printf("Empty strings passed in!");
         return;
     }
 
-    for (szt i {}; i < left_len; ++i) {
+    for (szt i {}; i < leftLen; ++i) {
         *out++ = *left++;
     }
-    for (szt i {}; i < right_len; ++i) {
+    for (szt i {}; i < rightLen; ++i) {
         *out++ = *right++;
     }
-    *len_out = left_len + right_len;
-    *out     = '\0';
+    *lenOut = leftLen + rightLen;
+    *out    = '\0';
 }
 
 // #ifdef TOM_WIN32
 #if 0
 // Convert a wide Unicode string to an UTF8 string
 inline szt
-get_wstr_sz(const wchar *wstr)
+getWstrSz(const wchar *wstr)
 {
     auto len  = get_wstr_len(wstr);
     auto size = (szt)WideCharToMultiByte(CP_UTF8, 0, wstr, (s32)len, NULL, 0, NULL, NULL);
@@ -93,38 +93,38 @@ get_wstr_sz(const wchar *wstr)
 }
 
 inline szt
-get_wstr_sz(const char *str)
+getWstrSz(const char *str)
 {
-    auto len  = get_str_len(str);
+    auto len  = getStrLen(str);
     auto size = (szt)MultiByteToWideChar(CP_UTF8, 0, str, (s32)len, NULL, 0);
     return size;
 }
 
 // FIXME: idk if this is working
 inline void
-wstr_to_str(const wchar *wstr, char *buf)
+wstrToStr(const wchar *wstr, char *buf)
 {
     auto len  = get_wstr_len(wstr);
     auto size = (szt)WideCharToMultiByte(CP_UTF8, 0, wstr, (s32)len, buf, 0, NULL, NULL);
 }
 
 inline void
-str_to_wstr(const char *str, wchar *buf)
+strToWstr(const char *str, wchar *buf)
 {
-    auto len  = get_str_len(str);
+    auto len  = getStrLen(str);
     auto size = (szt)MultiByteToWideChar(CP_UTF8, 0, str, (s32)len, NULL, 0);
     MultiByteToWideChar(CP_UTF8, 0, str, (s32)len, buf, (s32)size);
 }
 #else
 inline szt
-get_wstr_sz(const wchar *wstr)
+getWstrSz(const wchar *wstr)
 {
     // TODO: stub
     return -1;
 }
 
 inline szt
-get_wstr_sz(const char *str)
+getWstrSz(const char *str)
 {
     // TODO: stub
     return -1;
@@ -132,7 +132,7 @@ get_wstr_sz(const char *str)
 
 // FIXME: idk if this is working
 inline void
-wstr_to_str(const wchar *wstr, char *buf)
+wstrToStr(const wchar *wstr, char *buf)
 {
     // TODO: stub
 }

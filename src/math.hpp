@@ -1,7 +1,7 @@
 #ifndef TOMATO_MATH_HPP_
 #define TOMATO_MATH_HPP_
-#include "platform.h"
-#include "intrinsic.hpp"
+#include "Platform.h"
+#include "Intrinsic.hpp"
 namespace tom
 {
 // ===============================================================================================

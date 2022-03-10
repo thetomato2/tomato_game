@@ -21,7 +21,7 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${Build_Dir})
 set(CMAKE_SUPPRESS_REGENERATION true) #feck off ZERO_CHECK
 
 option(Emacs "Emacs" OFF)
-option(argb_converter "ARGB_Converter" OFF)
+option(ArgbConverter "ARGB_Converter" OFF)
 
 if (MSVC)
     list(APPEND Common_Compile_Flags
@@ -68,20 +68,20 @@ endif()
 
 
 
-add_library(Tomato_Game_Lib SHARED
-    ${Source_Dir}/common.hpp
-    ${Source_Dir}/entity.hpp
-    ${Source_Dir}/image.hpp
-    ${Source_Dir}/intrinsic.hpp
-    ${Source_Dir}/game.cpp
-    ${Source_Dir}/game.hpp
-    ${Source_Dir}/math.hpp
-    ${Source_Dir}/platform.h
-    ${Source_Dir}/sim_region.cpp
-    ${Source_Dir}/sim_region.hpp
-    ${Source_Dir}/world.cpp
-    ${Source_Dir}/world.hpp
-    ${Source_Dir}/utils.hpp
+add_library(TomatoGameLib SHARED
+    ${Source_Dir}/Common.hpp
+    ${Source_Dir}/Entity.hpp
+    ${Source_Dir}/Image.hpp
+    ${Source_Dir}/Intrinsic.hpp
+    ${Source_Dir}/Game.cpp
+    ${Source_Dir}/Game.hpp
+    ${Source_Dir}/Math.hpp
+    ${Source_Dir}/Platform.h
+    ${Source_Dir}/SimRegion.cpp
+    ${Source_Dir}/SimRegion.hpp
+    ${Source_Dir}/World.cpp
+    ${Source_Dir}/World.hpp
+    ${Source_Dir}/Utils.hpp
     )
 
 # because I have a real unity build going on,
@@ -92,81 +92,81 @@ add_library(Tomato_Game_Lib SHARED
 #     ${Source_Dir}/sim_region.cpp
 #     PROPERTIES HEADER_FILE_ONLY TRUE)
 
-set_target_properties(Tomato_Game_Lib PROPERTIES OUTPUT_NAME tomato_game)
-target_include_directories(Tomato_Game_Lib PUBLIC ${Source_Dir})
+set_target_properties(TomatoGameLib PROPERTIES OUTPUT_NAME tomato_game)
+target_include_directories(TomatoGameLib PUBLIC ${Source_Dir})
 
 if (MSVC)
-    target_compile_options(Tomato_Game_Lib PRIVATE
+    target_compile_options(TomatoGameLib PRIVATE
         ${Comman_Compile_FLags}
         # -MTd
         )
 
-    set_target_properties( Tomato_Game_Lib PROPERTIES
+    set_target_properties( TomatoGameLib PROPERTIES
         VS_DEBUGGER_WORKING_DIRECTORY "$(TargetDir)")
 
-    target_compile_definitions(Tomato_Game_Lib PRIVATE
+    target_compile_definitions(TomatoGameLib PRIVATE
         ${Common_Compile_Defs}
         _MSVC
         )
 
-    target_link_options(Tomato_Game_Lib PRIVATE
+    target_link_options(TomatoGameLib PRIVATE
         ${Common_Linker_Flags}
         -EXPORT:game_get_sound_samples
         -EXPORT:game_update_and_render
         )
 endif()
 
-add_executable(Win32_Tomato_Game WIN32
-    ${Source_Dir}/platform_win32.cpp
+add_executable(TomatoGameWin32 WIN32
+    ${Source_Dir}/PlatformWin32.cpp
     )
 
-target_include_directories(Win32_Tomato_Game PRIVATE ${Source_Dir})
+target_include_directories(TomatoGameWin32 PRIVATE ${Source_Dir})
 
 if (MSVC)
-    add_dependencies(Win32_Tomato_Game Tomato_Game_Lib)
+    add_dependencies(TomatoGameWin32 TomatoGameLib)
 
-    target_compile_options(Win32_Tomato_Game PRIVATE
+    target_compile_options(TomatoGameWin32 PRIVATE
         ${Common_Compile_FLags}
         # -MTd
         )
 
-    set_target_properties( Win32_Tomato_Game PROPERTIES
+    set_target_properties( TomatoGameWin32 PROPERTIES
         VS_DEBUGGER_WORKING_DIRECTORY "$(TargetDir)")
 
-    target_compile_definitions(Win32_Tomato_Game PRIVATE ${Common_Compile_Defs})
+    target_compile_definitions(TomatoGameWin32 PRIVATE ${Common_Compile_Defs})
 
-    target_link_libraries(Win32_Tomato_Game PRIVATE
+    target_link_libraries(TomatoGameWin32 PRIVATE
         ${Common_Linker_Libs}
         )
 
-    target_link_options(Tomato_Game_Lib PRIVATE
+    target_link_options(TomatoGameLib PRIVATE
         ${Common_Linker_Flags}
         # -NODEFAULTLIB
         )
 
     set_property(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} PROPERTY
-        VS_STARTUP_PROJECT Win32_Tomato_Game)
+        VS_STARTUP_PROJECT TomatoGameWin32)
 endif()
 
-add_executable(argb_converter
-    ${Source_Dir}/win32_argb_converter.cpp
+add_executable(ArgbConverter
+    ${Source_Dir}/ArgbConverterWin32.cpp
     ${Extern_Dir}/stb_image.h
     )
 
-target_include_directories(argb_converter PRIVATE ${Source_Dir})
+target_include_directories(ArgbConverter PRIVATE ${Source_Dir})
 
 if (MSVC)
-    target_compile_options(argb_converter PRIVATE
+    target_compile_options(ArgbConverter PRIVATE
         ${Common_Compile_FLags}
         # -MTd
         )
 
-    set_target_properties(argb_converter PROPERTIES
+    set_target_properties(ArgbConverter PROPERTIES
         VS_DEBUGGER_WORKING_DIRECTORY "$(TargetDir)")
 
-    target_compile_definitions(argb_converter PRIVATE ${Common_Compile_Defs})
+    target_compile_definitions(ArgbConverter PRIVATE ${Common_Compile_Defs})
 
-    target_link_libraries(argb_converter PRIVATE
+    target_link_libraries(ArgbConverter PRIVATE
         ${Common_Linker_Libs}
         )
 
@@ -191,6 +191,6 @@ if (Emacs)
         "/mnt/c/dev/include/for_emacs/c++/"
         )
 
-    target_compile_definitions(Win32_Tomato_Game PRIVATE _WIN32 _UNICODE UNICODE TOM_INTERNAL EMACS)
-    target_include_directories(Win32_Tomato_Game PUBLIC ${WIN32_INCLUDE_DIRS})
+    target_compile_definitions(TomatoGameWin32 PRIVATE _WIN32 _UNICODE UNICODE TOM_INTERNAL EMACS)
+    target_include_directories(TomatoGameWin32 PUBLIC ${WIN32_INCLUDE_DIRS})
 endif()

@@ -1,5 +1,5 @@
 #pragma once
-#include "platform.h"
+#include "Platform.h"
 
 #ifdef _EMACS
 using wchar_t = uint16_t;
@@ -22,70 +22,70 @@ using wchar_t = uint16_t;
 #include <mmdeviceapi.h>
 #include <audioclient.h>
 
-struct Window_Dims
+struct WindowDims
 {
     s32 width;
     s32 height;
 };
 
-struct Offscreen_Buffer
+struct OffscreenBuffer
 {
     BITMAPINFO info;
     void *memory;
     s32 width;
     s32 height;
     s32 pitch;
-    s32 bytes_per_pixel;
+    s32 bytesPerPixel;
 };
 
-struct Sound_Output
+struct SoundOutput
 {
-    s32 samples_per_sec;
-    u32 running_sample_index;
-    s32 bytes_per_sample;
-    DWORD secondary_buf_size;
-    s32 latency_sample_count;
+    s32 samplesPerSec;
+    u32 runningSampleIndex;
+    s32 bytesPerSample;
+    DWORD secondaryBufSize;
+    s32 latencySampleCount;
 };
 
-struct Replay_Buffer
+struct ReplayBuffer
 {
-    _TCHAR file_name[512];
-    HANDLE file_handle;
-    HANDLE memory_map;
-    void *memory_block;
+    _TCHAR fileName[512];
+    HANDLE fileHandle;
+    HANDLE memoryMap;
+    void *memoryBlock;
 };
 
-struct Win32_State
+struct Win32State
 {
-    szt total_size;
+    szt totalSize;
 
-    char exe_path[MAX_PATH];
+    char exePath[MAX_PATH];
 
-    void *game_memory_block;
+    void *gameMemoryBlock;
 
 #if REPLAY_BUFFERS
-    HANDLE recording_handle;
-    s32 input_recording_index;
-    HANDLE playback_handle;
-    s32 input_playback_index;
-    replay_buffer replay_buffers[4];
+    HANDLE recordingHandle;
+    s32 inputRecordingIndex;
+    HANDLE playbackHandle;
+    s32 inputPlaybackIndex;
+    replay_buffer replayBuffers[4];
 #endif
 };
 
 struct Game_Code
 {
-    HMODULE game_code_DLL;
-    FILETIME last_write_time_DLL;
-    game_update_and_render_stub *update_and_render;
-    game_get_sound_samples_stub *get_sound_samples;
-    bool is_valid;
+    HMODULE gameCodedLL;
+    FILETIME lastWriteTimedDLL;
+    stub_gameUpdateAndRender *updateAndRender;
+    stub_gameGetSoundSamples *getSoundSamples;
+    bool isValid;
 };
 
 #ifdef TOM_INTERNAL
-struct Debug_Sound_Time_Marker
+struct debug_soundTimeMarker
 {
-    DWORD play_cursor;
-    DWORD write_cursor;
+    DWORD playCursor;
+    DWORD writeCursor;
 };
 #endif
 
