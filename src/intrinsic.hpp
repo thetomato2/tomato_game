@@ -4,6 +4,8 @@
 
 namespace tom
 {
+namespace math
+{
 struct Bitscan_Result
 {
     bool found;
@@ -99,6 +101,7 @@ ceil_f32_to_s32(f32 val)
     s32 result = (s32)ceilf(val);
     return result;
 }
+}  // namespace math
 
 }  // namespace tom
 

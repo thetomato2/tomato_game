@@ -84,6 +84,28 @@ extern "C"
     static_assert(sizeof(b32) == 4, "b32 isn't 4 byte!s");
 #endif
 
+#define U8_MIN 0u
+#define U8_MAX 0xffu
+#define S8_MIN (-0x7f - 1)
+#define S8_MAX 0x7f
+
+#define U16_MIN 0u
+#define U16_MAX 0xffffu
+#define S16_MIN (-0x7fff - 1)
+#define S16_MAX 0x7fff
+
+#define U32_MIN 0u
+#define U32_MAX 0xffffffffu
+#define S32_MIN (-0x7fffffff - 1)
+#define S32_MAX 0x7fffffff
+
+#define U64_MIN 0ull
+#define U64_MAX 0xffffffffffffffffull
+#define S64_MIN (-0x7fffffffffffffffll - 1)
+#define S64_MAX 0x7fffffffffffffffll
+
+#define internal static
+
 #define KILOBYTES(val) ((val)*1024)
 #define MEGABYTES(val) (KILOBYTES(val) * 1024)
 #define GIGABYTES(val) (MEGABYTES(val) * 1024)
@@ -103,12 +125,20 @@ extern "C"
     #define TOM_DLL_EXPORT
 #endif
 #ifdef TOM_INTERNAL
-    #define TomAssert(x)                                                \
-        if (!(x)) {                                                     \
-            printf("FAILED ASSERT -> %s at :%d\n", __FILE__, __LINE__); \
-            __debugbreak();                                             \
-        }                                                               \
-        assert(x)
+    #if _MSVC
+        #define TomAssert(x)                                                \
+            if (!(x)) {                                                     \
+                printf("FAILED ASSERT -> %s at :%d\n", __FILE__, __LINE__); \
+                __debugbreak();                                             \
+            }                                                               \
+            assert(x)
+    #else
+        #define TomAssert(x)                                                \
+            if (!(x)) {                                                     \
+                printf("FAILED ASSERT -> %s at :%d\n", __FILE__, __LINE__); \
+            }                                                               \
+            assert(x)
+    #endif
 #else
     #define TomAssert(x)
 #endif

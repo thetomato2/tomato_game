@@ -28,10 +28,8 @@ struct Game_State
     u32 player_cnt;
     Entity_Actions player_acts[5];
 
-    u32 low_cnt;
-    u32 high_cnt;
-    Entity_Low low_entities[global::max_low_cnt];
-    Entity_High high_entities[global::max_high_cnt];
+    u32 stored_cnt;
+    Stored_Entity stored_entities[global::max_low_cnt];
 
     ARGB_img bg_img;
     ARGB_img crosshair_img;

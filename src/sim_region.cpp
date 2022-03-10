@@ -5,66 +5,99 @@
 
 namespace tom
 {
+// ===============================================================================================
+// #INTERNAL
+// ===============================================================================================
+static Sim_Entity *
+add_entity(Game_State &state, Sim_Region &region, u32 stored_i, Stored_Entity &source_ent,
+           v2 *sim_pos);
 
-namespace
+static Sim_Entity_Hash *
+get_hash_from_ind(Sim_Region &sim_region, u32 stored_i)
 {
+    TomAssert(stored_i);
+    Sim_Entity_Hash *result = nullptr;
+    u32 hash_val            = stored_i;
+    for (u32 offset = 0; offset < ArrayCount(sim_region.hash); ++offset) {
+        Sim_Entity_Hash *entry =
+            sim_region.hash + ((hash_val + offset) & (ArrayCount(sim_region.hash) - 1));
+        if (entry->ind == 0 || entry->ind == stored_i) {
+            result = entry;
+            break;
+        }
+    }
 
-struct Stored_Entity
+    return result;
+}
+
+static void
+map_storage_ind_to_ent(Sim_Region &sim_region, u32 stored_i, Sim_Entity &entity)
 {
-    World_Pos pos;
-};
+    Sim_Entity_Hash *entry = get_hash_from_ind(sim_region, stored_i);
+    TomAssert(entry->ind == 0 || entry->ind == stored_i);
+    entry->ind = stored_i;
+    entry->ptr = &entity;
+}
 
-struct Sim_Entity
+static void
+store_entity_ref(Entity_Ref *ref)
 {
-    World_Pos pos;
-};
-
-struct Sim_Region
+    if (ref->ptr != 0) {
+        ref->ind = ref->ptr->stored_i;
+    }
+}
+static Sim_Entity *
+get_entity_by_ind(Sim_Region &region, u32 stored_i)
 {
-    World_Pos origin;
-    Rect bounds;
+    Sim_Entity_Hash *entry = get_hash_from_ind(region, stored_i);
+    return entry->ptr;
+}
 
-    u32 max_sim_entity_cnt;
-    u32 sim_entity_cnt;
-    Sim_Entity *sim_entities;
-};
-
-}  // namespace
+static void
+load_entity_ref(Game_State &state, Sim_Region sim_region, Entity_Ref &ref)
+{
+    if (ref.ind) {
+        Sim_Entity_Hash *entry = get_hash_from_ind(sim_region, ref.ind);
+        if (entry->ptr == nullptr) {
+        }
+        ref.ptr = entry->ptr;
+    }
+}
 
 static v2
-get_cam_space_pos(const Game_State &state, Entity_Low *low_ent)
+get_cam_space_pos(const Game_State &state, Stored_Entity *stored_ent)
 {
-    World_Dif diff { get_world_diff(low_ent->pos, state.camera.pos) };
-    v2 result { diff.dif_xy };
+    World_Dif diff = get_world_diff(stored_ent->world_pos, state.camera.pos);
+    v2 result      = { diff.dif_xy };
 
     return result;
 }
 
 static v2
-get_region_space_pos(const Sim_Region &region, const Stored_Entity &stored)
+get_sim_space_pos(const Sim_Region &region, const Stored_Entity &stored_ent)
 {
-    World_Dif dif = get_world_diff(stored.pos, region.origin);
+    World_Dif dif = get_world_diff(stored_ent.world_pos, region.origin);
     return dif.dif_xy;
 }
 
-static bool
-validate_entity_pairs(const Game_State &state)
-{
-    bool valid { true };
-    for (u32 high_i { 1 }; high_i < state.high_cnt; ++high_i) {
-        valid = valid && state.low_entities[state.high_entities[high_i].low_i].high_i == high_i;
-    }
-
-    return valid;
-}
-
 static Sim_Entity *
-add_entity(Sim_Region &sim_region)
+add_entity(Game_State &state, Sim_Region &region, u32 stored_i, Stored_Entity *source_ent)
 {
-    Sim_Entity *entity {};
+    TomAssert(stored_i);
+    Sim_Entity *entity = nullptr;
 
-    if (sim_region.sim_entity_cnt < sim_region.max_sim_entity_cnt) {
-        entity = &sim_region.sim_entities[sim_region.sim_entity_cnt++];
+    if (region.sim_entity_cnt < region.max_sim_entity_cnt) {
+        // TODO: should be a decrompression step, not a copy!
+        entity = region.sim_entities + region.sim_entity_cnt++;
+        map_storage_ind_to_ent(region, stored_i, *entity);
+
+        if (source_ent) {
+            *entity = source_ent->sim;
+            load_entity_ref(state, region, entity->weapon_i);
+        }
+
+        entity->stored_i = stored_i;
+
     } else {
         INVALID_CODE_PATH;
     }
@@ -73,42 +106,60 @@ add_entity(Sim_Region &sim_region)
 }
 
 static Sim_Entity *
-add_entity(Sim_Region &sim_region, Stored_Entity *source, v2 *sim_pos = nullptr)
+add_entity(Game_State &state, Sim_Region &region, u32 stored_i, Stored_Entity &source_ent,
+           v2 *sim_pos)
 {
-    Sim_Entity *dest { add_entity(sim_region) };
-    if (dest) {
+    Sim_Entity *dest_ent = add_entity(region, stored_i, &source_ent);
+    if (dest_ent) {
         if (sim_pos) {
-            dest->pos;
+            dest_ent->pos = *sim_pos;
         } else {
-            // build wolrd position
-            printf("poop\n");
+            dest_ent->pos = get_sim_space_pos(region, source_ent);
         }
     }
 }
 
-static Sim_Region
-start_sim(Game_State &state, World_Pos origin, Rect bounds)
-{
-    Sim_Region sim_region;
-    sim_region.bounds = bounds;
-    sim_region.origin = origin;
+// ===============================================================================================
+// #EXTERNAL
+// ===============================================================================================
 
-    World_Pos min_chunk_pos { map_into_chunk_space(origin, rect::min_corner(bounds)) };
-    World_Pos max_chunk_pos { map_into_chunk_space(origin, rect::max_corner(bounds)) };
+Stored_Entity *
+get_stored_entity(Game_State &state, u32 ind)
+{
+    Stored_Entity *result = nullptr;
+
+    if (ind > 0 && ind < state.stored_cnt) {
+        result = state.stored_entities + ind;
+    }
+
+    return result;
+}
+
+Sim_Region *
+begin_sim(Memory_Arena *sim_arena, Game_State &state, World_Pos origin, Rect bounds)
+{
+    Sim_Region *region         = PushStruct(sim_arena, Sim_Region);
+    region->origin             = origin;
+    region->bounds             = bounds;
+    region->max_sim_entity_cnt = 4096;  // TODO: how many max entities?
+    region->sim_entity_cnt     = 0;
+    region->sim_entities       = PushArray(sim_arena, region->max_sim_entity_cnt, Sim_Entity);
+
+    World_Pos min_chunk_pos = map_into_chunk_space(origin, rect::min_corner(bounds));
+    World_Pos max_chunk_pos = map_into_chunk_space(origin, rect::max_corner(bounds));
 
     // make all entities outside camera space low
-    for (s32 chunk_y { min_chunk_pos.chunk_y }; chunk_y < max_chunk_pos.chunk_y; ++chunk_y) {
-        for (s32 chunk_x { min_chunk_pos.chunk_x }; chunk_x < max_chunk_pos.chunk_x; ++chunk_x) {
-            World_Chunk *chunk { get_world_chunk(*state.world, chunk_x, chunk_y, origin.chunk_z) };
+    for (s32 chunk_y = min_chunk_pos.chunk_y; chunk_y < max_chunk_pos.chunk_y; ++chunk_y) {
+        for (s32 chunk_x = min_chunk_pos.chunk_x; chunk_x < max_chunk_pos.chunk_x; ++chunk_x) {
+            World_Chunk *chunk = get_world_chunk(*state.world, chunk_x, chunk_y, origin.chunk_z);
             if (chunk) {
-                for (World_Entity_Block *block { &chunk->first_block }; block;
-                     block = block->next) {
-                    for (u32 ent_i {}; ent_i < block->low_entity_cnt; ++ent_i) {
-                        u32 low_i { block->low_ent_inds[ent_i] };
-                        Entity_Low *low_ent { state.low_entities + low_i };
-                        v2 cam_space_pos { get_cam_space_pos(state, low_ent) };
-                        if (rect::is_inside(bounds, cam_space_pos)) {
-                            // add_entity();
+                for (World_Entity_Block *block = &chunk->first_block; block; block = block->next) {
+                    for (u32 ent_i = 0; ent_i < block->stored_entity_cnt; ++ent_i) {
+                        u32 stored_i              = block->stored_ents_inds[ent_i];
+                        Stored_Entity *stored_ent = state.stored_entities + stored_i;
+                        v2 sim_space_pos          = get_sim_space_pos(*region, *stored_ent);
+                        if (rect::is_inside(region->bounds, sim_space_pos)) {
+                            add_entity(state, *region, stored_i, *stored_ent, &sim_space_pos);
                             printf("rect is inside!\n");
                         }
                     }
@@ -117,66 +168,29 @@ start_sim(Game_State &state, World_Pos origin, Rect bounds)
         }
     }
 
-    return {};
-
-    TomAssert(validate_entity_pairs(state));
-}
-
-static void
-end_sim(Sim_Region *region)
-{
-    Sim_Entity *entity { region->sim_entities };
-    for (u32 ent_i {}; ent_i < region->sim_entity_cnt; ++ent_i, ++entity) {
-        // TODO: store entity logic here
-    }
-}
-
-Entity_High *
-make_entity_high(Game_State &state, Entity_Low *low_ent, u32 low_i, v2 cam_space_pos)
-{
-    Entity_High *high_ent {};
-    TomAssert(low_i < global::max_low_cnt);
-    TomAssert(!low_ent->high_i);
-
-    if (state.high_cnt < global::max_high_cnt) {
-        u32 high_i { state.high_cnt++ };
-        TomAssert(high_i < global::max_high_cnt);
-        high_ent = state.high_entities + high_i;
-
-        high_ent->pos   = cam_space_pos;
-        high_ent->vel   = { 0.f, 0.f };
-        high_ent->dir   = Entity_Direction::north;
-        high_ent->low_i = low_i;
-
-        low_ent->high_i = high_i;
-    } else {
-        INVALID_CODE_PATH;
-    }
-
-    return high_ent;
-}
-
-Entity_High *
-make_entity_high(Game_State &state, u32 low_i)
-{
-    Entity_High *high_ent {};
-
-    Entity_Low *low_ent { state.low_entities + low_i };
-
-    if (low_ent->high_i) {
-        high_ent = state.high_entities + low_ent->high_i;
-    } else {
-        v2 cam_space_pos { get_cam_space_pos(state, low_ent) };
-        high_ent = make_entity_high(state, low_ent, low_i, cam_space_pos);
-    }
-
-    return high_ent;
+    return region;
 }
 
 void
-simulate_region(Game_State &state, World_Pos origin, Rect bounds)
+end_sim(Game_State &state, Sim_Region &region)
 {
-    start_sim(state, origin, bounds);
+    // TODO: low entities stored in the world and not games state?
+    Sim_Entity *entity = region.sim_entities;
+    for (u32 ent_i = 0; ent_i < region.sim_entity_cnt; ++ent_i, ++entity) {
+        Stored_Entity &stored_ent = state.stored_entities[ent_i];
+
+        stored_ent.sim = *entity;
+        store_entity_ref(&stored_ent.sim.weapon_i);
+
+        // TODO: save state back to stored entity, once high entities do state decompression
+        World_Pos new_pos = map_into_chunk_space(region.origin, entity->pos);
+        change_entity_location(state.world_arena, state.world, entity->stored_i, &stored_ent.pos,
+                               &new_pos);
+    }
 }
+
+// ===============================================================================================
+// #EXTERNAL
+// ===============================================================================================
 
 }  // namespace tom

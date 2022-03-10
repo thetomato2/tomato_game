@@ -22,8 +22,8 @@ struct World_Pos
 
 struct World_Entity_Block
 {
-    u32 low_entity_cnt;
-    u32 low_ent_inds[16];
+    u32 stored_entity_cnt;
+    u32 stored_ents_inds[16];
     World_Entity_Block *next;
 };
 

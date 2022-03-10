@@ -1,24 +1,41 @@
 #ifndef SIM_REGION_HPP_
 #define SIM_REGION_HPP_
 #include "common.hpp"
+#include "entity.hpp"
 
 namespace tom
 {
 
 struct Game_State;
-struct Entity;
-struct Entity_Low;
-struct Entity_High;
-struct World_Pos;
 
-Entity_High *
-make_entity_high(Game_State &state, Entity_Low *low_ent, u32 low_i, v2 cam_space_pos);
+struct Sim_Entity_Hash
+{
+    Sim_Entity *ptr;
+    u32 ind;
+};
 
-Entity_High *
-make_entity_high(Game_State &state, u32 low_i);
+struct Sim_Region
+{
+    World_Pos origin;
+    Rect bounds;
+
+    u32 max_sim_entity_cnt;
+    u32 sim_entity_cnt;
+    Sim_Entity *sim_entities;
+
+    // TODO: change size? need hash?
+    // NOTE: must be a power of 2
+    Sim_Entity_Hash hash[4096];
+};
+
+Stored_Entity *
+get_stored_entity(Game_State state, u32 ind);
+
+Sim_Region *
+begin_sim(Memory_Arena *sim_arena, Game_State &state, World_Pos origin, Rect bounds);
 
 void
-simulate_region(Game_State &state, World_Pos region_center, Rect region_bounds);
+end_sim(Game_State &state, Sim_Region &region);
 
 }  // namespace tom
 

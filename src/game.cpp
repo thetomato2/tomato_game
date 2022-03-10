@@ -3,16 +3,17 @@
 
 namespace tom
 {
+
 static void
 clear_buffer(Game_Offscreen_Buffer &buffer, const Color color = colors::pink)
 {
-    const s32 width { buffer.width };
-    const s32 height { buffer.height };
+    const s32 width  = buffer.width;
+    const s32 height = buffer.height;
 
-    byt *row { scast(byt *, buffer.memory) };
-    for (s32 y {}; y < height; ++y) {
-        u32 *pixel { rcast(u32 *, row) };
-        for (s32 x {}; x < width; ++x) {
+    byt *row = scast(byt *, buffer.memory);
+    for (s32 y = 0; y < height; ++y) {
+        u32 *pixel = rcast(u32 *, row);
+        for (s32 x = 0; x < width; ++x) {
             *pixel++ = color.argb;
         }
         row += buffer.pitch;
@@ -23,22 +24,21 @@ static void
 draw_rect(Game_Offscreen_Buffer &buffer, const f32 min_x_f32, const f32 min_y_f32,
           const f32 max_x_f32, const f32 max_y_f32, const Color color = colors::pink)
 {
-    s32 min_x { round_f32_to_s32(min_x_f32) };
-    s32 min_y { round_f32_to_s32(min_y_f32) };
-    s32 max_x { round_f32_to_s32(max_x_f32) };
-    s32 max_y { round_f32_to_s32(max_y_f32) };
+    s32 min_x = round_f32_to_s32(min_x_f32);
+    s32 min_y = round_f32_to_s32(min_y_f32);
+    s32 max_x = round_f32_to_s32(max_x_f32);
+    s32 max_y = round_f32_to_s32(max_y_f32);
 
     if (min_x < 0) min_x = 0;
     if (min_y < 0) min_y = 0;
     if (max_x > buffer.width) max_x = buffer.width;
     if (max_y > buffer.height) max_y = buffer.height;
 
-    byt *row { scast(byt *, buffer.memory) + min_x * buffer.bytes_per_pixel +
-               min_y * buffer.pitch };
+    byt *row = scast(byt *, buffer.memory) + min_x * buffer.bytes_per_pixel + min_y * buffer.pitch;
 
-    for (s32 y { min_y }; y < max_y; ++y) {
-        u32 *pixel { rcast(u32 *, row) };
-        for (s32 x { min_x }; x < max_x; ++x) {
+    for (s32 y = min_y; y < max_y; ++y) {
+        u32 *pixel = rcast(u32 *, row);
+        for (s32 x = min_x; x < max_x; ++x) {
             *pixel++ = color.argb;
         }
         row += buffer.pitch;
@@ -48,22 +48,21 @@ draw_rect(Game_Offscreen_Buffer &buffer, const f32 min_x_f32, const f32 min_y_f3
 static void
 draw_rect(Game_Offscreen_Buffer &buffer, const Rect rect, const Color color = colors::pink)
 {
-    s32 min_x { round_f32_to_s32(rect.min.x) };
-    s32 min_y { round_f32_to_s32(rect.min.y) };
-    s32 max_x { round_f32_to_s32(rect.max.x) };
-    s32 max_y { round_f32_to_s32(rect.max.y) };
+    s32 min_x = round_f32_to_s32(rect.min.x);
+    s32 min_y = round_f32_to_s32(rect.min.y);
+    s32 max_x = round_f32_to_s32(rect.max.x);
+    s32 max_y = round_f32_to_s32(rect.max.y);
 
     if (min_x < 0) min_x = 0;
     if (min_y < 0) min_y = 0;
     if (max_x > buffer.width) max_x = buffer.width;
     if (max_y > buffer.height) max_y = buffer.height;
 
-    byt *row { scast(byt *, buffer.memory) + min_x * buffer.bytes_per_pixel +
-               min_y * buffer.pitch };
+    byt *row = scast(byt *, buffer.memory) + min_x * buffer.bytes_per_pixel + min_y * buffer.pitch;
 
-    for (s32 y { min_y }; y < max_y; ++y) {
-        u32 *pixel { rcast(u32 *, row) };
-        for (s32 x { min_x }; x < max_x; ++x) {
+    for (s32 y = min_y; y < max_y; ++y) {
+        u32 *pixel = rcast(u32 *, row);
+        for (s32 x = min_x; x < max_x; ++x) {
             *pixel++ = color.argb;
         }
         row += buffer.pitch;
@@ -85,12 +84,11 @@ draw_rect_outline(Game_Offscreen_Buffer &buffer, const f32 min_x_f32, const f32 
     if (max_x > buffer.width) max_x = buffer.width;
     if (max_y > buffer.height) max_y = buffer.height;
 
-    byt *row { scast(byt *, buffer.memory) + min_x * buffer.bytes_per_pixel +
-               min_y * buffer.pitch };
+    byt *row = scast(byt *, buffer.memory) + min_x * buffer.bytes_per_pixel + min_y * buffer.pitch;
 
-    for (s32 y { min_y }; y < max_y; ++y) {
-        u32 *pixel { rcast(u32 *, row) };
-        for (s32 x { min_x }; x < max_x; ++x) {
+    for (s32 y = min_y; y < max_y; ++y) {
+        u32 *pixel = rcast(u32 *, row);
+        for (s32 x = min_x; x < max_x; ++x) {
             if (x <= min_x + thickness || x >= max_x - thickness - 1 || y <= min_y + thickness ||
                 y >= max_y - thickness - 1) {
                 *pixel = color.argb;
@@ -104,12 +102,12 @@ draw_rect_outline(Game_Offscreen_Buffer &buffer, const f32 min_x_f32, const f32 
 static void
 draw_ARGB(Game_Offscreen_Buffer &buffer, const ARGB_img &img, const v2 pos)
 {
-    s32 min_y { round_f32_to_s32(pos.y - (scast(f32, img.height) / 2.f)) };
-    s32 min_x { round_f32_to_s32(pos.x - (scast(f32, img.width) / 2.f)) };
-    s32 max_y { round_f32_to_s32(pos.y + (scast(f32, img.height) / 2.f)) };
-    s32 max_x { round_f32_to_s32(pos.x + (scast(f32, img.width) / 2.f)) };
+    s32 min_y = math::round_f32_to_s32(pos.y - (scast(f32, img.height) / 2.f));
+    s32 min_x = math::round_f32_to_s32(pos.x - (scast(f32, img.width) / 2.f));
+    s32 max_y = math::round_f32_to_s32(pos.y + (scast(f32, img.height) / 2.f));
+    s32 max_x = math::round_f32_to_s32(pos.x + (scast(f32, img.width) / 2.f));
 
-    s32 x_offset_left {}, x_offset_right {}, y_offset {};
+    s32 x_offset_left = 0, x_offset_right = 0, y_offset = 0;
 
     if (min_y < 0) {
         y_offset = min_y * -1;
@@ -125,20 +123,19 @@ draw_ARGB(Game_Offscreen_Buffer &buffer, const ARGB_img &img, const v2 pos)
     }
     if (max_y > buffer.height) max_y = buffer.height;
 
-    u32 *source { img.pixel_ptr + (y_offset * img.width) };
-    byt *row { scast(byt *, buffer.memory) + min_x * buffer.bytes_per_pixel +
-               min_y * buffer.pitch };
+    u32 *source = img.pixel_ptr + (y_offset * img.width);
+    byt *row = scast(byt *, buffer.memory) + min_x * buffer.bytes_per_pixel + min_y * buffer.pitch;
 
-    for (s32 y { min_y }; y < max_y; ++y) {
-        u32 *dest { rcast(u32 *, row) };
+    for (s32 y = min_y; y < max_y; ++y) {
+        u32 *dest = rcast(u32 *, row);
         source += x_offset_left;
-        for (s32 x { min_x }; x < max_x; ++x) {
-            Color dest_col { *dest };
-            Color source_col { *source };
+        for (s32 x = min_x; x < max_x; ++x) {
+            Color dest_col   = { *dest };
+            Color source_col = { *source };
             Color blended_col;
             blended_col.a = 0xff;
 
-            f32 alpha { scast(f32, source_col.a) / 255.f };
+            f32 alpha = scast(f32, source_col.a) / 255.f;
 
             blended_col.r = scast(
                 u8, (1.f - alpha) * scast(f32, dest_col.r) + alpha * scast(f32, source_col.r));
@@ -161,12 +158,11 @@ push_piece(Entity_Visble_Piece_Group *group, ARGB_img *img, const v2 mid_p, cons
            const f32 alpha = 1.0f)
 {
     TomAssert(group->piece_cnt < ArrayCount(group->pieces));
-    Entity_Visible_Piece *piece { group->pieces + group->piece_cnt++ };
-
-    piece->img   = img;
-    piece->mid_p = mid_p;
-    piece->z     = z_offset;
-    piece->alpha = alpha;
+    Entity_Visible_Piece *piece = group->pieces + group->piece_cnt++;
+    piece->img                  = img;
+    piece->mid_p                = mid_p;
+    piece->z                    = z_offset;
+    piece->alpha                = alpha;
 }
 
 static void
@@ -174,26 +170,25 @@ push_piece(Entity_Visble_Piece_Group *group, const f32 width, const f32 height, 
            const v2 mid_p, const f32 z_offset, const f32 alpha = 1.0f)
 {
     TomAssert(group->piece_cnt < ArrayCount(group->pieces));
-    Entity_Visible_Piece *piece { group->pieces + group->piece_cnt++ };
-
-    piece->img        = nullptr;
-    piece->mid_p      = mid_p;
-    piece->z          = z_offset;
-    piece->alpha      = alpha;
-    piece->rect.min.x = mid_p.x - width / 2;
-    piece->rect.min.y = mid_p.y - height / 2;
-    piece->rect.max.x = mid_p.x + width / 2;
-    piece->rect.max.y = mid_p.y + height / 2;
-    piece->color      = color;
+    Entity_Visible_Piece *piece = group->pieces + group->piece_cnt++;
+    piece->img                  = nullptr;
+    piece->mid_p                = mid_p;
+    piece->z                    = z_offset;
+    piece->alpha                = alpha;
+    piece->rect.min.x           = mid_p.x - width / 2;
+    piece->rect.min.y           = mid_p.y - height / 2;
+    piece->rect.max.x           = mid_p.x + width / 2;
+    piece->rect.max.y           = mid_p.y + height / 2;
+    piece->color                = color;
 }
 
 static void
 game_output_sound(Game_Sound_Output_Buffer &sound_buffer)
 {
     // NOTE: outputs nothing atm
-    s16 sample_value {};
-    s16 *sampleOut { sound_buffer.samples };
-    for (szt sampleIndex {}; sampleIndex < sound_buffer.sample_count; ++sampleIndex) {
+    s16 sample_value = 0;
+    s16 *sampleOut   = sound_buffer.samples;
+    for (szt sampleIndex = 0; sampleIndex < sound_buffer.sample_count; ++sampleIndex) {
         *sampleOut++ = sample_value;
         *sampleOut++ = sample_value;
     }
@@ -211,14 +206,14 @@ static Bitmap_Img
 load_bmp(Thread_Context *thread, debug_platform_read_entire_file *read_entire_file,
          const char *file_name)
 {
-    Debug_Read_File_Result read_result { read_entire_file(thread, file_name) };
+    Debug_Read_File_Result read_result = read_entire_file(thread, file_name);
     Bitmap_Img result;
 
     if (read_result.content_size != 0) {
-        auto *header { scast(Bitmap_Header *, read_result.contents) };
-        u32 *pixels { rcast(u32 *, (scast(byt *, read_result.contents) + header->bitmap_offset)) };
-        result.width     = header->width;
-        result.height    = header->height;
+        auto *header  = scast(Bitmap_Header *, read_result.contents);
+        u32 *pixels   = rcast(u32 *, (scast(byt *, read_result.contents) + header->bitmap_offset));
+        result.width  = header->width;
+        result.height = header->height;
         result.pixel_ptr = pixels;
     }
 
@@ -229,7 +224,7 @@ static ARGB_img
 load_ARGB(Thread_Context *thread, debug_platform_read_entire_file *read_entire_file,
           const char *file_name, const char *name = nullptr)
 {
-    const char *argb_dir { "T:/assets/argbs/" };
+    const char *argb_dir = "T:/assets/argbs/";
     char img_path_buf[512];
     szt img_buf_len;
     cat_str(argb_dir, file_name, &img_path_buf[0], &img_buf_len);
@@ -240,7 +235,7 @@ load_ARGB(Thread_Context *thread, debug_platform_read_entire_file *read_entire_f
     img_path_buf[img_buf_len++] = 'b';
     img_path_buf[img_buf_len++] = '\0';
 
-    Debug_Read_File_Result read_result { read_entire_file(thread, img_path_buf) };
+    Debug_Read_File_Result read_result = read_entire_file(thread, img_path_buf);
     ARGB_img result;
 
     TomAssert(read_result.content_size != 0);
@@ -250,7 +245,7 @@ load_ARGB(Thread_Context *thread, debug_platform_read_entire_file *read_entire_f
         else
             result.name = file_name;
 
-        u32 *file_ptr { scast(u32 *, read_result.contents) };
+        u32 *file_ptr    = scast(u32 *, read_result.contents);
         result.width     = *file_ptr++;
         result.height    = *file_ptr++;
         result.size      = *file_ptr++;
@@ -283,163 +278,45 @@ process_controller(const Game_Controller_Input &controller, Entity_Actions *enti
         if (controller.button_B.ended_down) entity_action->sprint = true;
 
         constexpr f32 stick_deadzone = 0.1f;
-        if (controller.is_analog && (abs_f32(controller.end_left_stick_x) > stick_deadzone ||
-                                     abs_f32(controller.end_left_stick_y) > stick_deadzone)) {
+        if (controller.is_analog && (math::abs_f32(controller.end_left_stick_x) > stick_deadzone ||
+                                     math::abs_f32(controller.end_left_stick_y) > stick_deadzone)) {
             entity_action->dir = { controller.end_left_stick_x, controller.end_left_stick_y };
         }
     }
 }
 
+#if 0
 static void
-make_entity_low(Game_State &game_state, u32 low_i)
+add_hit_points(Stored_Entity &entity, s32 hp)
 {
-    TomAssert(low_i < global::max_low_cnt);
-    Entity_Low &low_ent { game_state.low_entities[low_i] };
-    u32 high_i { low_ent.high_i };
-    if (high_i) {
-        u32 last_high_ent { game_state.high_cnt - 1 };
-        if (high_i != last_high_ent) {
-            Entity_High *last_ent { game_state.high_entities + last_high_ent };
-            Entity_High *del_ent { game_state.high_entities + high_i };
-            *del_ent                                        = *last_ent;
-            game_state.low_entities[last_ent->low_i].high_i = high_i;
-        }
-        --game_state.high_cnt;
-        low_ent.high_i = 0;
-    }
-}
-
-static Entity_Low *
-get_low_entity(Game_State &game_state, u32 low_i)
-{
-    Entity_Low *result {};
-
-    if (low_i > 0 && low_i < game_state.low_cnt) {
-        result = game_state.low_entities + low_i;
-    }
-
-    return result;
-}
-
-static Entity
-force_entity_into_high(Game_State &state, u32 low_i)
-{
-    Entity result {};
-
-    // TODO: allow 0 index and returning a nullptr?
-    TomAssert(low_i < global::max_low_cnt);
-    result.low_i = low_i;
-    result.low   = get_low_entity(state, result.low_i);
-    result.high  = make_entity_high(state, result.low_i);
-
-    return result;
-}
-
-static Entity
-get_entity_from_high_i(Game_State &state, u32 high_i)
-{
-    Entity result {};
-
-    // TODO: allow 0 index and returning a nullptr?
-    TomAssert(high_i < state.high_cnt);
-    if (high_i < state.high_cnt) {
-        result.high  = state.high_entities + high_i;
-        result.low_i = result.high->low_i;
-        result.low   = get_low_entity(state, result.low_i);
-    }
-
-    return result;
-}
-
-static Entity
-get_entity_from_low_i(Game_State &state, u32 low_i)
-{
-    Entity result {};
-
-    // TODO: allow 0 index and returning a nullptr?
-    assert(low_i < global::max_low_cnt);
-    result.low_i = low_i;
-    result.low   = get_low_entity(state, result.low_i);
-    result.high  = nullptr;
-    if (result.low->high_i) result.high = state.high_entities + result.low->high_i;
-
-    return result;
-}
-
-struct Add_Low_Entity_Result
-{
-    Entity_Low *low;
-    u32 low_i;
-};
-
-static Add_Low_Entity_Result
-add_low_entity(Game_State &state, Entity_Type type = Entity_Type::none, World_Pos pos = {},
-               bool start_active = true)
-{
-    TomAssert(state.low_cnt < global::max_low_cnt);
-    u32 low_i { state.low_cnt++ };
-
-    Entity_Low *ent_low { state.low_entities + low_i };
-    *ent_low        = {};
-    ent_low->type   = type;
-    ent_low->pos    = pos;
-    ent_low->active = start_active;
-
-    change_entity_location(&state.world_arena, *state.world, low_i, nullptr,
-                           &state.low_entities[low_i].pos);
-
-    Add_Low_Entity_Result result {};
-
-    result.low   = ent_low;
-    result.low_i = low_i;
-
-    return result;
+    entity.hit_points += hp;
+    if (entity.hit_points > entity.max_hit_points) entity.hit_points = entity.max_hit_points;
 }
 
 static void
-add_hit_points(Entity entity, s32 hp)
+subtract_hit_points(Stored_Entity entity, s32 hp)
 {
-    entity.low->hit_points += hp;
-    if (entity.low->hit_points > entity.low->max_hit_points)
-        entity.low->hit_points = entity.low->max_hit_points;
-}
-
-static void
-subtract_hit_points(Entity entity, s32 hp)
-{
-    entity.low->hit_points -= hp;
-    if (entity.low->hit_points < 0) {
-        entity.low->hit_points = 0;
-        entity.low->active     = false;
+    entity.hit_points -= hp;
+    if (entity.hit_points < 0) {
+        entity.hit_points = 0;
+        entity.active     = false;
     }
 }
 
 static void
-offset_and_check_entities_by_area(Game_State &state, const Rect area, const v2 offset)
-{
-    for (u32 high_i { 1 }; high_i < state.high_cnt;) {
-        Entity_High *high { state.high_entities + high_i };
-        high->pos += offset;
-        if (rect::is_inside(area, high->pos)) {
-            ++high_i;
-        } else {
-            make_entity_low(state, high->low_i);
-        }
-    }
-}
-
-static void
-init_hit_points(Entity_Low *ent_low, const u32 hp)
+init_hit_points(Stored_Entity *ent_low, const u32 hp)
 {
     ent_low->max_hit_points = hp;
     ent_low->hit_points     = ent_low->max_hit_points;
 }
 
-static Add_Low_Entity_Result
+#endif
+
+static Entity_Ref
 add_wall(Game_State &state, const f32 abs_x, const f32 abs_y, const f32 abs_z)
 {
-    auto wall { add_low_entity(state, Entity_Type::wall) };
-    World_Pos pos { abs_pos_to_world_pos(abs_x, abs_y, abs_z) };
+    auto wall     = add_entity(state, Entity_Type::wall);
+    World_Pos pos = abs_pos_to_world_pos(abs_x, abs_y, abs_z);
 
     wall.low->pos      = pos;
     wall.low->height   = 1.f;
@@ -452,11 +329,11 @@ add_wall(Game_State &state, const f32 abs_x, const f32 abs_y, const f32 abs_z)
     return wall;
 }
 
-static Add_Low_Entity_Result
+static Entity_Ref
 add_stairs(Game_State &state, const f32 abs_x, const f32 abs_y, const f32 abs_z)
 {
-    auto stairs { add_low_entity(state, Entity_Type::stairs) };
-    World_Pos pos { abs_pos_to_world_pos(abs_x, abs_y, abs_z) };
+    auto stairs   = add_low_entity(state, Entity_Type::stairs);
+    World_Pos pos = abs_pos_to_world_pos(abs_x, abs_y, abs_z);
 
     stairs.low->height      = 1.f;
     stairs.low->width       = 1.f;
@@ -470,11 +347,11 @@ add_stairs(Game_State &state, const f32 abs_x, const f32 abs_y, const f32 abs_z)
     return stairs;
 }
 
-static Add_Low_Entity_Result
+static Entity_Ref
 add_monster(Game_State &state, const f32 abs_x, const f32 abs_y, const f32 abs_z)
 {
-    auto monster { add_low_entity(state, Entity_Type::monster) };
-    World_Pos pos { abs_pos_to_world_pos(abs_x, abs_y, abs_z) };
+    auto monster  = add_low_entity(state, Entity_Type::monster);
+    World_Pos pos = abs_pos_to_world_pos(abs_x, abs_y, abs_z);
 
     monster.low->pos         = pos;
     monster.low->height      = .6f;
@@ -490,11 +367,11 @@ add_monster(Game_State &state, const f32 abs_x, const f32 abs_y, const f32 abs_z
     return monster;
 }
 
-static Add_Low_Entity_Result
+static Entity_Ref
 add_cat(Game_State &state, const f32 abs_x, const f32 abs_y, const f32 abs_z)
 {
-    auto cat { add_low_entity(state, Entity_Type::familiar) };
-    World_Pos pos { abs_pos_to_world_pos(abs_x, abs_y, abs_z) };
+    auto cat      = add_low_entity(state, Entity_Type::familiar);
+    World_Pos pos = abs_pos_to_world_pos(abs_x, abs_y, abs_z);
 
     cat.low->pos         = pos;
     cat.low->height      = .6f;
@@ -508,10 +385,10 @@ add_cat(Game_State &state, const f32 abs_x, const f32 abs_y, const f32 abs_z)
     return cat;
 }
 
-static Add_Low_Entity_Result
+static Entity_Ref
 add_sword(Game_State &state, ARGB_img *sprite = nullptr)
 {
-    auto sword { add_low_entity(state, Entity_Type::sword, {}, false) };
+    auto sword = add_low_entity(state, Entity_Type::sword, {}, false);
 
     sword.low->pos         = {};
     sword.low->height      = .6f;
@@ -532,10 +409,10 @@ add_player(Game_State &state, const u32 player_i, const f32 x, const f32 y, cons
     // NOTE: the first 5 entities are reserved for players
     TomAssert(player_i <= state.player_cnt);
     if (player_i <= state.player_cnt) {
-        auto player { add_low_entity(state, Entity_Type::player) };
+        auto player = add_low_entity(state, Entity_Type::player);
         TomAssert(player_i == player.low_i);
         if (player_i == player.low_i) {
-            auto pos { abs_pos_to_world_pos(x, y, z) };
+            auto pos                = abs_pos_to_world_pos(x, y, z);
             player.low->height      = .6f;
             player.low->width       = 0.6f * player.low->height;
             player.low->pos         = pos;
@@ -548,7 +425,7 @@ add_player(Game_State &state, const u32 player_i, const f32 x, const f32 y, cons
             init_hit_points(player.low, 10);
             force_entity_into_high(state, player_i);
 
-            auto sword { add_sword(state) };
+            auto sword           = add_sword(state);
             player.low->weapon_i = sword.low_i;
             sword.low->parent_i  = player.low_i;
         }
@@ -571,33 +448,33 @@ static void
 move_entity(Game_State &state, Entity entity, const Entity_Actions &entity_actions,
             Entity_Move_Spec move_spec, const f32 dt)
 {
-    v2 entity_acc { entity_actions.dir };
+    v2 entity_acc = entity_actions.dir;
 
     // NOTE: normalize vector to unit length
-    f32 ent_acc_length { vec::length_sq(entity_acc) };
+    f32 ent_acc_length = vec::length_sq(entity_acc);
     // TODO: make speed spefific to entity type
 
     if (ent_acc_length > 1.f) entity_acc *= (1.f / sqrt_f32(ent_acc_length));
     entity_acc *= move_spec.speed;
     entity_acc -= entity.high->vel * move_spec.drag;
 
-    v2 player_delta { (.5f * entity_acc * square(dt) + entity.high->vel * dt) };
-    v2 new_player_pos { entity.high->pos + player_delta };
+    v2 player_delta   = (.5f * entity_acc * square(dt) + entity.high->vel * dt);
+    v2 new_player_pos = entity.high->pos + player_delta;
 
     entity.high->vel += entity_acc * dt;
 
     // NOTE: how many iterations/time resolution
-    for (u32 i = {}; i < 4; ++i) {
-        f32 t_min { 1.0f };
-        u32 hit_ent_ind {};  // 0 is the null entity
-        v2 wall_nrm {};
-        v2 desired_position { entity.high->pos + player_delta };
+    for (u32 i = 0; i < 4; ++i) {
+        f32 t_min           = 1.0f;
+        u32 hit_ent_ind     = 0;  // 0 is the null entity
+        v2 wall_nrm         = {};
+        v2 desired_position = entity.high->pos + player_delta;
 
         // FIXME: this is N * N bad
-        for (u32 test_high_i { 1 }; test_high_i < state.high_cnt; ++test_high_i) {
+        for (u32 test_high_i = 1; test_high_i < state.high_cnt; ++test_high_i) {
             if (test_high_i == entity.low->high_i) continue;  // don't test against self
 
-            Entity test_ent { get_entity_from_high_i(state, test_high_i) };
+            Entity test_ent = get_entity_from_high_i(state, test_high_i);
 
             if (!test_ent.low->active || !test_ent.low->collides)
                 continue;  // skip inactive and non-collision entities
@@ -605,22 +482,22 @@ move_entity(Game_State &state, Entity entity, const Entity_Actions &entity_actio
             if (entity.low->parent_i == test_ent.low_i) continue;  // skip parent entity
 
             // NOTE: Minkowski sum
-            f32 radius_w { entity.low->width + test_ent.low->width };
-            f32 radius_h { entity.low->height + test_ent.low->height };
+            f32 radius_w = entity.low->width + test_ent.low->width;
+            f32 radius_h = entity.low->height + test_ent.low->height;
 
-            v2 min_corner { -.5f * v2 { radius_w, radius_h } };
-            v2 max_corner { .5f * v2 { radius_w, radius_h } };
-            v2 rel { entity.high->pos - test_ent.high->pos };
+            v2 min_corner = { -.5f * v2 { radius_w, radius_h } };
+            v2 max_corner = { .5f * v2 { radius_w, radius_h } };
+            v2 rel        = entity.high->pos - test_ent.high->pos;
 
             // TODO: maybe pull this out into a free function (but why?)
-            auto test_wall { [&t_min](f32 wall_x, f32 rel_x, f32 rel_y, f32 player_delta_x,
+            auto test_wall = [&t_min](f32 wall_x, f32 rel_x, f32 rel_y, f32 player_delta_x,
                                       f32 player_delta_y, f32 min_y, f32 max_y) -> bool {
-                bool hit { false };
+                bool hit = false;
 
-                f32 t_esp { .001f };
+                f32 t_esp = .001f;
                 if (player_delta_x != 0.f) {
-                    f32 t_res { (wall_x - rel_x) / player_delta_x };
-                    f32 y { rel_y + t_res * player_delta_y };
+                    f32 t_res = (wall_x - rel_x) / player_delta_x;
+                    f32 y     = rel_y + t_res * player_delta_y;
 
                     if (t_res >= 0.f && (t_min > t_res)) {
                         if (y >= min_y && y <= max_y) {
@@ -631,7 +508,7 @@ move_entity(Game_State &state, Entity entity, const Entity_Actions &entity_actio
                 }
 
                 return hit;
-            } };
+            };
 
             if (test_wall(min_corner.x, rel.x, rel.y, player_delta.x, player_delta.y, min_corner.y,
                           max_corner.y)) {
@@ -655,7 +532,7 @@ move_entity(Game_State &state, Entity entity, const Entity_Actions &entity_actio
             }
         }
 
-        Entity_High *hit_high { state.high_entities + hit_ent_ind };
+        Entity_High *hit_high = state.high_entities + hit_ent_ind;
 
         if (!state.low_entities[hit_high->low_i].barrier) {
             wall_nrm = v2 { 0.f, 0.f };
@@ -718,7 +595,7 @@ move_entity(Game_State &state, Entity entity, const Entity_Actions &entity_actio
     entity.high->hit_cd += dt;
 
     // NOTE: changes the players direction for the sprite
-    v2 pv { entity.high->vel };
+    v2 pv = { entity.high->vel };
     if (abs_f32(pv.x) > abs_f32(pv.y)) {
         pv.x > 0.f ? entity.high->dir = Entity_Direction::east
                    : entity.high->dir = Entity_Direction::west;
@@ -728,38 +605,21 @@ move_entity(Game_State &state, Entity entity, const Entity_Actions &entity_actio
     }
 
     // TODO:
-    World_Pos new_pos { map_into_chunk_space(state.camera.pos, entity.high->pos) };
+    World_Pos new_pos = map_into_chunk_space(state.camera.pos, entity.high->pos);
     change_entity_location(&state.world_arena, *state.world, entity.low_i, &entity.low->pos,
                            &new_pos);
     entity.low->pos = new_pos;
 }
 
-void static set_camera(Game_State &state, World_Pos new_cam_pos)
-{
-    World_Pos old_cam_pos { state.camera.pos };
-    World_Dif dif_cam { get_world_diff(new_cam_pos, old_cam_pos) };
-    state.camera.pos = new_cam_pos;
-
-    // offset and make all entities inside camera space high
-    f32 screen_test_size_mult { 2.f };
-    v2 test_screen_size { (global::screen_size_x * screen_test_size_mult),
-                          global::screen_size_y * screen_test_size_mult };
-    Rect cam_bounds { rect::center_half_dim({ 0.f, 0.f }, test_screen_size) };
-    v2 ent_offset { -dif_cam.dif_xy };
-    offset_and_check_entities_by_area(state, cam_bounds, ent_offset);
-
-    simulate_region(state, new_cam_pos, cam_bounds);
-}
-
 static void
 update_familiar(Game_State &state, Entity fam, const f32 dt)
 {
-    Entity closest_player {};
-    f32 closest_player_dist_sq { square(10.f) };
-    for (u32 high_i { 1 }; high_i < state.high_cnt; ++high_i) {
-        Entity test_ent { get_entity_from_high_i(state, high_i) };
+    Entity closest_player      = 0;
+    f32 closest_player_dist_sq = square(10.f);
+    for (u32 high_i = 1; high_i < state.high_cnt; ++high_i) {
+        Entity test_ent = get_entity_from_high_i(state, high_i);
         if (test_ent.low->type == Entity_Type::player) {
-            f32 test_dist_sq { vec::length_sq(test_ent.high->pos - fam.high->pos) };
+            f32 test_dist_sq = vec::length_sq(test_ent.high->pos - fam.high->pos);
             if (closest_player_dist_sq > test_dist_sq) {
                 closest_player         = test_ent;
                 closest_player_dist_sq = test_dist_sq;
@@ -768,14 +628,14 @@ update_familiar(Game_State &state, Entity fam, const f32 dt)
     }
 
     if (closest_player.high) {
-        Entity_Actions fam_acts {};
-        f32 one_over_len { 1.f / sqrt_f32(closest_player_dist_sq) };
-        f32 min_dist { 2.f };
-        v2 dif { closest_player.high->pos - fam.high->pos };
+        Entity_Actions fam_acts = {};
+        f32 one_over_len        = 1.f / sqrt_f32(closest_player_dist_sq);
+        f32 min_dist            = 2.f;
+        v2 dif                  = closest_player.high->pos - fam.high->pos;
         if (abs_f32(dif.x) > min_dist || abs_f32(dif.y) > min_dist)
             fam_acts.dir = one_over_len * (dif);
 
-        auto move_spec { get_default_move_spec() };
+        auto move_spec = get_default_move_spec();
         move_entity(state, fam, fam_acts, move_spec, dt);
         if (fam.high->dir == Entity_Direction::east)
             fam.low->sprite = &state.cat_sprites[0];
@@ -787,8 +647,8 @@ update_familiar(Game_State &state, Entity fam, const f32 dt)
 static void
 update_sword(Game_State &state, Entity sword, const f32 dt)
 {
-    Entity_Actions sword_acts {};
-    constexpr f32 sword_vel { 5.0f };
+    Entity_Actions sword_acts = {};
+    constexpr f32 sword_vel   = 5.0f;
 
     switch (sword.high->dir) {
         case Entity_Direction::north: {
@@ -808,7 +668,7 @@ update_sword(Game_State &state, Entity sword, const f32 dt)
             sword.low->sprite = &state.sword_sprites[Entity_Direction::west];
         } break;
     }
-    auto move_spec { get_default_move_spec() };
+    auto move_spec = get_default_move_spec();
     move_spec.drag = 0.0f;
     move_entity(state, sword, sword_acts, move_spec, dt);
 }
@@ -821,9 +681,9 @@ update_monster(Game_State &state, Entity monster, f32 dt)
 static void
 update_player(Game_State &state, Entity player, f32 dt)
 {
-    auto move_spec { get_default_move_spec() };
+    auto move_spec = get_default_move_spec();
 
-    f32 ent_speed { state.player_acts[1].sprint ? move_spec.speed = 25.f : move_spec.drag = 10.f };
+    f32 ent_speed = state.player_acts[1].sprint ? move_spec.speed = 25.f : move_spec.drag = 10.f;
     move_entity(state, player, state.player_acts[1], move_spec, dt);
     switch (player.high->dir) {
         case Entity_Direction::north: {
@@ -859,7 +719,7 @@ GAME_UPDATE_AND_RENDER(game_update_and_render)
 
     // NOTE: cast to GameState ptr, dereference and cast to GameState reference
     // TODO: just fucking use a pointer?
-    auto &state { (Game_State &)(*(Game_State *)memory.permanent_storage) };
+    auto &state = (Game_State &)(*(Game_State *)memory.permanent_storage);
 
     // ===============================================================================================
     // #Initialization
@@ -871,7 +731,7 @@ GAME_UPDATE_AND_RENDER(game_update_and_render)
 
         state.world = PushStruct(&state.world_arena, World);
 
-        World *world { state.world };
+        World *world = state.world;
         init_world(*world, 1.4f);
 
         state.debug_draw_collision = false;
@@ -932,20 +792,20 @@ GAME_UPDATE_AND_RENDER(game_update_and_render)
         state.entity_camera_follow_ind = 1;
 
         // add the player entites
-        for (u32 player_i { 1 }; player_i <= state.player_cnt; ++player_i) {
+        for (u32 player_i = 1; player_i <= state.player_cnt; ++player_i) {
             add_player(state, player_i, 0.f, 0.f, 0.f, &state.player_sprites[0]);
         }
 
-        f32 x_len { 55.f };
-        for (f32 x { -20.f }; x < x_len; ++x) {
+        f32 x_len = 55.f;
+        for (f32 x = -20.f; x < x_len; ++x) {
             add_wall(state, x, 15, 0.0f);
             add_wall(state, x, -5, 0.0f);
             if (scast(s32, x) % 17 == 0) continue;
             add_wall(state, x, 5, 0.0f);
         }
 
-        for (f32 x { -20.f }; x <= x_len; x += 15.f) {
-            for (f32 y { -5 }; y < 15; ++y) {
+        for (f32 x = -20.f; x <= x_len; x += 15.f) {
+            for (f32 y = -5; y < 15; ++y) {
                 if ((y == 0.f || y == 10.f) && (x != -20.f && x != 55.f)) continue;
                 add_wall(state, x, y, 0.0);
             }
@@ -959,20 +819,20 @@ GAME_UPDATE_AND_RENDER(game_update_and_render)
     }
 
     // ===============================================================================================
-    // #Start
+    // #START
     // ===============================================================================================
 
     // REVIEW: if you put Game_World & it won't convert??????
-    auto &world { state.world };
-    Camera &camera { state.camera };
+    auto &world    = state.world;
+    Camera &camera = state.camera;
 
     auto p1 = get_entity_from_low_i(state, 1);
 
     // get input
     // NOTE: only doing one player
-    Entity_Low *low_player { get_low_entity(state, 1) };
-    assert(low_player->type == Entity_Type::player);
-    Entity_Actions player_action {};
+    Stored_Entity *player = get_low_entity(state, 1);
+    assert(player->type == Entity_Type::player);
+    Entity_Actions player_action = {};
     process_keyboard(input.keyboard, &player_action);
     process_controller(input.controllers[0], &player_action);
     state.player_acts[1] = player_action;
@@ -981,17 +841,17 @@ GAME_UPDATE_AND_RENDER(game_update_and_render)
     if (state.player_acts[1].attack) {
         if (!p1.high->is_attacking) {
             p1.high->is_attacking = true;
-            Entity sword { force_entity_into_high(state, p1.low->weapon_i) };
-            sword.high->dir   = p1.high->dir;
-            sword.low->active = true;
-            // TODO: player weapon pos offsest
+            Entity sword          = force_entity_into_high(state, p1.low->weapon_i);
+            sword.high->dir       = p1.high->dir;
+            sword.low->active     = true;
+            // TODO: player weapon pos offset
             sword.high->pos    = p1.high->pos;
             p1.high->attack_cd = 0.5f;
         }
     }
     if (p1.high->is_attacking) {
         p1.high->attack_cd -= input.delta_time;
-        Entity sword { force_entity_into_high(state, p1.low->weapon_i) };
+        Entity sword = force_entity_into_high(state, p1.low->weapon_i);
         update_sword(state, sword, input.delta_time);
         if (p1.high->attack_cd <= 0.f) {
             p1.high->is_attacking = false;
@@ -1001,32 +861,38 @@ GAME_UPDATE_AND_RENDER(game_update_and_render)
 
     if (is_key_up(input.keyboard.d1)) state.debug_draw_collision = !state.debug_draw_collision;
 
-    Entity cam_ent { get_entity_from_low_i(state, state.entity_camera_follow_ind) };
-    World_Dif entity_dif { get_world_diff(cam_ent.low->pos, camera.pos) };
+    Entity cam_ent       = get_entity_from_low_i(state, state.entity_camera_follow_ind);
+    World_Dif entity_dif = get_world_diff(cam_ent.low->pos, camera.pos);
 
     camera.pos.chunk_z = cam_ent.low->pos.chunk_z;
 
     // NOTE: camera is following the player
-    World_Pos new_cam_pos { p1.low->pos };
-    set_camera(state, new_cam_pos);
-    v2 screen_center { .5f * (f32)video_buffer.width, .5f * (f32)video_buffer.height };
-    Entity_Visble_Piece_Group piece_group {};
+    World_Pos new_cam_pos     = p1.low->pos;
+    f32 screen_test_size_mult = 2.f;
+    v2 test_screen_size       = { (global::screen_size_x * screen_test_size_mult),
+                            global::screen_size_y * screen_test_size_mult };
+    Rect cam_bounds           = rect::center_half_dim({ 0.f, 0.f }, test_screen_size);
+
+    Sim_Region *sim_region = begin_sim(state, origin, bounds);
+
+    v2 screen_center = { .5f * (f32)video_buffer.width, .5f * (f32)video_buffer.height };
+    Entity_Visble_Piece_Group piece_group = {};
 
     // NOTE: *not* using PatBlt in the win32 layer
     Color clear_color { 0xff'4e'4e'4e };
     clear_buffer(video_buffer, clear_color);
 
-    for (u32 high_i { 1 }; high_i < state.high_cnt; ++high_i) {
+    for (u32 ent_i = 0; ent_i < sim_region->sim_entity_cnt; ++ent_i) {
         piece_group.piece_cnt = 0;
-        Entity ent { get_entity_from_high_i(state, high_i) };
+        Entity ent            = get_entity_from_high_i(state, ent_i);
         if (!ent.low->active) continue;  // don't draw inactive entities
 
-        auto ent_dif { get_world_diff(ent.low->pos, camera.pos) };
-        v2 ent_mid { (screen_center.x + (ent_dif.dif_xy.x * global::meters_to_pixels)),
-                     (screen_center.y - (ent_dif.dif_xy.y * global::meters_to_pixels)) };
+        auto ent_dif = get_world_diff(ent.low->pos, camera.pos);
+        v2 ent_mid   = { (screen_center.x + (ent_dif.dif_xy.x * global::meters_to_pixels)),
+                       (screen_center.y - (ent_dif.dif_xy.y * global::meters_to_pixels)) };
 
-        // TODO: pull this out
-        auto push_hp { [](Entity_Visble_Piece_Group &piece_group, Entity ent, v2 argb_mid) {
+        // TODO: pull this out?
+        auto push_hp = [](Entity_Visble_Piece_Group &piece_group, Entity ent, v2 argb_mid) {
             for (u32 i {}; i < ent.low->hit_points; ++i) {
                 push_piece(&piece_group, 3.f, 6.f, { colors::red },
                            v2 { argb_mid.x - (ent.low->width / 2.f) * global::meters_to_pixels -
@@ -1034,7 +900,7 @@ GAME_UPDATE_AND_RENDER(game_update_and_render)
                                 argb_mid.y - ent.low->height * global::meters_to_pixels - 10.f },
                            ent.high->z);
             }
-        } };
+        };
 
         switch (ent.low->type) {
             case Entity_Type::none: {
@@ -1047,33 +913,33 @@ GAME_UPDATE_AND_RENDER(game_update_and_render)
             case Entity_Type::player: {
                 // TODO: get player index from entity?
                 update_player(state, ent, input.delta_time);
-                v2 argb_mid { ent_mid.x, ent_mid.y - ent.low->argb_offset };
+                v2 argb_mid = { ent_mid.x, ent_mid.y - ent.low->argb_offset };
                 push_piece(&piece_group, ent.low->sprite, argb_mid, ent.high->z);
                 push_hp(piece_group, ent, argb_mid);
 
             } break;
             case Entity_Type::wall: {
-                v2 argb_mid { ent_mid.x, ent_mid.y - ent.low->argb_offset };
+                v2 argb_mid = { ent_mid.x, ent_mid.y - ent.low->argb_offset };
                 push_piece(&piece_group, ent.low->sprite, argb_mid, ent.high->z);
             } break;
             case Entity_Type::stairs: {
-                v2 argb_mid { ent_mid.x, ent_mid.y - ent.low->argb_offset };
+                v2 argb_mid = { ent_mid.x, ent_mid.y - ent.low->argb_offset };
                 push_piece(&piece_group, ent.low->sprite, argb_mid, ent.high->z);
             } break;
             case Entity_Type::familiar: {
                 update_familiar(state, ent, input.delta_time);
-                v2 argb_mid { ent_mid.x, ent_mid.y - ent.low->argb_offset };
+                v2 argb_mid = { ent_mid.x, ent_mid.y - ent.low->argb_offset };
                 push_piece(&piece_group, ent.low->sprite, argb_mid, ent.high->z);
             } break;
             case Entity_Type::monster: {
                 update_monster(state, ent, input.delta_time);
-                v2 argb_mid { ent_mid.x, ent_mid.y - ent.low->argb_offset };
+                v2 argb_mid = { ent_mid.x, ent_mid.y - ent.low->argb_offset };
                 push_piece(&piece_group, ent.low->sprite, argb_mid, ent.high->z);
                 push_hp(piece_group, ent, argb_mid);
             } break;
             case Entity_Type::sword: {
                 update_monster(state, ent, input.delta_time);
-                v2 argb_mid { ent_mid.x, ent_mid.y - ent.low->argb_offset };
+                v2 argb_mid = { ent_mid.x, ent_mid.y - ent.low->argb_offset };
                 push_piece(&piece_group, ent.low->sprite, argb_mid, ent.high->z);
             } break;
             default: {
@@ -1085,8 +951,8 @@ GAME_UPDATE_AND_RENDER(game_update_and_render)
         // #DRAW
         // ===============================================================================================
 
-        for (u32 piece_i {}; piece_i < piece_group.piece_cnt; ++piece_i) {
-            Entity_Visible_Piece *piece { &piece_group.pieces[piece_i] };
+        for (u32 piece_i = 0; piece_i < piece_group.piece_cnt; ++piece_i) {
+            Entity_Visible_Piece *piece = &piece_group.pieces[piece_i];
             if (piece->img) {
                 draw_ARGB(video_buffer, *piece->img, piece->mid_p);
             } else {
@@ -1105,12 +971,14 @@ GAME_UPDATE_AND_RENDER(game_update_and_render)
     }
 
 #if 0
-    // NOTE: hacky way to draw a debug postion
-    auto test_dif  { get_world_diff(state.test_pos, camera.pos) };
-    v2 test_mid   { (screen_center.x + (test_dif.dif_xy.x * global::g_meters_to_pixels)),
-                  (screen_center.y - (test_dif.dif_xy.y * global::g_meters_to_pixels)) };
+    // HACK: hacky way to draw a debug postion
+    auto test_dif = get_world_diff(state.test_pos, camera.pos);
+    v2 test_mid   = { (screen_center.x + (test_dif.dif_xy.x * global::g_meters_to_pixels)),
+                    (screen_center.y - (test_dif.dif_xy.y * global::g_meters_to_pixels)) };
     draw_ARGB(video_buffer, state.crosshair_img, test_mid);
 #endif
+
+    end_sim(state, *sim_region);
 }
 
 }  // namespace tom

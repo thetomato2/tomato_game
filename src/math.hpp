@@ -239,7 +239,8 @@ is_inside(Rect rect, v2 test)
 // ===============================================================================================
 // #FREE_FUNCS
 // ===============================================================================================
-
+namespace math
+{
 template<typename T>
 T
 square(const T val)
@@ -279,5 +280,7 @@ min(const T a, const T b)
     a < b ? result = a : result = b;
     return result;
 }
+}  // namespace math
+
 }  // namespace tom
 #endif  // TOMATO_MATH_HPP_
