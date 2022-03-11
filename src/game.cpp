@@ -1,11 +1,11 @@
-#include "Game.hpp"
+#include "game.hpp"
 #include "rng_nums.h"
 
 namespace tom
 {
 
-internal void
-clearBuffer(GameOffscreenBuffer &buffer, const Color color = colors::pink)
+static void
+clear_buffer(Game_Offscreen_Buffer &buffer, const Color color = colors::pink)
 {
     const s32 width  = buffer.width;
     const s32 height = buffer.height;
@@ -20,77 +20,77 @@ clearBuffer(GameOffscreenBuffer &buffer, const Color color = colors::pink)
     }
 }
 
-internal void
-drawRect(GameOffscreenBuffer &buffer, const f32 minX_f32, const f32 minY_f32, const f32 maxX_f32,
-         const f32 maxY_f32, const Color color = colors::pink)
+static void
+draw_rect(Game_Offscreen_Buffer &buffer, const f32 min_x_f32, const f32 min_y_f32,
+          const f32 max_x_f32, const f32 max_y_f32, const Color color = colors::pink)
 {
-    s32 minX = math::round_f32_s32(minX_f32);
-    s32 minY = math::round_f32_s32(minY_f32);
-    s32 maxX = math::round_f32_s32(maxX_f32);
-    s32 maxY = math::round_f32_s32(maxY_f32);
+    s32 min_x = round_f32_to_s32(min_x_f32);
+    s32 min_y = round_f32_to_s32(min_y_f32);
+    s32 max_x = round_f32_to_s32(max_x_f32);
+    s32 max_y = round_f32_to_s32(max_y_f32);
 
-    if (minX < 0) minX = 0;
-    if (minY < 0) minY = 0;
-    if (maxX > buffer.width) maxX = buffer.width;
-    if (maxY > buffer.height) maxY = buffer.height;
+    if (min_x < 0) min_x = 0;
+    if (min_y < 0) min_y = 0;
+    if (max_x > buffer.width) max_x = buffer.width;
+    if (max_y > buffer.height) max_y = buffer.height;
 
-    byt *row = scast(byt *, buffer.memory) + minX * buffer.bytesPerPixel + minY * buffer.pitch;
+    byt *row = scast(byt *, buffer.memory) + min_x * buffer.bytes_per_pixel + min_y * buffer.pitch;
 
-    for (s32 y = minY; y < maxY; ++y) {
+    for (s32 y = min_y; y < max_y; ++y) {
         u32 *pixel = rcast(u32 *, row);
-        for (s32 x = minX; x < maxX; ++x) {
+        for (s32 x = min_x; x < max_x; ++x) {
             *pixel++ = color.argb;
         }
         row += buffer.pitch;
     }
 }
 
-internal void
-drawRect(GameOffscreenBuffer &buffer, const Rect rect, const Color color = colors::pink)
+static void
+draw_rect(Game_Offscreen_Buffer &buffer, const Rect rect, const Color color = colors::pink)
 {
-    s32 minX = math::round_f32_s32(rect.min.x);
-    s32 minY = math::round_f32_s32(rect.min.y);
-    s32 maxX = math::round_f32_s32(rect.max.x);
-    s32 maxY = math::round_f32_s32(rect.max.y);
+    s32 min_x = round_f32_to_s32(rect.min.x);
+    s32 min_y = round_f32_to_s32(rect.min.y);
+    s32 max_x = round_f32_to_s32(rect.max.x);
+    s32 max_y = round_f32_to_s32(rect.max.y);
 
-    if (minX < 0) minX = 0;
-    if (minY < 0) minY = 0;
-    if (maxX > buffer.width) maxX = buffer.width;
-    if (maxY > buffer.height) maxY = buffer.height;
+    if (min_x < 0) min_x = 0;
+    if (min_y < 0) min_y = 0;
+    if (max_x > buffer.width) max_x = buffer.width;
+    if (max_y > buffer.height) max_y = buffer.height;
 
-    byt *row = scast(byt *, buffer.memory) + minX * buffer.bytesPerPixel + minY * buffer.pitch;
+    byt *row = scast(byt *, buffer.memory) + min_x * buffer.bytes_per_pixel + min_y * buffer.pitch;
 
-    for (s32 y = minY; y < maxY; ++y) {
+    for (s32 y = min_y; y < max_y; ++y) {
         u32 *pixel = rcast(u32 *, row);
-        for (s32 x = minX; x < maxX; ++x) {
+        for (s32 x = min_x; x < max_x; ++x) {
             *pixel++ = color.argb;
         }
         row += buffer.pitch;
     }
 }
 
-internal void
-drawRectOutline(GameOffscreenBuffer &buffer, const f32 minX_f32, const f32 minY_f32,
-                const f32 maxX_f32, const f32 maxY_f32, const s32 thickness,
-                const Color color = colors::pink)
+static void
+draw_rect_outline(Game_Offscreen_Buffer &buffer, const f32 min_x_f32, const f32 min_y_f32,
+                  const f32 max_x_f32, const f32 max_y_f32, const s32 thickness,
+                  const Color color = colors::pink)
 {
-    s32 minX = math::round_f32_s32(minX_f32);
-    s32 minY = math::round_f32_s32(minY_f32);
-    s32 maxX = math::round_f32_s32(maxX_f32);
-    s32 maxY = math::round_f32_s32(maxY_f32);
+    s32 min_x { round_f32_to_s32(min_x_f32) };
+    s32 min_y { round_f32_to_s32(min_y_f32) };
+    s32 max_x { round_f32_to_s32(max_x_f32) };
+    s32 max_y { round_f32_to_s32(max_y_f32) };
 
-    if (minX < 0) minX = 0;
-    if (minY < 0) minY = 0;
-    if (maxX > buffer.width) maxX = buffer.width;
-    if (maxY > buffer.height) maxY = buffer.height;
+    if (min_x < 0) min_x = 0;
+    if (min_y < 0) min_y = 0;
+    if (max_x > buffer.width) max_x = buffer.width;
+    if (max_y > buffer.height) max_y = buffer.height;
 
-    byt *row = scast(byt *, buffer.memory) + minX * buffer.bytesPerPixel + minY * buffer.pitch;
+    byt *row = scast(byt *, buffer.memory) + min_x * buffer.bytes_per_pixel + min_y * buffer.pitch;
 
-    for (s32 y = minY; y < maxY; ++y) {
+    for (s32 y = min_y; y < max_y; ++y) {
         u32 *pixel = rcast(u32 *, row);
-        for (s32 x = minX; x < maxX; ++x) {
-            if (x <= minX + thickness || x >= maxX - thickness - 1 || y <= minY + thickness ||
-                y >= maxY - thickness - 1) {
+        for (s32 x = min_x; x < max_x; ++x) {
+            if (x <= min_x + thickness || x >= max_x - thickness - 1 || y <= min_y + thickness ||
+                y >= max_y - thickness - 1) {
                 *pixel = color.argb;
             }
             ++pixel;
@@ -99,223 +99,224 @@ drawRectOutline(GameOffscreenBuffer &buffer, const f32 minX_f32, const f32 minY_
     }
 }
 
-internal void
-drawArgb(GameOffscreenBuffer &buffer, const ArgbImg &img, const v2 pos)
+static void
+draw_ARGB(Game_Offscreen_Buffer &buffer, const ARGB_img &img, const v2 pos)
 {
-    s32 minY = math::round_f32_s32(pos.y - (scast(f32, img.height) / 2.f));
-    s32 minX = math::round_f32_s32(pos.x - (scast(f32, img.width) / 2.f));
-    s32 maxY = math::round_f32_s32(pos.y + (scast(f32, img.height) / 2.f));
-    s32 maxX = math::round_f32_s32(pos.x + (scast(f32, img.width) / 2.f));
+    s32 min_y = math::round_f32_to_s32(pos.y - (scast(f32, img.height) / 2.f));
+    s32 min_x = math::round_f32_to_s32(pos.x - (scast(f32, img.width) / 2.f));
+    s32 max_y = math::round_f32_to_s32(pos.y + (scast(f32, img.height) / 2.f));
+    s32 max_x = math::round_f32_to_s32(pos.x + (scast(f32, img.width) / 2.f));
 
-    s32 xOffsetLeft = 0, xOffsetRight = 0, yOffset = 0;
+    s32 x_offset_left = 0, x_offset_right = 0, y_offset = 0;
 
-    if (minY < 0) {
-        yOffset = minY * -1;
-        minY    = 0;
+    if (min_y < 0) {
+        y_offset = min_y * -1;
+        min_y    = 0;
     }
-    if (minX < 0) {
-        xOffsetLeft = minX * -1;
-        minX        = 0;
+    if (min_x < 0) {
+        x_offset_left = min_x * -1;
+        min_x         = 0;
     }
-    if (maxX > buffer.width) {
-        xOffsetRight = maxX - buffer.width;
-        maxX         = buffer.width;
+    if (max_x > buffer.width) {
+        x_offset_right = max_x - buffer.width;
+        max_x          = buffer.width;
     }
-    if (maxY > buffer.height) maxY = buffer.height;
+    if (max_y > buffer.height) max_y = buffer.height;
 
-    u32 *source = img.pixelPtr + (yOffset * img.width);
-    byt *row    = scast(byt *, buffer.memory) + minX * buffer.bytesPerPixel + minY * buffer.pitch;
+    u32 *source = img.pixel_ptr + (y_offset * img.width);
+    byt *row = scast(byt *, buffer.memory) + min_x * buffer.bytes_per_pixel + min_y * buffer.pitch;
 
-    for (s32 y = minY; y < maxY; ++y) {
+    for (s32 y = min_y; y < max_y; ++y) {
         u32 *dest = rcast(u32 *, row);
-        source += xOffsetLeft;
-        for (s32 x = minX; x < maxX; ++x) {
-            Color destCol   = { *dest };
-            Color sourceCol = { *source };
-            Color blendedCol;
-            blendedCol.a = 0xff;
+        source += x_offset_left;
+        for (s32 x = min_x; x < max_x; ++x) {
+            Color dest_col   = { *dest };
+            Color source_col = { *source };
+            Color blended_col;
+            blended_col.a = 0xff;
 
-            f32 alpha = scast(f32, sourceCol.a) / 255.f;
+            f32 alpha = scast(f32, source_col.a) / 255.f;
 
-            blendedCol.r =
-                scast(u8, (1.f - alpha) * scast(f32, destCol.r) + alpha * scast(f32, sourceCol.r));
-            blendedCol.g =
-                scast(u8, (1.f - alpha) * scast(f32, destCol.g) + alpha * scast(f32, sourceCol.g));
-            blendedCol.b =
-                scast(u8, (1.f - alpha) * scast(f32, destCol.b) + alpha * scast(f32, sourceCol.b));
+            blended_col.r = scast(
+                u8, (1.f - alpha) * scast(f32, dest_col.r) + alpha * scast(f32, source_col.r));
+            blended_col.g = scast(
+                u8, (1.f - alpha) * scast(f32, dest_col.g) + alpha * scast(f32, source_col.g));
+            blended_col.b = scast(
+                u8, (1.f - alpha) * scast(f32, dest_col.b) + alpha * scast(f32, source_col.b));
 
-            *dest = blendedCol.argb;
+            *dest = blended_col.argb;
 
             ++dest, ++source;
         }
-        source += xOffsetRight;
+        source += x_offset_right;
         row += buffer.pitch;
     }
 }
 
-internal void
-pushPiece(EntityVisblePieceGroup *group, ArgbImg *img, const v2 midP, const f32 zOffset,
-          const f32 alpha = 1.0f)
+static void
+push_piece(Entity_Visble_Piece_Group *group, ARGB_img *img, const v2 mid_p, const f32 z_offset,
+           const f32 alpha = 1.0f)
 {
-    TOM_ASSERT(group->pieceCnt < ARRAY_COUNT(group->pieces));
-    EntityVisiblePiece *piece = group->pieces + group->pieceCnt++;
-    piece->img                = img;
-    piece->midP               = midP;
-    piece->z                  = zOffset;
-    piece->alpha              = alpha;
+    TomAssert(group->piece_cnt < ArrayCount(group->pieces));
+    Entity_Visible_Piece *piece = group->pieces + group->piece_cnt++;
+    piece->img                  = img;
+    piece->mid_p                = mid_p;
+    piece->z                    = z_offset;
+    piece->alpha                = alpha;
 }
 
-internal void
-pushPiece(EntityVisblePieceGroup *group, const f32 width, const f32 height, const Color color,
-          const v2 midP, const f32 zOffset, const f32 alpha = 1.0f)
+static void
+push_piece(Entity_Visble_Piece_Group *group, const f32 width, const f32 height, const Color color,
+           const v2 mid_p, const f32 z_offset, const f32 alpha = 1.0f)
 {
-    TOM_ASSERT(group->pieceCnt < ARRAY_COUNT(group->pieces));
-    EntityVisiblePiece *piece = group->pieces + group->pieceCnt++;
-    piece->img                = nullptr;
-    piece->midP               = midP;
-    piece->z                  = zOffset;
-    piece->alpha              = alpha;
-    piece->rect.min.x         = midP.x - width / 2;
-    piece->rect.min.y         = midP.y - height / 2;
-    piece->rect.max.x         = midP.x + width / 2;
-    piece->rect.max.y         = midP.y + height / 2;
-    piece->color              = color;
+    TomAssert(group->piece_cnt < ArrayCount(group->pieces));
+    Entity_Visible_Piece *piece = group->pieces + group->piece_cnt++;
+    piece->img                  = nullptr;
+    piece->mid_p                = mid_p;
+    piece->z                    = z_offset;
+    piece->alpha                = alpha;
+    piece->rect.min.x           = mid_p.x - width / 2;
+    piece->rect.min.y           = mid_p.y - height / 2;
+    piece->rect.max.x           = mid_p.x + width / 2;
+    piece->rect.max.y           = mid_p.y + height / 2;
+    piece->color                = color;
 }
 
-internal void
-gameOutputSound(GameSoundOutputBuffer &soundBuffer)
+static void
+game_output_sound(Game_Sound_Output_Buffer &sound_buffer)
 {
     // NOTE: outputs nothing atm
-    s16 sampleValue = 0;
-    s16 *sampleOut  = soundBuffer.samples;
-    for (szt sampleIndex = 0; sampleIndex < soundBuffer.sampleCount; ++sampleIndex) {
-        *sampleOut++ = sampleValue;
-        *sampleOut++ = sampleValue;
+    s16 sample_value = 0;
+    s16 *sampleOut   = sound_buffer.samples;
+    for (szt sampleIndex = 0; sampleIndex < sound_buffer.sample_count; ++sampleIndex) {
+        *sampleOut++ = sample_value;
+        *sampleOut++ = sample_value;
     }
 }
 
-internal void
-initArena(MemoryArena *arena, const mem_ind size, byt *base)
+static void
+init_arena(Memory_Arena *arena, const mem_ind size, byt *base)
 {
     arena->size = size;
     arena->base = base;
     arena->used = 0;
 }
 
-internal BitmapImg
-loadBmp(ThreadContext *thread, debug_platformReadEntireFile *readEntireFile, const char *fileName)
+static Bitmap_Img
+load_bmp(Thread_Context *thread, debug_platform_read_entire_file *read_entire_file,
+         const char *file_name)
 {
-    debug_ReadFileResult readResult = readEntireFile(thread, fileName);
-    BitmapImg result;
+    Debug_Read_File_Result read_result = read_entire_file(thread, file_name);
+    Bitmap_Img result;
 
-    if (readResult.contentSz != 0) {
-        auto *header    = scast(BitmapHeader *, readResult.contents);
-        u32 *pixels     = rcast(u32 *, (scast(byt *, readResult.contents) + header->bitmapOffset));
-        result.width    = header->width;
-        result.height   = header->height;
-        result.pixelPtr = pixels;
+    if (read_result.content_size != 0) {
+        auto *header  = scast(Bitmap_Header *, read_result.contents);
+        u32 *pixels   = rcast(u32 *, (scast(byt *, read_result.contents) + header->bitmap_offset));
+        result.width  = header->width;
+        result.height = header->height;
+        result.pixel_ptr = pixels;
     }
 
     return result;
 }
 
-internal ArgbImg
-loadArgb(ThreadContext *thread, debug_platformReadEntireFile *readEntireFile, const char *fileName,
-         const char *name = nullptr)
+static ARGB_img
+load_ARGB(Thread_Context *thread, debug_platform_read_entire_file *read_entire_file,
+          const char *file_name, const char *name = nullptr)
 {
-    const char *argbDir = "T:/assets/argbs/";
-    char imgPathBuf[512];
-    szt imgBufLen;
-    catStr(argbDir, fileName, &imgPathBuf[0], &imgBufLen);
-    imgPathBuf[imgBufLen++] = '.';
-    imgPathBuf[imgBufLen++] = 'a';
-    imgPathBuf[imgBufLen++] = 'r';
-    imgPathBuf[imgBufLen++] = 'g';
-    imgPathBuf[imgBufLen++] = 'b';
-    imgPathBuf[imgBufLen++] = '\0';
+    const char *argb_dir = "T:/assets/argbs/";
+    char img_path_buf[512];
+    szt img_buf_len;
+    cat_str(argb_dir, file_name, &img_path_buf[0], &img_buf_len);
+    img_path_buf[img_buf_len++] = '.';
+    img_path_buf[img_buf_len++] = 'a';
+    img_path_buf[img_buf_len++] = 'r';
+    img_path_buf[img_buf_len++] = 'g';
+    img_path_buf[img_buf_len++] = 'b';
+    img_path_buf[img_buf_len++] = '\0';
 
-    debug_ReadFileResult readResult = readEntireFile(thread, imgPathBuf);
-    ArgbImg result;
+    Debug_Read_File_Result read_result = read_entire_file(thread, img_path_buf);
+    ARGB_img result;
 
-    TOM_ASSERT(readResult.contentSz != 0);
-    if (readResult.contentSz != 0) {
+    TomAssert(read_result.content_size != 0);
+    if (read_result.content_size != 0) {
         if (name)
             result.name = name;
         else
-            result.name = fileName;
+            result.name = file_name;
 
-        u32 *filePtr    = scast(u32 *, readResult.contents);
-        result.width    = *filePtr++;
-        result.height   = *filePtr++;
-        result.size     = *filePtr++;
-        result.pixelPtr = filePtr;
+        u32 *file_ptr    = scast(u32 *, read_result.contents);
+        result.width     = *file_ptr++;
+        result.height    = *file_ptr++;
+        result.size      = *file_ptr++;
+        result.pixel_ptr = file_ptr;
     }
 
     return result;
 }
 
-internal void
-processKeyboard(const GameKeyboardInput &keyboard, EntityActions *entityAction)
+static void
+process_keyboard(const Game_Keyboard_Input &keyboard, Entity_Actions *entity_action)
 {
-    if (entityAction) {
-        if (isKeyUp(keyboard.t)) entityAction->start = true;
-        if (keyboard.space.endedDown) entityAction->jump = true;
-        if (keyboard.w.endedDown) entityAction->dir.y += 1.f;
-        if (keyboard.s.endedDown) entityAction->dir.y += -1.f;
-        if (keyboard.a.endedDown) entityAction->dir.x += -1.f;
-        if (keyboard.d.endedDown) entityAction->dir.x += 1.f;
-        if (keyboard.leftShift.endedDown) entityAction->sprint = true;
+    if (entity_action) {
+        if (is_key_up(keyboard.t)) entity_action->start = true;
+        if (keyboard.space.ended_down) entity_action->jump = true;
+        if (keyboard.w.ended_down) entity_action->dir.y += 1.f;
+        if (keyboard.s.ended_down) entity_action->dir.y += -1.f;
+        if (keyboard.a.ended_down) entity_action->dir.x += -1.f;
+        if (keyboard.d.ended_down) entity_action->dir.x += 1.f;
+        if (keyboard.left_shift.ended_down) entity_action->sprint = true;
     }
 }
 
-internal void
-processController(Const GameControllerInput &controller, EntityActions *entityAction)
+static void
+process_controller(const Game_Controller_Input &controller, Entity_Actions *entity_action)
 {
-    if (entityAction) {
-        if (isButtonUp(Controller.ButtonStart)) entityAction->Start = true;
-        if (isButtonUp(Controller.ButtonA)) entityAction->Attack = true;
-        if (controller.buttonB.EndedDown) entityAction->Sprint = true;
+    if (entity_action) {
+        if (is_button_up(controller.button_start)) entity_action->start = true;
+        if (is_button_up(controller.button_A)) entity_action->attack = true;
+        if (controller.button_B.ended_down) entity_action->sprint = true;
 
-        constexpr f32 stickDeadzone = 0.1f;
-        if (controller.isAnalog && (math::absF32(Controller.EndLeftStickX) > stickDeadzone ||
-                                    math::absF32(Controller.EndLeftStickY) > stickDeadzone)) {
-            entityAction->Dir = { controller.endLeftStickX, controller.endLeftStickY };
+        constexpr f32 stick_deadzone = 0.1f;
+        if (controller.is_analog && (math::abs_f32(controller.end_left_stick_x) > stick_deadzone ||
+                                     math::abs_f32(controller.end_left_stick_y) > stick_deadzone)) {
+            entity_action->dir = { controller.end_left_stick_x, controller.end_left_stick_y };
         }
     }
 }
 
 #if 0
-internal void
-addHitPoints(StoredEntity &entity, s32 hp)
+static void
+add_hit_points(Stored_Entity &entity, s32 hp)
 {
-    entity.hitPoints += hp;
-    if (entity.hitPoints > entity.maxHitPoints) entity.hitPoints = entity.maxHitPoints;
+    entity.hit_points += hp;
+    if (entity.hit_points > entity.max_hit_points) entity.hit_points = entity.max_hit_points;
 }
 
-internal void
-subtractHitPoints(StoredEntity entity, s32 hp)
+static void
+subtract_hit_points(Stored_Entity entity, s32 hp)
 {
-    entity.hitPoints -= hp;
-    if (entity.hitPoints < 0) {
-        entity.hitPoints = 0;
+    entity.hit_points -= hp;
+    if (entity.hit_points < 0) {
+        entity.hit_points = 0;
         entity.active     = false;
     }
 }
 
-internal void
-initHitPoints(StoredEntity *entLow, const u32 hp)
+static void
+init_hit_points(Stored_Entity *ent_low, const u32 hp)
 {
-    entLow->MaxHitPoints = hp;
-    entLow->HitPoints     = entLow->MaxHitPoints;
+    ent_low->max_hit_points = hp;
+    ent_low->hit_points     = ent_low->max_hit_points;
 }
 
 #endif
 
-internal EntityRef
-addWall(GameState &state, const f32 absX, const f32 absY, const f32 absZ)
+static Entity_Ref
+add_wall(Game_State &state, const f32 abs_x, const f32 abs_y, const f32 abs_z)
 {
-    auto wall    = addEntity(State, EntityType::Wall);
-    WorldPos pos = abs_pos_to_world_pos(absX, absY, absZ);
+    auto wall     = add_entity(state, Entity_Type::wall);
+    World_Pos pos = abs_pos_to_world_pos(abs_x, abs_y, abs_z);
 
     wall.low->pos      = pos;
     wall.low->height   = 1.f;
@@ -323,185 +324,185 @@ addWall(GameState &state, const f32 absX, const f32 absY, const f32 absZ)
     wall.low->color    = { 0xff'dd'dd'dd };
     wall.low->collides = true;
     wall.low->barrier  = true;
-    wall.low->sprite   = &state.treeSprite;
+    wall.low->sprite   = &state.tree_sprite;
 
     return wall;
 }
 
-internal EntityRef
-addStairs(GameState &state, const f32 absX, const f32 absY, const f32 absZ)
+static Entity_Ref
+add_stairs(Game_State &state, const f32 abs_x, const f32 abs_y, const f32 abs_z)
 {
-    auto stairs  = addLowEntity(State, EntityType::Stairs);
-    WorldPos pos = abs_pos_to_world_pos(absX, absY, absZ);
+    auto stairs   = add_low_entity(state, Entity_Type::stairs);
+    World_Pos pos = abs_pos_to_world_pos(abs_x, abs_y, abs_z);
 
-    stairs.low->height     = 1.f;
-    stairs.low->width      = 1.f;
-    stairs.low->pos        = pos;
-    stairs.low->color      = { 0xff'1e'1e'1e };
-    stairs.low->argbOffset = 16.f;
-    stairs.low->collides   = true;
-    stairs.low->barrier    = false;
-    stairs.low->sprite     = &state.stairSprite;
+    stairs.low->height      = 1.f;
+    stairs.low->width       = 1.f;
+    stairs.low->pos         = pos;
+    stairs.low->color       = { 0xff'1e'1e'1e };
+    stairs.low->argb_offset = 16.f;
+    stairs.low->collides    = true;
+    stairs.low->barrier     = false;
+    stairs.low->sprite      = &state.stair_sprite;
 
     return stairs;
 }
 
-internal EntityRef
-addMonster(GameState &state, const f32 absX, const f32 absY, const f32 absZ)
+static Entity_Ref
+add_monster(Game_State &state, const f32 abs_x, const f32 abs_y, const f32 abs_z)
 {
-    auto monster = addLowEntity(State, EntityType::Monster);
-    WorldPos pos = abs_pos_to_world_pos(absX, absY, absZ);
+    auto monster  = add_low_entity(state, Entity_Type::monster);
+    World_Pos pos = abs_pos_to_world_pos(abs_x, abs_y, abs_z);
 
-    monster.low->pos        = pos;
-    monster.low->height     = .6f;
-    monster.low->width      = .6f * .6f;
-    monster.low->color      = { 0xff'dd'dd'dd };
-    monster.low->argbOffset = 16.f;
-    monster.low->collides   = true;
-    monster.low->barrier    = true;
-    monster.low->sprite     = &state.monsterSprites[0];
+    monster.low->pos         = pos;
+    monster.low->height      = .6f;
+    monster.low->width       = .6f * .6f;
+    monster.low->color       = { 0xff'dd'dd'dd };
+    monster.low->argb_offset = 16.f;
+    monster.low->collides    = true;
+    monster.low->barrier     = true;
+    monster.low->sprite      = &state.monster_sprites[0];
 
-    initHitPoints(Monster.Low, 6);
+    init_hit_points(monster.low, 6);
 
     return monster;
 }
 
-internal EntityRef
-addCat(GameState &state, const f32 absX, const f32 absY, const f32 absZ)
+static Entity_Ref
+add_cat(Game_State &state, const f32 abs_x, const f32 abs_y, const f32 abs_z)
 {
-    auto cat     = addLowEntity(State, EntityType::Familiar);
-    WorldPos pos = abs_pos_to_world_pos(absX, absY, absZ);
+    auto cat      = add_low_entity(state, Entity_Type::familiar);
+    World_Pos pos = abs_pos_to_world_pos(abs_x, abs_y, abs_z);
 
-    cat.low->pos        = pos;
-    cat.low->height     = .6f;
-    cat.low->width      = .8f;
-    cat.low->color      = { 0xff'dd'dd'dd };
-    cat.low->argbOffset = 5.f;
-    cat.low->collides   = true;
-    cat.low->barrier    = true;
-    cat.low->sprite     = &state.catSprites[0];
+    cat.low->pos         = pos;
+    cat.low->height      = .6f;
+    cat.low->width       = .8f;
+    cat.low->color       = { 0xff'dd'dd'dd };
+    cat.low->argb_offset = 5.f;
+    cat.low->collides    = true;
+    cat.low->barrier     = true;
+    cat.low->sprite      = &state.cat_sprites[0];
 
     return cat;
 }
 
-internal EntityRef
-addSword(GameState &state, ARGBImg *sprite = nullptr)
+static Entity_Ref
+add_sword(Game_State &state, ARGB_img *sprite = nullptr)
 {
-    auto sword = addLowEntity(State, EntityType::Sword, {}, false);
+    auto sword = add_low_entity(state, Entity_Type::sword, {}, false);
 
-    sword.low->pos        = {};
-    sword.low->height     = .6f;
-    sword.low->width      = .8f;
-    sword.low->color      = { 0xff'dd'dd'dd };
-    sword.low->argbOffset = 5.f;
-    sword.low->collides   = false;
-    sword.low->barrier    = false;
-    sword.low->hurtbox    = true;
+    sword.low->pos         = {};
+    sword.low->height      = .6f;
+    sword.low->width       = .8f;
+    sword.low->color       = { 0xff'dd'dd'dd };
+    sword.low->argb_offset = 5.f;
+    sword.low->collides    = false;
+    sword.low->barrier     = false;
+    sword.low->hurtbox     = true;
 
     return sword;
 }
 
-internal void
-addPlayer(GameState &state, const u32 playerI, const f32 x, const f32 y, const f32 z,
-          ARGBImg *sprite)
+static void
+add_player(Game_State &state, const u32 player_i, const f32 x, const f32 y, const f32 z,
+           ARGB_img *sprite)
 {
     // NOTE: the first 5 entities are reserved for players
-    TOM_ASSERT(playerI <= state.playerCnt);
-    if (playerI <= state.playerCnt) {
-        auto player = addLowEntity(State, EntityType::Player);
-        TOM_ASSERT(playerI == player.lowI);
-        if (playerI == player.lowI) {
-            auto pos               = absPosToWorldPos(X, y, z);
-            player.low->height     = .6f;
-            player.low->width      = 0.6f * player.low->height;
-            player.low->pos        = pos;
-            player.low->color      = { 0xff'00'00'ff };
-            player.low->argbOffset = 16.f;
-            player.low->collides   = true;
-            player.low->barrier    = true;
-            player.low->sprite     = sprite;
+    TomAssert(player_i <= state.player_cnt);
+    if (player_i <= state.player_cnt) {
+        auto player = add_low_entity(state, Entity_Type::player);
+        TomAssert(player_i == player.low_i);
+        if (player_i == player.low_i) {
+            auto pos                = abs_pos_to_world_pos(x, y, z);
+            player.low->height      = .6f;
+            player.low->width       = 0.6f * player.low->height;
+            player.low->pos         = pos;
+            player.low->color       = { 0xff'00'00'ff };
+            player.low->argb_offset = 16.f;
+            player.low->collides    = true;
+            player.low->barrier     = true;
+            player.low->sprite      = sprite;
 
-            initHitPoints(Player.Low, 10);
-            forceEntityIntoHigh(State, playerI);
+            init_hit_points(player.low, 10);
+            force_entity_into_high(state, player_i);
 
-            auto sword          = addSword(State);
-            player.low->weaponI = sword.lowI;
-            sword.low->parentI  = player.lowI;
+            auto sword           = add_sword(state);
+            player.low->weapon_i = sword.low_i;
+            sword.low->parent_i  = player.low_i;
         }
     }
 }
 
-struct EntityMoveSpec
+struct Entity_Move_Spec
 {
     f32 speed;
     f32 drag;
 };
 
-internal EntityMoveSpec
-getDefaultMoveSpec()
+static Entity_Move_Spec
+get_default_move_spec()
 {
     return { 10.0f, 10.0f };
 }
 
-internal void
-moveEntity(GameState &state, Entity entity, const EntityActions &entityActions,
-           EntityMoveSpec moveSpec, const f32 dt)
+static void
+move_entity(Game_State &state, Entity entity, const Entity_Actions &entity_actions,
+            Entity_Move_Spec move_spec, const f32 dt)
 {
-    v2 entityAcc = entityActions.Dir;
+    v2 entity_acc = entity_actions.dir;
 
     // NOTE: normalize vector to unit length
-    f32 entAccLength = vec::length_sq(entityAcc);
+    f32 ent_acc_length = vec::length_sq(entity_acc);
     // TODO: make speed spefific to entity type
 
-    if (entAccLength > 1.f) entityAcc *= (1.f / sqrt_f32(entAccLength));
-    entityAcc *= moveSpec.Speed;
-    entityAcc -= entity.high->vel * moveSpec.Drag;
+    if (ent_acc_length > 1.f) entity_acc *= (1.f / sqrt_f32(ent_acc_length));
+    entity_acc *= move_spec.speed;
+    entity_acc -= entity.high->vel * move_spec.drag;
 
-    v2 playerDelta  = (.5f * entityAcc * square(dt) + entity.high->vel * dt);
-    v2 newPlayerPos = entity.high->pos + playerDelta;
+    v2 player_delta   = (.5f * entity_acc * square(dt) + entity.high->vel * dt);
+    v2 new_player_pos = entity.high->pos + player_delta;
 
-    entity.high->vel += entityAcc * dt;
+    entity.high->vel += entity_acc * dt;
 
     // NOTE: how many iterations/time resolution
     for (u32 i = 0; i < 4; ++i) {
-        f32 tMin           = 1.0f;
-        u32 hitEntInd      = 0;  // 0 is the null entity
-        v2 wallNrm         = {};
-        v2 desiredPosition = entity.high->pos + playerDelta;
+        f32 t_min           = 1.0f;
+        u32 hit_ent_ind     = 0;  // 0 is the null entity
+        v2 wall_nrm         = {};
+        v2 desired_position = entity.high->pos + player_delta;
 
         // FIXME: this is N * N bad
-        for (u32 testHighI = 1; testHighI < state.highCnt; ++testHighI) {
-            if (testHighI == entity.low->highI) continue;  // don't test against self
+        for (u32 test_high_i = 1; test_high_i < state.high_cnt; ++test_high_i) {
+            if (test_high_i == entity.low->high_i) continue;  // don't test against self
 
-            Entity testEnt = getEntityFromHighI(State, testHighI);
+            Entity test_ent = get_entity_from_high_i(state, test_high_i);
 
-            if (!testEnt.low->active || !testEnt.low->collides)
+            if (!test_ent.low->active || !test_ent.low->collides)
                 continue;  // skip inactive and non-collision entities
-            if (entity.low->weaponI == testEnt.low_i) continue;  // skip entity's weapon
-            if (entity.low->parentI == testEnt.low_i) continue;  // skip parent entity
+            if (entity.low->weapon_i == test_ent.low_i) continue;  // skip entity's weapon
+            if (entity.low->parent_i == test_ent.low_i) continue;  // skip parent entity
 
             // NOTE: Minkowski sum
-            f32 radiusW = entity.low->width + testEnt.low->width;
-            f32 radiusH = entity.low->height + testEnt.low->height;
+            f32 radius_w = entity.low->width + test_ent.low->width;
+            f32 radius_h = entity.low->height + test_ent.low->height;
 
-            v2 minCorner = { -.5f * v2 { radiusW, radiusH } };
-            v2 maxCorner = { .5f * v2 { radiusW, radiusH } };
-            v2 rel       = entity.high->pos - testEnt.high->pos;
+            v2 min_corner = { -.5f * v2 { radius_w, radius_h } };
+            v2 max_corner = { .5f * v2 { radius_w, radius_h } };
+            v2 rel        = entity.high->pos - test_ent.high->pos;
 
             // TODO: maybe pull this out into a free function (but why?)
-            auto testWall = [&tMin](f32 wallX, f32 relX, f32 relY, f32 playerDelta_x,
-                                    f32 playerDelta_y, f32 minY, f32 maxY) -> bool {
+            auto test_wall = [&t_min](f32 wall_x, f32 rel_x, f32 rel_y, f32 player_delta_x,
+                                      f32 player_delta_y, f32 min_y, f32 max_y) -> bool {
                 bool hit = false;
 
-                f32 tEsp = .001f;
-                if (playerDelta_x != 0.f) {
-                    f32 tRes = (wallX - relX) / playerDelta_x;
-                    f32 y    = relY + tRes * playerDelta_y;
+                f32 t_esp = .001f;
+                if (player_delta_x != 0.f) {
+                    f32 t_res = (wall_x - rel_x) / player_delta_x;
+                    f32 y     = rel_y + t_res * player_delta_y;
 
-                    if (tRes >= 0.f && (tMin > tRes)) {
-                        if (y >= minY && y <= maxY) {
-                            tMin = max(0.f, tRes - tEsp);
-                            hit  = true;
+                    if (t_res >= 0.f && (t_min > t_res)) {
+                        if (y >= min_y && y <= max_y) {
+                            t_min = max(0.f, t_res - t_esp);
+                            hit   = true;
                         }
                     }
                 }
@@ -509,71 +510,73 @@ moveEntity(GameState &state, Entity entity, const EntityActions &entityActions,
                 return hit;
             };
 
-            if (testWall(minCorner.x, rel.x, rel.y, playerDelta.x, playerDelta.y, minCorner.y,
-                         maxCorner.y)) {
-                wallNrm   = v2 { -1.f, 0.f };
-                hitEntInd = testHighI;
+            if (test_wall(min_corner.x, rel.x, rel.y, player_delta.x, player_delta.y, min_corner.y,
+                          max_corner.y)) {
+                wall_nrm    = v2 { -1.f, 0.f };
+                hit_ent_ind = test_high_i;
             }
-            if (testWall(maxCorner.x, rel.x, rel.y, playerDelta.x, playerDelta.y, minCorner.y,
-                         maxCorner.y)) {
-                wallNrm   = v2 { 1.f, 0.f };
-                hitEntInd = testHighI;
+            if (test_wall(max_corner.x, rel.x, rel.y, player_delta.x, player_delta.y, min_corner.y,
+                          max_corner.y)) {
+                wall_nrm    = v2 { 1.f, 0.f };
+                hit_ent_ind = test_high_i;
             }
-            if (testWall(minCorner.y, rel.y, rel.x, playerDelta.y, playerDelta.x, minCorner.x,
-                         maxCorner.x)) {
-                wallNrm   = v2 { 0.f, -1.f };
-                hitEntInd = testHighI;
+            if (test_wall(min_corner.y, rel.y, rel.x, player_delta.y, player_delta.x, min_corner.x,
+                          max_corner.x)) {
+                wall_nrm    = v2 { 0.f, -1.f };
+                hit_ent_ind = test_high_i;
             }
-            if (testWall(maxCorner.y, rel.y, rel.x, playerDelta.y, playerDelta.x, minCorner.x,
-                         maxCorner.x)) {
-                wallNrm   = v2 { 0.f, 1.f };
-                hitEntInd = testHighI;
+            if (test_wall(max_corner.y, rel.y, rel.x, player_delta.y, player_delta.x, min_corner.x,
+                          max_corner.x)) {
+                wall_nrm    = v2 { 0.f, 1.f };
+                hit_ent_ind = test_high_i;
             }
         }
 
-        EntityHigh *hitHigh = state.highEntities + hitEntInd;
+        Entity_High *hit_high = state.high_entities + hit_ent_ind;
 
-        if (!state.lowEntities[HitHigh->LowI].Barrier) {
-            wallNrm = v2 { 0.f, 0.f };
+        if (!state.low_entities[hit_high->low_i].barrier) {
+            wall_nrm = v2 { 0.f, 0.f };
         }
 
-        entity.high->pos += tMin * playerDelta;
-        if (hitEntInd) {
-            entity.high->vel -= 1.f * vec::inner(entity.high->vel, wallNrm) * wallNrm;
-            playerDelta -= 1.f * vec::inner(playerDelta, wallNrm) * wallNrm;
+        entity.high->pos += t_min * player_delta;
+        if (hit_ent_ind) {
+            entity.high->vel -= 1.f * vec::inner(entity.high->vel, wall_nrm) * wall_nrm;
+            player_delta -= 1.f * vec::inner(player_delta, wall_nrm) * wall_nrm;
 
-            // printf("%d hit %d!\n", entity.low->highI, hitEntInd);
+            // printf("%d hit %d!\n", entity.low->high_i, hit_ent_ind);
 
             // TODO: temp player hitting monster logic
-            if (entity.high->hitCd > .5f) {
+            if (entity.high->hit_cd > .5f) {
                 switch (entity.low->type) {
-                    case EntityType::Player: {
-                        if (state.lowEntities[HitHigh->LowI].Type == EntityType::Monster) {
-                            entity.high->hitCd = 0.f;
-                            subtractHitPoints(Entity, 1);
-                        } else if (state.lowEntities[HitHigh->LowI].Type == EntityType::Familiar) {
-                            entity.high->hitCd = 0.f;
-                            addHitPoints(Entity, 1);
+                    case Entity_Type::player: {
+                        if (state.low_entities[hit_high->low_i].type == Entity_Type::monster) {
+                            entity.high->hit_cd = 0.f;
+                            subtract_hit_points(entity, 1);
+                        } else if (state.low_entities[hit_high->low_i].type ==
+                                   Entity_Type::familiar) {
+                            entity.high->hit_cd = 0.f;
+                            add_hit_points(entity, 1);
                         }
                     } break;
-                    case EntityType::Sword: {
-                        if (state.lowEntities[HitHigh->LowI].Type == EntityType::Monster) {
-                            Entity hitMonster = getEntityFromLowI(State, hitHigh->LowI);
-                            if (hitMonster.high->hit_cd <= 0.0f) {
-                                hitMonster.high->hit_cd = 0.5f;
-                                subtract_hit_points(hitMonster, 1);
+                    case Entity_Type::sword: {
+                        if (state.low_entities[hit_high->low_i].type == Entity_Type::monster) {
+                            Entity hit_monster = get_entity_from_low_i(state, hit_high->low_i);
+                            if (hit_monster.high->hit_cd <= 0.0f) {
+                                hit_monster.high->hit_cd = 0.5f;
+                                subtract_hit_points(hit_monster, 1);
                             } else {
-                                hitMonster.high->hit_cd -= dt;
+                                hit_monster.high->hit_cd -= dt;
                             }
                         }
                     } break;
                 }
 
-                if (entity.high->stairCd > .5f &&
-                    state.lowEntities[HitHigh->LowI].Type == EntityType::Stairs) {
-                    entity.low->virtualZ == 0  ? ++entity.low->pos.chunkZ,
-                        ++entity.low->virtualZ : --entity.low->pos.chunkZ, --entity.low->virtualZ;
-                    entity.high->stairCd = 0.f;
+                if (entity.high->stair_cd > .5f &&
+                    state.low_entities[hit_high->low_i].type == Entity_Type::stairs) {
+                    entity.low->virtual_z == 0  ? ++entity.low->pos.chunk_z,
+                        ++entity.low->virtual_z : --entity.low->pos.chunk_z,
+                        --entity.low->virtual_z;
+                    entity.high->stair_cd = 0.f;
                 }
             } else {
                 break;
@@ -583,115 +586,117 @@ moveEntity(GameState &state, Entity entity, const EntityActions &entityActions,
 
     // jump code
     // TODO: implement this
-    if (entityActions.Jump && !entity.high->isJumping) {
-        entity.high->isJumping = true;
-        entity.high->velZ      = global::jumpVel;
+    if (entity_actions.jump && !entity.high->is_jumping) {
+        entity.high->is_jumping = true;
+        entity.high->vel_z      = global::jump_vel;
     }
 
-    entity.high->stairCd += dt;
-    entity.high->hitCd += dt;
+    entity.high->stair_cd += dt;
+    entity.high->hit_cd += dt;
 
     // NOTE: changes the players direction for the sprite
     v2 pv = { entity.high->vel };
-    if (absF32(Pv.X) > absF32(Pv.Y)) {
-        pv.x > 0.f ? entity.high->dir = EntityDirection::East
-                   : entity.high->dir = EntityDirection::West;
-    } else if (absF32(Pv.Y) > absF32(Pv.X)) {
-        pv.y > 0.f ? entity.high->dir = EntityDirection::North
-                   : entity.high->dir = EntityDirection::South;
+    if (abs_f32(pv.x) > abs_f32(pv.y)) {
+        pv.x > 0.f ? entity.high->dir = Entity_Direction::east
+                   : entity.high->dir = Entity_Direction::west;
+    } else if (abs_f32(pv.y) > abs_f32(pv.x)) {
+        pv.y > 0.f ? entity.high->dir = Entity_Direction::north
+                   : entity.high->dir = Entity_Direction::south;
     }
 
     // TODO:
-    WorldPos newPos = mapIntoChunkSpace(State.Camera.Pos, entity.high->pos);
-    changeEntityLocation(&State.WorldArena, *state.world, entity.lowI, &entity.low->pos, &newPos);
-    entity.low->pos = newPos;
+    World_Pos new_pos = map_into_chunk_space(state.camera.pos, entity.high->pos);
+    change_entity_location(&state.world_arena, *state.world, entity.low_i, &entity.low->pos,
+                           &new_pos);
+    entity.low->pos = new_pos;
 }
 
-internal void
-updateFamiliar(GameState &state, Entity fam, const f32 dt)
+static void
+update_familiar(Game_State &state, Entity fam, const f32 dt)
 {
-    Entity closestPlayer      = 0;
-    f32 closestPlayer_dist_sq = square(10.f);
-    for (u32 highI = 1; highI < state.highCnt; ++highI) {
-        Entity testEnt = getEntityFromHighI(State, highI);
-        if (testEnt.low->type == EntityType::Player) {
-            f32 testDistSq = vec::length_sq(testEnt.high->pos - fam.high->pos);
-            if (closestPlayer_dist_sq > testDistSq) {
-                closestPlayer         = testEnt;
-                closestPlayer_dist_sq = testDistSq;
+    Entity closest_player      = 0;
+    f32 closest_player_dist_sq = square(10.f);
+    for (u32 high_i = 1; high_i < state.high_cnt; ++high_i) {
+        Entity test_ent = get_entity_from_high_i(state, high_i);
+        if (test_ent.low->type == Entity_Type::player) {
+            f32 test_dist_sq = vec::length_sq(test_ent.high->pos - fam.high->pos);
+            if (closest_player_dist_sq > test_dist_sq) {
+                closest_player         = test_ent;
+                closest_player_dist_sq = test_dist_sq;
             }
         }
     }
 
-    if (closestPlayer.high) {
-        EntityActions famActs = {};
-        f32 oneOverLen        = 1.f / sqrt_f32(closestPlayer_dist_sq);
-        f32 minDist           = 2.f;
-        v2 dif                = closestPlayer.high->pos - fam.high->pos;
-        if (absF32(Dif.X) > minDist || absF32(Dif.Y) > minDist) famActs.dir = oneOverLen * (dif);
+    if (closest_player.high) {
+        Entity_Actions fam_acts = {};
+        f32 one_over_len        = 1.f / sqrt_f32(closest_player_dist_sq);
+        f32 min_dist            = 2.f;
+        v2 dif                  = closest_player.high->pos - fam.high->pos;
+        if (abs_f32(dif.x) > min_dist || abs_f32(dif.y) > min_dist)
+            fam_acts.dir = one_over_len * (dif);
 
-        auto moveSpec = getDefaultMoveSpec();
-        moveEntity(State, fam, famActs, moveSpec, dt);
-        if (fam.high->dir == EntityDirection::East)
-            fam.low->sprite = &state.catSprites[0];
-        else if (fam.high->dir == EntityDirection::West)
-            fam.low->sprite = &state.catSprites[1];
+        auto move_spec = get_default_move_spec();
+        move_entity(state, fam, fam_acts, move_spec, dt);
+        if (fam.high->dir == Entity_Direction::east)
+            fam.low->sprite = &state.cat_sprites[0];
+        else if (fam.high->dir == Entity_Direction::west)
+            fam.low->sprite = &state.cat_sprites[1];
     }
 }
 
-internal void
-updateSword(GameState &state, Entity sword, const f32 dt)
+static void
+update_sword(Game_State &state, Entity sword, const f32 dt)
 {
-    EntityActions swordActs = {};
-    constexpr f32 swordVel  = 5.0f;
+    Entity_Actions sword_acts = {};
+    constexpr f32 sword_vel   = 5.0f;
 
     switch (sword.high->dir) {
-        case EntityDirection::North: {
-            sword.high->vel.y = swordVel;
-            sword.low->sprite = &state.sword_sprites[EntityDirection::North];
+        case Entity_Direction::north: {
+            sword.high->vel.y = sword_vel;
+            sword.low->sprite = &state.sword_sprites[Entity_Direction::north];
         } break;
-        case EntityDirection::East: {
-            sword.high->vel.x = swordVel;
-            sword.low->sprite = &state.sword_sprites[EntityDirection::East];
+        case Entity_Direction::east: {
+            sword.high->vel.x = sword_vel;
+            sword.low->sprite = &state.sword_sprites[Entity_Direction::east];
         } break;
-        case EntityDirection::South: {
-            sword.high->vel.y = -swordVel;
-            sword.low->sprite = &state.swordSprites[EntityDirection::South];
+        case Entity_Direction::south: {
+            sword.high->vel.y = -sword_vel;
+            sword.low->sprite = &state.sword_sprites[Entity_Direction::south];
         } break;
-        case EntityDirection::West: {
-            sword.high->vel.x = -swordVel;
-            sword.low->sprite = &state.swordSprites[EntityDirection::West];
+        case Entity_Direction::west: {
+            sword.high->vel.x = -sword_vel;
+            sword.low->sprite = &state.sword_sprites[Entity_Direction::west];
         } break;
     }
-    auto moveSpec = getDefaultMoveSpec();
-    moveSpec.drag = 0.0f;
-    moveEntity(State, sword, swordActs, moveSpec, dt);
+    auto move_spec = get_default_move_spec();
+    move_spec.drag = 0.0f;
+    move_entity(state, sword, sword_acts, move_spec, dt);
 }
 
-internal void
-updateMonster(GameState &state, Entity monster, f32 dt)
+static void
+update_monster(Game_State &state, Entity monster, f32 dt)
 {
 }
 
-internal void
-updatePlayer(GameState &state, Entity player, f32 dt)
+static void
+update_player(Game_State &state, Entity player, f32 dt)
 {
-    auto moveSpec = getDefaultMoveSpec();
+    auto move_spec = get_default_move_spec();
 
-    f32 entSpeed = state.playerActs[1].Sprint ? moveSpec.speed = 25.f : moveSpec.drag = 10.f;
-    moveEntity(State, player, state.playerActs[1], moveSpec, dt);
+    f32 ent_speed = state.player_acts[1].sprint ? move_spec.speed = 25.f : move_spec.drag = 10.f;
+    move_entity(state, player, state.player_acts[1], move_spec, dt);
     switch (player.high->dir) {
-        case EntityDirection::North: {
-            player.low->sprite = &state.player_sprites[EntityDirection::North];
+        case Entity_Direction::north: {
+            player.low->sprite = &state.player_sprites[Entity_Direction::north];
         } break;
-        case EntityDirection::East: {
-            player.low->sprite = &state.player_sprites[EntityDirection::East];
+        case Entity_Direction::east: {
+            player.low->sprite = &state.player_sprites[Entity_Direction::east];
         } break;
-        case EntityDirection::South: {
-            player.low->sprite = &state.playerSprites[EntityDirection::South];
+        case Entity_Direction::south: {
+            player.low->sprite = &state.player_sprites[Entity_Direction::south];
         } break;
-        case EntityDirection::West: {
-            player.low->sprite = &state.playerSprites[EntityDirection::West];
+        case Entity_Direction::west: {
+            player.low->sprite = &state.player_sprites[Entity_Direction::west];
         } break;
     }
 }
@@ -700,245 +705,245 @@ updatePlayer(GameState &state, Entity player, f32 dt)
 // #EXPORT
 // ===============================================================================================
 
-extern "C" TOMDllExport
-GAMEGetSoundSamples(GameGetSoundSamples)
+extern "C" TOM_DLL_EXPORT
+GAME_GET_SOUND_SAMPLES(game_get_sound_samples)
 {
-    auto *state = (GameState *)memory.permanentStorage;
-    gameOutputSound(SoundBuffer);
+    auto *state = (Game_State *)memory.permanent_storage;
+    game_output_sound(sound_buffer);
 }
 
-extern "C" TOMDllExport
-GAMEUpdateAndRender(GameUpdateAndRender)
+extern "C" TOM_DLL_EXPORT
+GAME_UPDATE_AND_RENDER(game_update_and_render)
 {
-    TOM_ASSERT(sizeof(GameState) <= memory.permanentStorageSize);
+    TomAssert(sizeof(Game_State) <= memory.permanent_storage_size);
 
     // NOTE: cast to GameState ptr, dereference and cast to GameState reference
     // TODO: just fucking use a pointer?
-    auto &state = (GameState &)(*(GameState *)memory.permanentStorage);
+    auto &state = (Game_State &)(*(Game_State *)memory.permanent_storage);
 
     // ===============================================================================================
     // #Initialization
     // ===============================================================================================
-    if (!memory.isInitialized) {
+    if (!memory.is_initialized) {
         // init memory
-        initArena(&State.WorldArena, memory.permanentStorageSize - sizeof(state),
-                  (u8 *)memory.permanentStorage + sizeof(state));
+        init_arena(&state.world_arena, memory.permanent_storage_size - sizeof(state),
+                   (u8 *)memory.permanent_storage + sizeof(state));
 
-        state.world = PushStruct(&state.worldArena, World);
+        state.world = PushStruct(&state.world_arena, World);
 
         World *world = state.world;
-        initWorld(*World, 1.4f);
+        init_world(*world, 1.4f);
 
-        state.debugDrawCollision = false;
+        state.debug_draw_collision = false;
 
-        const char *bg = "uvColorSquares960X540";
+        const char *bg = "uv_color_squares_960x540";
 
         // load textures
-        state.player_sprites[EntityDirection::North] =
-            loadArgb(Thread, memory.platfromReadEntireFile, "playerN");
-        state.player_sprites[EntityDirection::East] =
-            loadArgb(Thread, memory.platfromReadEntireFile, "playerE");
-        state.playerSprites[EntityDirection::South] =
-            loadArgb(Thread, memory.platfromReadEntireFile, "playerS");
-        state.playerSprites[EntityDirection::West] =
-            loadArgb(Thread, memory.platfromReadEntireFile, "playerW");
+        state.player_sprites[Entity_Direction::north] =
+            load_ARGB(thread, memory.platfrom_read_entire_file, "player_n");
+        state.player_sprites[Entity_Direction::east] =
+            load_ARGB(thread, memory.platfrom_read_entire_file, "player_e");
+        state.player_sprites[Entity_Direction::south] =
+            load_ARGB(thread, memory.platfrom_read_entire_file, "player_s");
+        state.player_sprites[Entity_Direction::west] =
+            load_ARGB(thread, memory.platfrom_read_entire_file, "player_w");
 
-        state.monster_sprites[EntityDirection::North] =
-            loadArgb(Thread, memory.platfromReadEntireFile, "monsterN");
-        state.monster_sprites[EntityDirection::East] =
-            loadArgb(Thread, memory.platfromReadEntireFile, "monsterE");
-        state.monsterSprites[EntityDirection::South] =
-            loadArgb(Thread, memory.platfromReadEntireFile, "monsterS");
-        state.monsterSprites[EntityDirection::West] =
-            loadArgb(Thread, memory.platfromReadEntireFile, "monsterW");
+        state.monster_sprites[Entity_Direction::north] =
+            load_ARGB(thread, memory.platfrom_read_entire_file, "monster_n");
+        state.monster_sprites[Entity_Direction::east] =
+            load_ARGB(thread, memory.platfrom_read_entire_file, "monster_e");
+        state.monster_sprites[Entity_Direction::south] =
+            load_ARGB(thread, memory.platfrom_read_entire_file, "monster_s");
+        state.monster_sprites[Entity_Direction::west] =
+            load_ARGB(thread, memory.platfrom_read_entire_file, "monster_w");
 
-        state.sword_sprites[EntityDirection::North] =
-            loadArgb(Thread, memory.platfromReadEntireFile, "swordN");
-        state.sword_sprites[EntityDirection::East] =
-            loadArgb(Thread, memory.platfromReadEntireFile, "swordE");
-        state.swordSprites[EntityDirection::South] =
-            loadArgb(Thread, memory.platfromReadEntireFile, "swordS");
-        state.swordSprites[EntityDirection::West] =
-            loadArgb(Thread, memory.platfromReadEntireFile, "swordW");
+        state.sword_sprites[Entity_Direction::north] =
+            load_ARGB(thread, memory.platfrom_read_entire_file, "sword_n");
+        state.sword_sprites[Entity_Direction::east] =
+            load_ARGB(thread, memory.platfrom_read_entire_file, "sword_e");
+        state.sword_sprites[Entity_Direction::south] =
+            load_ARGB(thread, memory.platfrom_read_entire_file, "sword_s");
+        state.sword_sprites[Entity_Direction::west] =
+            load_ARGB(thread, memory.platfrom_read_entire_file, "sword_w");
 
-        state.catSprites[0] = loadArgb(Thread, memory.platfromReadEntireFile, "catE");
-        state.catSprites[1] = loadArgb(Thread, memory.platfromReadEntireFile, "catW");
+        state.cat_sprites[0] = load_ARGB(thread, memory.platfrom_read_entire_file, "cat_e");
+        state.cat_sprites[1] = load_ARGB(thread, memory.platfrom_read_entire_file, "cat_w");
 
-        state.bgImg        = loadArgb(Thread, memory.platfromReadEntireFile, bg);
-        state.crosshairImg = loadArgb(Thread, memory.platfromReadEntireFile, "crosshair");
-        state.treeSprite   = loadArgb(Thread, memory.platfromReadEntireFile, "shittyTree");
-        state.stairSprite  = loadArgb(Thread, memory.platfromReadEntireFile, "stairs");
+        state.bg_img        = load_ARGB(thread, memory.platfrom_read_entire_file, bg);
+        state.crosshair_img = load_ARGB(thread, memory.platfrom_read_entire_file, "crosshair");
+        state.tree_sprite   = load_ARGB(thread, memory.platfrom_read_entire_file, "shitty_tree");
+        state.stair_sprite  = load_ARGB(thread, memory.platfrom_read_entire_file, "stairs");
 
-        s32 screenBaseX {}, screenBaseY {}, screenBaseZ {}, virtualZ {}, rngInd {};
-        s32 screenX { screenBaseX }, screenY { screenBaseY }, screenZ { screenBaseZ };
+        s32 screen_base_x {}, screen_base_y {}, screen_base_z {}, virtual_z {}, rng_ind {};
+        s32 screen_x { screen_base_x }, screen_y { screen_base_y }, screen_z { screen_base_z };
 
         // set world render size
-        state.camera.pos.chunkX = 0;
-        state.camera.pos.chunkY = 0;
-        state.camera.pos.offset.x += screenBaseX / 2.f;
-        state.camera.pos.offset.y += screenBaseY / 2.f;
+        state.camera.pos.chunk_x = 0;
+        state.camera.pos.chunk_y = 0;
+        state.camera.pos.offset.x += screen_base_x / 2.f;
+        state.camera.pos.offset.y += screen_base_y / 2.f;
 
         // NOTE: entity 0 is the null entity
-        addLowEntity(State, EntityType::Null);
-        state.highEntities[0] = {};
-        ++state.highCnt;
-        // state.playerCnt               = GameInput::SInputCnt;
-        state.playerCnt             = 1;
-        state.entityCameraFollowInd = 1;
+        add_low_entity(state, Entity_Type::null);
+        state.high_entities[0] = {};
+        ++state.high_cnt;
+        // state.player_cnt               = Game_Input::s_input_cnt;
+        state.player_cnt               = 1;
+        state.entity_camera_follow_ind = 1;
 
         // add the player entites
-        for (u32 playerI = 1; playerI <= state.playerCnt; ++playerI) {
-            addPlayer(State, playerI, 0.f, 0.f, 0.f, &state.playerSprites[0]);
+        for (u32 player_i = 1; player_i <= state.player_cnt; ++player_i) {
+            add_player(state, player_i, 0.f, 0.f, 0.f, &state.player_sprites[0]);
         }
 
-        f32 xLen = 55.f;
-        for (f32 x = -20.f; x < xLen; ++x) {
-            addWall(State, x, 15, 0.0f);
-            addWall(State, x, -5, 0.0f);
+        f32 x_len = 55.f;
+        for (f32 x = -20.f; x < x_len; ++x) {
+            add_wall(state, x, 15, 0.0f);
+            add_wall(state, x, -5, 0.0f);
             if (scast(s32, x) % 17 == 0) continue;
-            addWall(State, x, 5, 0.0f);
+            add_wall(state, x, 5, 0.0f);
         }
 
-        for (f32 x = -20.f; x <= xLen; x += 15.f) {
+        for (f32 x = -20.f; x <= x_len; x += 15.f) {
             for (f32 y = -5; y < 15; ++y) {
                 if ((y == 0.f || y == 10.f) && (x != -20.f && x != 55.f)) continue;
-                addWall(State, x, y, 0.0);
+                add_wall(state, x, y, 0.0);
             }
         }
 
-        addMonster(State, 5.f, 0.f, 0.f);
-        addCat(State, -1.f, 1.f, 0.f);
+        add_monster(state, 5.f, 0.f, 0.f);
+        add_cat(state, -1.f, 1.f, 0.f);
 
         // TODO: this might be more appropriate in the platform layer
-        memory.isInitialized = true;
+        memory.is_initialized = true;
     }
 
     // ===============================================================================================
     // #START
     // ===============================================================================================
 
-    // REVIEW: if you put GameWorld & it won't convert??????
+    // REVIEW: if you put Game_World & it won't convert??????
     auto &world    = state.world;
     Camera &camera = state.camera;
 
-    auto p1 = getEntityFromLowI(State, 1);
+    auto p1 = get_entity_from_low_i(state, 1);
 
     // get input
     // NOTE: only doing one player
-    StoredEntity *player = getLowEntity(State, 1);
-    assert(player->type == EntityType::Player);
-    EntityActions playerAction = {};
-    processKeyboard(Input.Keyboard, &playerAction);
-    processController(Input.Controllers[0], &playerAction);
-    state.playerActs[1] = playerAction;
+    Stored_Entity *player = get_low_entity(state, 1);
+    assert(player->type == Entity_Type::player);
+    Entity_Actions player_action = {};
+    process_keyboard(input.keyboard, &player_action);
+    process_controller(input.controllers[0], &player_action);
+    state.player_acts[1] = player_action;
 
     // player sword attack
-    if (state.playerActs[1].attack) {
-        if (!p1.high->isAttacking) {
-            p1.high->isAttacking = true;
-            Entity sword         = forceEntityIntoHigh(State, p1.low->weaponI);
-            sword.high->dir      = p1.high->dir;
-            sword.low->active    = true;
+    if (state.player_acts[1].attack) {
+        if (!p1.high->is_attacking) {
+            p1.high->is_attacking = true;
+            Entity sword          = force_entity_into_high(state, p1.low->weapon_i);
+            sword.high->dir       = p1.high->dir;
+            sword.low->active     = true;
             // TODO: player weapon pos offset
-            sword.high->pos   = p1.high->pos;
-            p1.high->attackCd = 0.5f;
+            sword.high->pos    = p1.high->pos;
+            p1.high->attack_cd = 0.5f;
         }
     }
-    if (p1.high->isAttacking) {
-        p1.high->attackCd -= input.deltaTime;
-        Entity sword = forceEntityIntoHigh(State, p1.low->weaponI);
-        updateSword(State, sword, input.deltaTime);
-        if (p1.high->attackCd <= 0.f) {
-            p1.high->isAttacking = false;
-            sword.low->active    = false;
+    if (p1.high->is_attacking) {
+        p1.high->attack_cd -= input.delta_time;
+        Entity sword = force_entity_into_high(state, p1.low->weapon_i);
+        update_sword(state, sword, input.delta_time);
+        if (p1.high->attack_cd <= 0.f) {
+            p1.high->is_attacking = false;
+            sword.low->active     = false;
         }
     }
 
-    if (isKeyUp(Input.Keyboard.D1)) state.debugDrawCollision = !state.debugDrawCollision;
+    if (is_key_up(input.keyboard.d1)) state.debug_draw_collision = !state.debug_draw_collision;
 
-    Entity camEnt      = getEntityFromLowI(State, state.entityCameraFollowInd);
-    WorldDif entityDif = get_world_diff(camEnt.low->pos, camera.pos);
+    Entity cam_ent       = get_entity_from_low_i(state, state.entity_camera_follow_ind);
+    World_Dif entity_dif = get_world_diff(cam_ent.low->pos, camera.pos);
 
-    camera.pos.chunkZ = camEnt.low->pos.chunk_z;
+    camera.pos.chunk_z = cam_ent.low->pos.chunk_z;
 
     // NOTE: camera is following the player
-    WorldPos newCamPos     = p1.low->pos;
-    f32 screenTestSizeMult = 2.f;
-    v2 testScreenSize      = { (global::screenSizeX * screenTestSizeMult),
-                          global::screenSizeY * screenTestSizeMult };
-    Rect camBounds         = rect::centerHalfDim({ 0.f, 0.f }, testScreenSize);
+    World_Pos new_cam_pos     = p1.low->pos;
+    f32 screen_test_size_mult = 2.f;
+    v2 test_screen_size       = { (global::screen_size_x * screen_test_size_mult),
+                            global::screen_size_y * screen_test_size_mult };
+    Rect cam_bounds           = rect::center_half_dim({ 0.f, 0.f }, test_screen_size);
 
-    SimRegion *simRegion = beginSim(State, origin, bounds);
+    Sim_Region *sim_region = begin_sim(state, origin, bounds);
 
-    v2 screenCenter = { .5f * (f32)videoBuffer.Width, .5f * (f32)videoBuffer.Height };
-    EntityVisblePieceGroup pieceGroup = {};
+    v2 screen_center = { .5f * (f32)video_buffer.width, .5f * (f32)video_buffer.height };
+    Entity_Visble_Piece_Group piece_group = {};
 
     // NOTE: *not* using PatBlt in the win32 layer
-    Color clearColor { 0xff'4e'4e'4e };
-    clearBuffer(VideoBuffer, clearColor);
+    Color clear_color { 0xff'4e'4e'4e };
+    clear_buffer(video_buffer, clear_color);
 
-    for (u32 entI = 0; entI < simRegion->SimEntityCnt; ++entI) {
-        pieceGroup.piece_cnt = 0;
-        Entity ent           = getEntityFromHighI(State, entI);
+    for (u32 ent_i = 0; ent_i < sim_region->sim_entity_cnt; ++ent_i) {
+        piece_group.piece_cnt = 0;
+        Entity ent            = get_entity_from_high_i(state, ent_i);
         if (!ent.low->active) continue;  // don't draw inactive entities
 
-        auto entDif = getWorldDiff(Ent.Low->Pos, camera.pos);
-        v2 entMid   = { (screenCenter.x + (entDif.dif_xy.x * global::metersToPixels)),
-                      (screenCenter.y - (entDif.dif_xy.y * global::metersToPixels)) };
+        auto ent_dif = get_world_diff(ent.low->pos, camera.pos);
+        v2 ent_mid   = { (screen_center.x + (ent_dif.dif_xy.x * global::meters_to_pixels)),
+                       (screen_center.y - (ent_dif.dif_xy.y * global::meters_to_pixels)) };
 
         // TODO: pull this out?
-        auto pushHp = [](EntityVisblePieceGroup &pieceGroup, Entity ent, v2 argbMid) {
-            for (u32 i {}; i < ent.low->hitPoints; ++i) {
-                push_piece(&pieceGroup, 3.f, 6.f, { colors::red },
-                           v2 { argbMid.X - (ent.low->width / 2.f) * global::metersToPixels - 10.f +
-                                    scast(f32, i) * 4.f,
-                                argbMid.Y - ent.low->height * global::metersToPixels - 10.f },
+        auto push_hp = [](Entity_Visble_Piece_Group &piece_group, Entity ent, v2 argb_mid) {
+            for (u32 i {}; i < ent.low->hit_points; ++i) {
+                push_piece(&piece_group, 3.f, 6.f, { colors::red },
+                           v2 { argb_mid.x - (ent.low->width / 2.f) * global::meters_to_pixels -
+                                    10.f + scast(f32, i) * 4.f,
+                                argb_mid.y - ent.low->height * global::meters_to_pixels - 10.f },
                            ent.high->z);
             }
         };
 
         switch (ent.low->type) {
-            case EntityType::None: {
-                drawRect(videoBuffer, entMid.x - (ent.low->width * global::metersToPixels) / 2.f,
-                         entMid.y - (ent.low->height * global::metersToPixels) / 2.f,
-                         entMid.x + (ent.low->width * global::metersToPixels) / 2.f,
-                         entMid.y + (ent.low->height * global::metersToPixels) / 2.f,
-                         { 0xffff00ff });
+            case Entity_Type::none: {
+                draw_rect(
+                    video_buffer, ent_mid.x - (ent.low->width * global::meters_to_pixels) / 2.f,
+                    ent_mid.y - (ent.low->height * global::meters_to_pixels) / 2.f,
+                    ent_mid.x + (ent.low->width * global::meters_to_pixels) / 2.f,
+                    ent_mid.y + (ent.low->height * global::meters_to_pixels) / 2.f, { 0xffff00ff });
             } break;
-            case EntityType::Player: {
+            case Entity_Type::player: {
                 // TODO: get player index from entity?
-                updatePlayer(State, ent, input.deltaTime);
-                v2 argbMid = { entMid.x, entMid.y - ent.low->argbOffset };
-                push_piece(&pieceGroup, ent.low->sprite, argbMid, ent.high->z);
-                pushHp(pieceGroup, ent, argbMid);
+                update_player(state, ent, input.delta_time);
+                v2 argb_mid = { ent_mid.x, ent_mid.y - ent.low->argb_offset };
+                push_piece(&piece_group, ent.low->sprite, argb_mid, ent.high->z);
+                push_hp(piece_group, ent, argb_mid);
 
             } break;
-            case EntityType::Wall: {
-                v2 argbMid = { entMid.x, entMid.y - ent.low->argbOffset };
-                push_piece(&pieceGroup, ent.low->sprite, argbMid, ent.high->z);
+            case Entity_Type::wall: {
+                v2 argb_mid = { ent_mid.x, ent_mid.y - ent.low->argb_offset };
+                push_piece(&piece_group, ent.low->sprite, argb_mid, ent.high->z);
             } break;
-            case EntityType::Stairs: {
-                v2 argbMid = { entMid.x, entMid.y - ent.low->argbOffset };
-                push_piece(&pieceGroup, ent.low->sprite, argbMid, ent.high->z);
+            case Entity_Type::stairs: {
+                v2 argb_mid = { ent_mid.x, ent_mid.y - ent.low->argb_offset };
+                push_piece(&piece_group, ent.low->sprite, argb_mid, ent.high->z);
             } break;
-            case EntityType::Familiar: {
-                updateFamiliar(State, ent, input.deltaTime);
-                v2 argbMid = { entMid.x, entMid.y - ent.low->argbOffset };
-                push_piece(&pieceGroup, ent.low->sprite, argbMid, ent.high->z);
+            case Entity_Type::familiar: {
+                update_familiar(state, ent, input.delta_time);
+                v2 argb_mid = { ent_mid.x, ent_mid.y - ent.low->argb_offset };
+                push_piece(&piece_group, ent.low->sprite, argb_mid, ent.high->z);
             } break;
-            case EntityType::Monster: {
-                updateMonster(State, ent, input.deltaTime);
-                v2 argbMid = { entMid.x, entMid.y - ent.low->argbOffset };
-                push_piece(&pieceGroup, ent.low->sprite, argbMid, ent.high->z);
-                pushHp(pieceGroup, ent, argbMid);
+            case Entity_Type::monster: {
+                update_monster(state, ent, input.delta_time);
+                v2 argb_mid = { ent_mid.x, ent_mid.y - ent.low->argb_offset };
+                push_piece(&piece_group, ent.low->sprite, argb_mid, ent.high->z);
+                push_hp(piece_group, ent, argb_mid);
             } break;
-            case EntityType::Sword: {
-                updateMonster(State, ent, input.deltaTime);
-                v2 argbMid = { entMid.x, entMid.y - ent.low->argbOffset };
-                push_piece(&pieceGroup, ent.low->sprite, argbMid, ent.high->z);
+            case Entity_Type::sword: {
+                update_monster(state, ent, input.delta_time);
+                v2 argb_mid = { ent_mid.x, ent_mid.y - ent.low->argb_offset };
+                push_piece(&piece_group, ent.low->sprite, argb_mid, ent.high->z);
             } break;
             default: {
-                INVALIDCodePath;
+                INVALID_CODE_PATH;
             } break;
         }
 
@@ -946,34 +951,34 @@ GAMEUpdateAndRender(GameUpdateAndRender)
         // #DRAW
         // ===============================================================================================
 
-        for (u32 pieceI = 0; pieceI < pieceGroup.piece_cnt; ++pieceI) {
-            EntityVisiblePiece *piece = &pieceGroup.pieces[pieceI];
+        for (u32 piece_i = 0; piece_i < piece_group.piece_cnt; ++piece_i) {
+            Entity_Visible_Piece *piece = &piece_group.pieces[piece_i];
             if (piece->img) {
-                draw_ARGB(videoBuffer, *piece->img, piece->midP);
+                draw_ARGB(video_buffer, *piece->img, piece->mid_p);
             } else {
-                drawRect(videoBuffer, piece->rect, { colors::red });
+                draw_rect(video_buffer, piece->rect, { colors::red });
             }
         }
 
         // NOTE:collision box
-        if (state.debugDrawCollision) {
-            drawRectOutline(videoBuffer, entMid.x - (ent.low->width * global::metersToPixels) / 2.f,
-                            entMid.y - (ent.low->height * global::metersToPixels) / 2.f,
-                            entMid.x + (ent.low->width * global::metersToPixels) / 2.f,
-                            entMid.y + (ent.low->height * global::metersToPixels) / 2.f, 1,
-                            { 0xffff0000 });
+        if (state.debug_draw_collision) {
+            draw_rect_outline(
+                video_buffer, ent_mid.x - (ent.low->width * global::meters_to_pixels) / 2.f,
+                ent_mid.y - (ent.low->height * global::meters_to_pixels) / 2.f,
+                ent_mid.x + (ent.low->width * global::meters_to_pixels) / 2.f,
+                ent_mid.y + (ent.low->height * global::meters_to_pixels) / 2.f, 1, { 0xffff0000 });
         }
     }
 
 #if 0
     // HACK: hacky way to draw a debug postion
-    auto testDif = getWorldDiff(State.TestPos, camera.pos);
-    v2 testMid   = { (screenCenter.x + (testDif.dif_xy.x * global::gMetersToPixels)),
-                    (screenCenter.y - (testDif.dif_xy.y * global::gMetersToPixels)) };
-    draw_ARGB(videoBuffer, state.crosshairImg, testMid);
+    auto test_dif = get_world_diff(state.test_pos, camera.pos);
+    v2 test_mid   = { (screen_center.x + (test_dif.dif_xy.x * global::g_meters_to_pixels)),
+                    (screen_center.y - (test_dif.dif_xy.y * global::g_meters_to_pixels)) };
+    draw_ARGB(video_buffer, state.crosshair_img, test_mid);
 #endif
 
-    endSim(State, *simRegion);
+    end_sim(state, *sim_region);
 }
 
 }  // namespace tom

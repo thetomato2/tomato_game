@@ -1,60 +1,60 @@
 #ifndef GAME_HPP_
 #define GAME_HPP_
 
-#include "Platform.h"
-#include "Common.hpp"
-#include "Image.hpp"
-#include "Entity.hpp"
-#include "World.hpp"
-#include "SimRegion.hpp"
+#include "platform.h"
+#include "common.hpp"
+#include "image.hpp"
+#include "entity.hpp"
+#include "world.hpp"
+#include "sim_region.hpp"
 
 namespace tom
 {
 
 struct Camera
 {
-    WorldPos pos;
+    World_Pos pos;
 };
 
-struct GameState
+struct Game_State
 {
-    MemoryArena worldArena;
+    Memory_Arena world_arena;
     World *world;
 
-    u32 entityCameraFollowInd;
+    u32 entity_camera_follow_ind;
     Camera camera;
-    BitmapImg bitmap;
-    u32 playerControllerInd[INPUT_CNT];
+    Bitmap_Img bitmap;
+    u32 player_controller_ind[5];
     u32 player_cnt;
-    EntityActions player_acts[INPUT_CNT];
+    Entity_Actions player_acts[5];
 
-    u32 storedCnt;
-    StoredEntity storedEntities[global::max_ent_cnt];
+    u32 stored_cnt;
+    Stored_Entity stored_entities[global::max_low_cnt];
 
-    ArgbImg bgImg;
-    ArgbImg crosshairImg;
-    ArgbImg playerSprites[4];
-    ArgbImg monsterSprites[4];
-    ArgbImg swordSprites[4];
-    ArgbImg catSprites[2];
-    ArgbImg treeSprite;
-    ArgbImg stairSprite;
+    ARGB_img bg_img;
+    ARGB_img crosshair_img;
+    ARGB_img player_sprites[4];
+    ARGB_img monster_sprites[4];
+    ARGB_img sword_sprites[4];
+    ARGB_img cat_sprites[2];
+    ARGB_img tree_sprite;
+    ARGB_img stair_sprite;
 
-    WorldPos testPos;
+    World_Pos test_pos;
 
-    b32 debug_drawCollision;
+    b32 debug_draw_collision;
 };
 
 inline bool
-isKeyUp(const GameButtonState &key)
+is_key_up(const Game_Button_State &key)
 {
-    return key.halfTransitionCount > 0 && key.endedDown == 0;
+    return key.half_transition_count > 0 && key.ended_down == 0;
 }
 
 inline bool
-isButtonUp(const GameButtonState &button)
+is_button_up(const Game_Button_State &button)
 {
-    return isKeyUp(button);
+    return is_key_up(button);
 }
 }  // namespace tom
 #endif

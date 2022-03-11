@@ -1,63 +1,64 @@
 #ifndef TOMATO_WORLD_HPP_
 #define TOMATO_WORLD_HPP_
-#include "Common.hpp"
+#include "common.hpp"
 
 namespace tom
 {
 // TODO: change to V3
-struct WorldDif
+struct World_Dif
 {
-    v2 difXy;
-    f32 difZ;
+    v2 dif_xy;
+    f32 dif_z;
 };
 
-struct WorldPos
+struct World_Pos
 {
     // NOTE: these are fixed point positioins. The high bits are the tile
     // chunk index, and the lower bits are the tile index in the chunk
-    s32 chunkX, chunkY, chunkZ;
+    s32 chunk_x, chunk_y, chunk_z;
     // NOTE: from the chunk center
     v2 offset;
 };
 
-struct WorldEntityBlock
+struct World_Entity_Block
 {
-    u32 storedEntityCnt;
-    u32 storedEntsInds[16];
-    WorldEntityBlock *next;
+    u32 stored_entity_cnt;
+    u32 stored_ents_inds[16];
+    World_Entity_Block *next;
 };
 
-struct WorldChunk
+struct World_Chunk
 {
     s32 x, y, z;
-    WorldEntityBlock firstBlock;
-    WorldChunk *nextInHash;
+    World_Entity_Block first_block;
+    World_Chunk *next_in_hash;
 };
 
 struct World
 {
-    WorldChunk worldChunkHash[4096];
-    WorldEntityBlock *firstFree;
+    World_Chunk world_chunk_hash[4096];
+    World_Entity_Block *first_free;
 };
 
 void
-initWorld(World &world, f32 tileSizesInMeters);
+init_world(World &world, f32 tile_sizes_in_meters);
 
-WorldDif
-getWorldDiff(WorldPos &posA, WorldPos &posB);
+World_Dif
+get_world_diff(const World_Pos &pos_a, const World_Pos &pos_b);
 
-WorldPos
-mapIntoChunkSpace(WorldPos &pos, v2 offset);
+World_Pos
+map_into_chunk_space(const World_Pos &pos, const v2 offset);
 
-WorldChunk *
-getWorldChunk(World &world, s32 chunkX, s32 chunkY, s32 chunkZ, MemoryArena *arena);
+World_Chunk *
+get_world_chunk(World &world, const s32 chunk_x, const s32 chunk_y, const s32 chunk_z,
+                Memory_Arena *arena = nullptr);
 
-WorldPos
-absPosToWorldPos(f32 absX, f32 absY, f32 absZ);
+World_Pos
+abs_pos_to_world_pos(f32 abs_x, f32 abs_y, f32 abs_z);
 
 void
-changeEntityLocation(MemoryArena *arena, World &world, u32 lowInd, WorldPos *oldPos,
-                     WorldPos *newPos);
+change_entity_location(Memory_Arena *arena, World &world, const u32 low_i, const World_Pos *old_pos,
+                       World_Pos *new_pos);
 
 }  // namespace tom
 
