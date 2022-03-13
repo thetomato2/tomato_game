@@ -111,7 +111,7 @@ if (MSVC)
 
     target_link_options(Tomato_Game_Lib PRIVATE
         ${Common_Linker_Flags}
-        -EXPORT:game_get_sound_samples
+        -EXPORT:game_get_sound_samples
         -EXPORT:game_update_and_render
         )
 endif()

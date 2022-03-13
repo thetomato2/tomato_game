@@ -1,12 +1,13 @@
 #ifndef IMAGE_HPP_
 #define IMAGE_HPP_
+
 #include "common.hpp"
 
 namespace tom
 {
 
 #pragma pack(push, 1)
-struct Bitmap_Header
+struct bitmap_header
 {
     u16 file_type;
     u32 file_size;
@@ -20,7 +21,7 @@ struct Bitmap_Header
     u16 bits_per_pixel;
 };
 
-struct ARGB_header
+struct argb_header
 {
     u32 width;
     u32 height;
@@ -28,14 +29,14 @@ struct ARGB_header
 };
 #pragma pack(pop)
 
-struct Bitmap_Img
+struct bitmap_img
 {
     s32 width;
     s32 height;
     u32 *pixel_ptr;
 };
 
-struct ARGB_img
+struct argb_img
 {
     const char *name;
     u32 width;

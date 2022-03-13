@@ -6,16 +6,16 @@ namespace tom
 {
 namespace math
 {
-struct Bitscan_Result
+struct bitscan_result
 {
     bool found;
     u32 index;
 };
 
-inline Bitscan_Result
+inline bitscan_result
 find_least_signifcant_set_bit(u32 val)
 {
-    Bitscan_Result result {};
+    bitscan_result result {};
 
 #if MSVC
     result.found = _BitScanForward((ul *)&result.index, val);

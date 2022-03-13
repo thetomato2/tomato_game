@@ -1,4 +1,6 @@
-#pragma once
+#ifndef PLATFORM_WIN32_HPP_
+#define PLATFORM_WIN32_HPP_
+
 #include "platform.h"
 
 #ifdef _EMACS
@@ -22,13 +24,13 @@ using wchar_t = uint16_t;
 #include <mmdeviceapi.h>
 #include <audioclient.h>
 
-struct Window_Dims
+struct window_dims
 {
     s32 width;
     s32 height;
 };
 
-struct Offscreen_Buffer
+struct offscreen_buffer
 {
     BITMAPINFO info;
     void *memory;
@@ -38,7 +40,7 @@ struct Offscreen_Buffer
     s32 bytes_per_pixel;
 };
 
-struct Sound_Output
+struct sound_output
 {
     s32 samples_per_sec;
     u32 running_sample_index;
@@ -47,7 +49,7 @@ struct Sound_Output
     s32 latency_sample_count;
 };
 
-struct Replay_Buffer
+struct replay_buffer
 {
     _TCHAR file_name[512];
     HANDLE file_handle;
@@ -55,7 +57,7 @@ struct Replay_Buffer
     void *memory_block;
 };
 
-struct Win32_State
+struct win32_state
 {
     szt total_size;
 
@@ -72,7 +74,7 @@ struct Win32_State
 #endif
 };
 
-struct Game_Code
+struct game_code
 {
     HMODULE game_code_DLL;
     FILETIME last_write_time_DLL;
@@ -82,14 +84,14 @@ struct Game_Code
 };
 
 #ifdef TOM_INTERNAL
-struct Debug_Sound_Time_Marker
+struct debug_sound_time_marker
 {
     DWORD play_cursor;
     DWORD write_cursor;
 };
 #endif
 
-enum Keys : byt
+enum keys : byt
 {
     none           = 0,
     back           = 0x8,
@@ -221,3 +223,5 @@ enum Keys : byt
     backslash      = 0xe2,
     process_key    = 0xe5,
 };
+
+#endif

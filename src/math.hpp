@@ -163,33 +163,33 @@ length_sq(const v2 a)
 // #RECT_V2
 // ===============================================================================================
 
-struct Rect
+struct rect
 {
     v2 min;
     v2 max;
 };
 
-namespace rect
+namespace rec
 {
 
 inline v2
-max_corner(Rect rect)
+max_corner(rect rect)
 {
     v2 result = rect.max;
     return result;
 }
 
 inline v2
-min_corner(Rect rect)
+min_corner(rect rect)
 {
     v2 result = rect.min;
     return result;
 }
 
-inline Rect
+inline rect
 min_max(v2 min, v2 max)
 {
-    Rect result;
+    rect result;
 
     result.min = min;
     result.max = max;
@@ -197,10 +197,10 @@ min_max(v2 min, v2 max)
     return result;
 }
 
-inline Rect
+inline rect
 min_dim(v2 min, v2 dim)
 {
-    Rect result;
+    rect result;
 
     result.min = min;
     result.max = min + dim;
@@ -208,10 +208,10 @@ min_dim(v2 min, v2 dim)
     return result;
 }
 
-inline Rect
+inline rect
 center_half_dim(v2 center, v2 half_dim)
 {
-    Rect result;
+    rect result;
 
     result.min = center - half_dim;
     result.max = center + half_dim;
@@ -220,7 +220,7 @@ center_half_dim(v2 center, v2 half_dim)
 }
 
 inline v2
-center(Rect rect)
+center(rect rect)
 {
     v2 result = 0.5f * (rect.min + rect.max);
 
@@ -228,13 +228,13 @@ center(Rect rect)
 }
 
 inline bool
-is_inside(Rect rect, v2 test)
+is_inside(rect rect, v2 test)
 {
     bool result = ((test.x >= rect.min.x) && (test.y >= rect.min.y) && (test.x <= rect.max.x) &&
                    (test.y <= rect.max.y));
     return result;
 }
-}  // namespace rect
+}  // namespace rec
 
 // ===============================================================================================
 // #FREE_FUNCS

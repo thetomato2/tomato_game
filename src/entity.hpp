@@ -6,7 +6,7 @@
 
 namespace tom
 {
-struct Entity_Actions
+struct entity_actions
 {
     bool start;
     bool jump;
@@ -17,7 +17,7 @@ struct Entity_Actions
     bool sprint;
 };
 
-enum Entity_Direction : s32
+enum entity_direction : s32
 {
     north = 0,
     east,
@@ -25,7 +25,7 @@ enum Entity_Direction : s32
     west
 };
 
-enum class Entity_Type
+enum class entity_type
 {
     null = 0,
     none,
@@ -37,37 +37,37 @@ enum class Entity_Type
     sword
 };
 
-struct Entity_Low_Chunk_Ref
+struct entity_low_chunk_ref
 {
-    World_Chunk *tile_chunk;
+    world_chunk *tile_chunk;
     u32 i_in_chunk;
 };
 
-struct Entity_Visible_Piece
+struct entity_visible_piece
 {
-    ARGB_img *img;
+    argb_img *img;
     v2 mid_p;
     f32 z;
     f32 alpha;
-    Rect rect;
-    Color color;
+    rect rect;
+    color color;
 };
 
-struct Entity_Visble_Piece_Group
+struct entity_visble_piece_group
 {
     u32 piece_cnt;
-    Entity_Visible_Piece pieces[64];
+    entity_visible_piece pieces[64];
 };
 
-struct Sim_Entity;
+struct sim_entity;
 
-union Entity_Ref
+union entity_ref
 {
-    Sim_Entity *ptr;
+    sim_entity *ptr;
     u32 ind;
 };
 
-struct Sim_Entity
+struct sim_entity
 {
     v2 pos;
     v2 vel;
@@ -75,31 +75,33 @@ struct Sim_Entity
     f32 z;
     f32 vel_z;
 
+    f32 hit_cd;
+
     b32 active;
     b32 collides;
     b32 barrier;
     b32 hurtbox;
-    s32 hit_points;
-    u32 max_hit_points;
+    s32 hp;
+    u32 max_hp;
     s32 virtual_z;
     f32 width, height;
     f32 argb_offset;
 
     u32 stored_i;
 
-    Entity_Ref weapon_i;
-    Entity_Ref parent_i;
+    entity_ref weapon_i;
+    entity_ref parent_i;
 
-    Color color;
-    Entity_Type type;
-    Entity_Direction direction;
-    ARGB_img *sprite;
+    color color;
+    entity_type type;
+    entity_direction dir;
+    argb_img *sprite;
 };
 
-struct Stored_Entity
+struct stored_entity
 {
-    Sim_Entity sim;
-    World_Pos world_pos;
+    sim_entity sim;
+    world_pos world_pos;
 };
 
 }  // namespace tom

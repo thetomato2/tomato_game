@@ -1,41 +1,54 @@
 #ifndef SIM_REGION_HPP_
 #define SIM_REGION_HPP_
+
 #include "common.hpp"
 #include "entity.hpp"
 
 namespace tom
 {
 
-struct Game_State;
+struct game_state;
 
-struct Sim_Entity_Hash
+struct sim_entity_hash
 {
-    Sim_Entity *ptr;
+    sim_entity *ptr;
     u32 ind;
 };
 
-struct Sim_Region
+struct sim_region
 {
-    World_Pos origin;
-    Rect bounds;
+    world_pos origin;
+    rect bounds;
 
     u32 max_sim_entity_cnt;
     u32 sim_entity_cnt;
-    Sim_Entity *sim_entities;
+    sim_entity *sim_entities;
 
-    // TODO: change size? need hash?
-    // NOTE: must be a power of 2
-    Sim_Entity_Hash hash[4096];
+    // todo: change size? need hash?
+    // note: must be a power of 2
+    sim_entity_hash hash[4096];
 };
 
-Stored_Entity *
-get_stored_entity(Game_State state, u32 ind);
+struct entity_move_spec
+{
+    f32 speed;
+    f32 drag;
+};
 
-Sim_Region *
-begin_sim(Memory_Arena *sim_arena, Game_State &state, World_Pos origin, Rect bounds);
+inline entity_move_spec
+get_default_move_spec()
+{
+    return { 10.0f, 10.0f };
+}
+
+stored_entity *
+get_stored_entity(game_state state, u32 ind);
+
+sim_region *
+begin_sim(memory_arena *sim_arena, game_state &state, world_pos origin, rect bounds);
 
 void
-end_sim(Game_State &state, Sim_Region &region);
+end_sim(game_state &state, sim_region &region);
 
 }  // namespace tom
 
