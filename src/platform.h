@@ -120,6 +120,7 @@ extern "C"
 #define local_persist static
 #define global_var    static
 
+// NOTE: only win32 is supported currently
 #define TOM_WIN32
 #ifdef TOM_WIN32
     #define TOM_DLL_EXPORT __declspec(dllexport)
@@ -285,10 +286,10 @@ extern "C"
     {
         bool is_initialized;
         u64 permanent_storage_size;
-        void *permanent_storage;  //! required to be cleared to 0!
+        void *permanent_storage;  // NOTE: required to be cleared to 0!
 
         u64 transient_storage_size;
-        void *transient_storage;  //! required to be cleared to 0!
+        void *transient_storage;  // NOTE: required to be cleared to 0!
 
 #ifdef TOM_INTERNAL
         debug_platform_free_file_memory *platform_free_file_memory;

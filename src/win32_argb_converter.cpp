@@ -68,7 +68,7 @@ win32_free_memor(void *memory_)
 debug_read_file_result
 win32_read_file(const char *file_name)
 {
-    Debug_Read_File_Result file = {};
+    debug_read_file_result file = {};
 
     HANDLE file_handle =
         CreateFileA(file_name, GENERIC_READ, 0, 0, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, 0);

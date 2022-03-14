@@ -14,8 +14,7 @@ namespace tom
 namespace global
 {
 
-global_var constexpr u32 max_low_cnt            = 65536;
-global_var constexpr u32 max_high_cnt           = 4096;
+global_var constexpr u32 max_ent_cnt            = 65536;
 global_var constexpr u32 num_screens            = 10;
 global_var constexpr u32 num_tiles_per_screen_y = 11;
 global_var constexpr s32 chunk_safe_margin      = S32_MAX / 64;
@@ -60,6 +59,14 @@ struct memory_arena
     mem_ind used;
 };
 
+inline void
+init_arena(memory_arena *arena, const mem_ind size, void *base)
+{
+    arena->size = size;
+    arena->base = scast(byt *, base);
+    arena->used = 0;
+}
+
 inline void *
 push_size(memory_arena *arena, mem_ind size)
 {
@@ -70,7 +77,18 @@ push_size(memory_arena *arena, mem_ind size)
     return result;
 }
 
+inline void
+zero_size(mem_ind size, void *ptr)
+{
+    // TODO: profile this for performance
+    byt *byte = scast(byt *, ptr);
+    while (size--) {
+        *byte++ = 0;
+    }
+}
+
 #define PUSH_STRUCT(arena, type)       (type *)push_size(arena, sizeof(type))
 #define PUSH_ARRAY(arena, count, type) (type *)push_size(arena, (count * sizeof(type)))
+#define ZERO_STRUCT(inst)              zero_size(sizeof(inst), &(inst))
 }  // namespace tom
 #endif  // TOMATO_COMMON_HPP_

@@ -1,5 +1,5 @@
-#ifndef IMAGE_HPP_
-#define IMAGE_HPP_
+#ifndef TOMATO_IMAGE_HPP_
+#define TOMATO_IMAGE_HPP_
 
 #include "common.hpp"
 

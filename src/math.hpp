@@ -113,6 +113,26 @@ operator*=(v2 &lhs, f32 rhs)
     return lhs;
 }
 
+inline v2
+operator/(v2 lhs, f32 rhs)
+{
+    v2 result;
+
+    result.x = lhs.x / rhs;
+    result.y = lhs.y / rhs;
+
+    return result;
+}
+
+inline v2 &
+operator/=(v2 &lhs, f32 rhs)
+{
+    lhs.x /= rhs;
+    lhs.y /= rhs;
+
+    return lhs;
+}
+
 // ===============================================================================================
 // #VECTOR 3
 // ===============================================================================================

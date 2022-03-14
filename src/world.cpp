@@ -1,19 +1,16 @@
 #include "world.hpp"
 
-#define CHUNK_UNITIALIZED INT32_MAX
+#define CHUNK_UNITIALIZED S32_MAX
 
 namespace tom
 {
 
-// ===============================================================================================
-// #INTERNAL
-// ===============================================================================================
-
 internal bool
 is_canonical(f32 rel_coord)
 {
-    return rel_coord >= global::chunk_size_meters * -.5f &&
-           rel_coord <= global::chunk_size_meters * .5f;
+    constexpr f32 epsilon = 0.0001f;
+    return rel_coord >= global::chunk_size_meters * -0.5f - epsilon &&
+           rel_coord <= global::chunk_size_meters * 0.5f + epsilon;
 }
 
 internal bool
@@ -55,17 +52,13 @@ get_centered_point(const s32 x, const s32 y, const s32 z)
     return result;
 }
 
-// ===============================================================================================
-// #EXTERNAL
-// ===============================================================================================
-
 void
-init_world(world &world, f32 tile_sizes_in_meters)
+init_world(world *world, f32 tile_sizes_in_meters)
 {
-    world.first_free = nullptr;
-    for (s32 chunk_i = 0; chunk_i < ARRAY_COUNT(world.world_chunk_hash); ++chunk_i) {
-        world.world_chunk_hash[chunk_i].x = CHUNK_UNITIALIZED;  // null chunk
-        world.world_chunk_hash[chunk_i].first_block.stored_entity_cnt = 0;
+    world->first_free = nullptr;
+    for (s32 chunk_i = 0; chunk_i < ARRAY_COUNT(world->world_chunk_hash); ++chunk_i) {
+        world->world_chunk_hash[chunk_i].x                   = CHUNK_UNITIALIZED;  // null chunk
+        world->world_chunk_hash[chunk_i].first_block.ent_cnt = 0;
     }
 }
 
@@ -99,7 +92,7 @@ map_into_chunk_space(const world_pos &pos, const v2 offset)
 }
 
 world_chunk *
-get_world_chunk(world &world, const s32 chunk_x, const s32 chunk_y, const s32 chunk_z,
+get_world_chunk(world *world, const s32 chunk_x, const s32 chunk_y, const s32 chunk_z,
                 memory_arena *arena)
 {
     TOM_ASSERT(chunk_x > -global::chunk_safe_margin);
@@ -111,10 +104,10 @@ get_world_chunk(world &world, const s32 chunk_x, const s32 chunk_y, const s32 ch
 
     // TODO: better hash function!
     s32 hash_val  = 19 * chunk_x + 7 * chunk_y + 3 * chunk_z;
-    s32 hash_slot = scast(s32, hash_val & (ARRAY_COUNT(world.world_chunk_hash) - 1));
-    TOM_ASSERT(hash_slot < ARRAY_COUNT(world.world_chunk_hash));
+    s32 hash_slot = scast(s32, hash_val & (ARRAY_COUNT(world->world_chunk_hash) - 1));
+    TOM_ASSERT(hash_slot < ARRAY_COUNT(world->world_chunk_hash));
 
-    world_chunk *chunk = world.world_chunk_hash + hash_slot;
+    world_chunk *chunk = world->world_chunk_hash + hash_slot;
     do {
         // found chunk
         if (chunk_x == chunk->x && chunk_y == chunk->y && chunk_z == chunk->z) {
@@ -142,8 +135,6 @@ get_world_chunk(world &world, const s32 chunk_x, const s32 chunk_y, const s32 ch
     } while (chunk);
 
     return chunk;
-    u32 low_ent_inds[16];
-    world_entity_block *next;
 }
 
 world_pos
@@ -158,12 +149,14 @@ abs_pos_to_world_pos(f32 abs_x, f32 abs_y, f32 abs_z)
     result.offset.x = abs_x - (result.chunk_x * global::chunk_size_meters);
     result.offset.y = abs_y - (result.chunk_y * global::chunk_size_meters);
 
+    result = map_into_chunk_space(result, result.offset);
+
     return result;
 }
 
 void
-change_entity_location(memory_arena *arena, world &world, const u32 stored_i,
-                       const world_pos *old_pos, world_pos *new_pos)
+change_entity_location(memory_arena *arena, world *world, u32 ent_i, world_pos *old_pos,
+                       world_pos *new_pos)
 {
     if (old_pos && is_same_chunk(*old_pos, *new_pos)) {
         //  leave the entity where it is
@@ -179,17 +172,16 @@ change_entity_location(memory_arena *arena, world &world, const u32 stored_i,
                 world_entity_block *first_block = &chunk->first_block;
                 for (world_entity_block *block = &chunk->first_block; block && !found;
                      block                     = block->next) {
-                    for (u32 i {}; i < block->stored_entity_cnt; ++i) {
-                        if (block->stored_ents_inds[i] == stored_i) {
-                            TOM_ASSERT(first_block->stored_entity_cnt > 0);
-                            block->stored_ents_inds[i] =
-                                first_block->stored_ents_inds[--first_block->stored_entity_cnt];
-                            if (first_block->stored_entity_cnt == 0) {
+                    for (u32 i {}; i < block->ent_cnt; ++i) {
+                        if (block->ent_inds[i] == ent_i) {
+                            TOM_ASSERT(first_block->ent_cnt > 0);
+                            block->ent_inds[i] = first_block->ent_inds[--first_block->ent_cnt];
+                            if (first_block->ent_cnt == 0) {
                                 if (first_block->next) {
                                     world_entity_block *next_block = first_block->next;
                                     *first_block                   = *next_block;
-                                    next_block->next               = world.first_free;
-                                    world.first_free               = next_block;
+                                    next_block->next               = world->first_free;
+                                    world->first_free              = next_block;
                                 }
                             }
                             found = true;
@@ -204,21 +196,21 @@ change_entity_location(memory_arena *arena, world &world, const u32 stored_i,
             get_world_chunk(world, new_pos->chunk_x, new_pos->chunk_y, new_pos->chunk_z, arena);
         TOM_ASSERT(chunk);
         world_entity_block *block = &chunk->first_block;
-        if (block->stored_entity_cnt == ARRAY_COUNT(block->stored_ents_inds)) {
+        if (block->ent_cnt == ARRAY_COUNT(block->ent_inds)) {
             // out of room! make new block
-            world_entity_block *old_block = world.first_free;
+            world_entity_block *old_block = world->first_free;
             if (old_block) {
-                world.first_free = old_block->next;
+                world->first_free = old_block->next;
             } else {
                 old_block = PUSH_STRUCT(arena, world_entity_block);
             }
-            *old_block               = *block;
-            block->next              = old_block;
-            block->stored_entity_cnt = 0;
+            *old_block     = *block;
+            block->next    = old_block;
+            block->ent_cnt = 0;
         }
 
-        TOM_ASSERT(block->stored_entity_cnt < ARRAY_COUNT(block->stored_ents_inds));
-        block->stored_ents_inds[block->stored_entity_cnt++] = stored_i;
+        TOM_ASSERT(block->ent_cnt < ARRAY_COUNT(block->ent_inds));
+        block->ent_inds[block->ent_cnt++] = ent_i;
     }
 }
 }  // namespace tom

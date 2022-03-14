@@ -1,11 +1,16 @@
-#ifndef ENTITY_HPP_
-#define ENTITY_HPP_
+#ifndef TOMATO_ENTITY_HPP_
+#define TOMATO_ENTITY_HPP_
+
 #include "common.hpp"
 #include "world.hpp"
-#include "image.hpp"
 
 namespace tom
 {
+
+struct argb_img;
+struct game_state;
+struct sim_region;
+
 struct entity_actions
 {
     bool start;
@@ -56,6 +61,7 @@ struct entity_visible_piece
 struct entity_visble_piece_group
 {
     u32 piece_cnt;
+    // TODO: how many pieces?
     entity_visible_piece pieces[64];
 };
 
@@ -86,23 +92,70 @@ struct sim_entity
     s32 virtual_z;
     f32 width, height;
     f32 argb_offset;
-
-    u32 stored_i;
-
-    entity_ref weapon_i;
-    entity_ref parent_i;
-
-    color color;
-    entity_type type;
+    u32 weapon_i;
+    u32 parent_i;
     entity_direction dir;
+
+    u32 ent_i;
+};
+
+struct entity
+{
+    sim_entity sim;
+    entity_type type;
+    world_pos world_pos;
+    color color;
     argb_img *sprite;
 };
 
-struct stored_entity
+struct entity_move_spec
 {
-    sim_entity sim;
-    world_pos world_pos;
+    f32 speed;
+    f32 drag;
 };
+
+inline entity_move_spec
+get_default_move_spec()
+{
+    return { 10.0f, 10.0f };
+}
+
+void
+move_entity(game_state *state, sim_region *region, sim_entity *ent, entity_actions ent_actions,
+            entity_move_spec move_spec, f32 dt);
+
+entity *
+get_entity(game_state *state, u32 ind);
+
+entity *
+add_new_entity(game_state *state, f32 abs_x = 0.f, f32 abs_y = 0.f, f32 abs_z = 0.f);
+
+entity *
+add_tree(game_state *state, f32 abs_x, f32 abs_y, f32 abs_z);
+
+entity *
+add_monster(game_state *state, f32 abs_x, f32 abs_y, f32 abs_z);
+
+entity *
+add_cat(game_state *state, f32 abs_x, f32 abs_y, f32 abs_z);
+
+entity *
+add_sword(game_state *state, u32 parent_i, argb_img *sprite = nullptr);
+
+void
+add_player(game_state *state, u32 player_i, f32 abs_x, f32 abs_y, f32 abs_z);
+
+void
+update_familiar(game_state *state, sim_region *region, entity *fam, f32 dt);
+
+void
+update_sword(game_state *state, sim_region *region, entity *sword, f32 dt);
+
+void
+update_monster(game_state *state, sim_region *region, entity *monster, f32 dt);
+
+void
+update_player(game_state *state, sim_region *region, entity *player, f32 dt);
 
 }  // namespace tom
 #endif  // ENTITY_HPP_

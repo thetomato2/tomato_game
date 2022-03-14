@@ -9,7 +9,7 @@ set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
-set(CMAKE_UNITY_BUILD ON)
+set(CMAKE_UNITY_BUILD OFF)
 
 set(Source_Dir ${CMAKE_CURRENT_LIST_DIR}/src)
 set(Extern_Dir ${CMAKE_CURRENT_LIST_DIR}/external)
@@ -18,7 +18,7 @@ set(Build_Dir ${CMAKE_CURRENT_LIST_DIR}/build)
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${Build_Dir})
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${Build_Dir})
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${Build_Dir})
-set(CMAKE_SUPPRESS_REGENERATION true) #feck off ZERO_CHECK
+# set(CMAKE_SUPPRESS_REGENERATION true) #feck off ZERO_CHECK
 
 option(Emacs "Emacs" OFF)
 option(argb_converter "ARGB_Converter" OFF)
@@ -71,6 +71,7 @@ endif()
 add_library(Tomato_Game_Lib SHARED
     ${Source_Dir}/common.hpp
     ${Source_Dir}/entity.hpp
+    ${Source_Dir}/entity.cpp
     ${Source_Dir}/image.hpp
     ${Source_Dir}/intrinsic.hpp
     ${Source_Dir}/game.cpp
