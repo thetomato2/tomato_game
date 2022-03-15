@@ -29,8 +29,8 @@ subtract_hit_points(sim_entity *ent, s32 hp)
 {
     ent->hp -= hp;
     if (ent->hp < 0) {
-        ent->hp     = 0;
-        ent->active = false;
+        ent->hp = 0;
+        clear_flag(ent->flags, sim_entity_flags::active);
     }
 }
 
@@ -52,10 +52,12 @@ add_new_entity(game_state *state, f32 abs_x, f32 abs_y, f32 abs_z)
         *ent           = {};
         ent->sim.ent_i = ent_i;
         ent->type      = entity_type::null;
-        ent->world_pos = abs_pos_to_world_pos(abs_x, abs_y, abs_z);
+        ent->world_pos = null_world_pos();
+
         // NOTE: this inserts the entity into the corresponding  world chunk
         // REVIEW: make add_entity_to_world()?
-        change_entity_location(&state->world_arena, state->world, ent_i, nullptr, &ent->world_pos);
+        world_pos start_pos = abs_pos_to_world_pos(abs_x, abs_y, abs_z);
+        change_entity_location(&state->world_arena, state->world, ent, start_pos);
     } else {
         INVALID_CODE_PATH;
     }
@@ -69,14 +71,13 @@ add_tree(game_state *state, f32 abs_x, f32 abs_y, f32 abs_z)
     entity *ent = add_new_entity(state, abs_x, abs_y, abs_z);
     TOM_ASSERT(ent);
 
-    ent->type         = entity_type::wall;
-    ent->color        = { 0xff'dd'dd'dd };
-    ent->sprite       = &state->tree_sprite;
-    ent->sim.height   = 1.f;
-    ent->sim.width    = 1.f;
-    ent->sim.collides = true;
-    ent->sim.barrier  = true;
-    ent->sim.active   = true;
+    ent->type       = entity_type::wall;
+    ent->color      = { 0xff'dd'dd'dd };
+    ent->sprite     = &state->tree_sprite;
+    ent->sim.height = 1.f;
+    ent->sim.width  = 1.f;
+    ent->sim.flags =
+        sim_entity_flags::active | sim_entity_flags::collides | sim_entity_flags::barrier;
 
     return ent;
 }
@@ -94,9 +95,8 @@ add_monster(game_state *state, f32 abs_x, f32 abs_y, f32 abs_z)
     ent->sim.height      = .6f;
     ent->sim.width       = .6f * .6f;
     ent->sim.argb_offset = 16.f;
-    ent->sim.collides    = true;
-    ent->sim.barrier     = true;
-    ent->sim.active      = true;
+    ent->sim.flags =
+        sim_entity_flags::active | sim_entity_flags::collides | sim_entity_flags::barrier;
 
     init_hit_points(&ent->sim, 6);
 
@@ -116,9 +116,8 @@ add_cat(game_state *state, f32 abs_x, f32 abs_y, f32 abs_z)
     ent->sim.height      = .6f;
     ent->sim.width       = .8f;
     ent->sim.argb_offset = 5.f;
-    ent->sim.collides    = true;
-    ent->sim.barrier     = true;
-    ent->sim.active      = true;
+    ent->sim.flags =
+        sim_entity_flags::active | sim_entity_flags::collides | sim_entity_flags::barrier;
 
     return ent;
 }
@@ -135,9 +134,7 @@ add_sword(game_state *state, u32 parent_i, argb_img *sprite)
     ent->sim.height      = .6f;
     ent->sim.width       = .8f;
     ent->sim.argb_offset = 5.f;
-    ent->sim.collides    = false;
-    ent->sim.barrier     = false;
-    ent->sim.hurtbox     = true;
+    ent->sim.flags       = sim_entity_flags::hurtbox | sim_entity_flags::nonspatial;
 
     return ent;
 }
@@ -156,9 +153,8 @@ add_player(game_state *state, u32 player_i, f32 abs_x, f32 abs_y, f32 abs_z)
             player->sim.height      = .6f;
             player->sim.width       = 0.6f * player->sim.height;
             player->sim.argb_offset = 16.f;
-            player->sim.collides    = true;
-            player->sim.barrier     = true;
-            player->sim.active      = true;
+            player->sim.flags =
+                sim_entity_flags::active | sim_entity_flags::collides | sim_entity_flags::barrier;
 
             init_hit_points(&player->sim, 10);
 
@@ -179,47 +175,48 @@ move_entity(game_state *state, sim_region *region, entity *ent, const entity_act
 {
     TOM_ASSERT(state && region);
 
-    v2 entity_acc = ent_actions.dir;
+    v2 ent_accel = ent_actions.dir;
 
     // NOTE: normalize vector to unit length
-    f32 ent_acc_length = vec::length_sq(entity_acc);
+    f32 ent_accel_len = vec::length_sq(ent_accel);
     // TODO: make speed specific to ent type
 
-    if (ent_acc_length > 1.f) entity_acc *= (1.f / math::sqrt_f32(ent_acc_length));
-    entity_acc *= move_spec.speed;
-    entity_acc -= ent->sim.vel * move_spec.drag;
+    if (ent_accel_len > 1.f) ent_accel *= (1.f / math::sqrt_f32(ent_accel_len));
+    ent_accel *= move_spec.speed;
+    ent_accel -= ent->sim.vel * move_spec.drag;
 
-    v2 player_delta   = (.5f * entity_acc * math::square(dt) + ent->sim.vel * dt);
+    v2 player_delta   = (.5f * ent_accel * math::square(dt) + ent->sim.vel * dt);
     v2 new_player_pos = ent->sim.pos + player_delta;
 
-    ent->sim.vel += entity_acc * dt;
+    ent->sim.vel += ent_accel * dt;
 
     // NOTE: how many iterations/time resolution
     for (u32 i = 0; i < 4; ++i) {
         f32 t_min           = 1.0f;
-        u32 hit_ent_ind     = 0;  // 0 is the null ent
         v2 wall_nrm         = {};
         v2 desired_position = ent->sim.pos + player_delta;
+        sim_entity *hit_ent = nullptr;
 
         // FIXME: this is N * N bad
-        for (u32 test_ent_i = 1; test_ent_i < region->sim_entity_cnt; ++test_ent_i) {
-            if (test_ent_i == ent->sim.ent_i) continue;  // don't test against self
+        for (sim_entity *test_ent = region->sim_entities;
+             test_ent != region->sim_entities + region->sim_entity_cnt; ++test_ent) {
+            if (test_ent->ent_i == ent->sim.ent_i) continue;  // don't test against self
 
-            entity *test_ent = get_entity(state, test_ent_i);
             TOM_ASSERT(test_ent);  // a nullptr probably means something broke
 
-            if (!test_ent->sim.active || !test_ent->sim.collides)
+            if (!is_flag_set(test_ent->flags, sim_entity_flags::active) ||
+                !is_flag_set(test_ent->flags, sim_entity_flags::collides))
                 continue;  // skip inactive and non-collision entities
-            if (ent->sim.weapon_i == test_ent->sim.ent_i) continue;  // skip ent's weapon
-            if (ent->sim.parent_i == test_ent->sim.ent_i) continue;  // skip parent ent
+            if (ent->sim.weapon_i == test_ent->ent_i) continue;  // skip ent's weapon
+            if (ent->sim.parent_i == test_ent->ent_i) continue;  // skip parent ent
 
             // NOTE: Minkowski sum
-            f32 r_w = ent->sim.width + test_ent->sim.width;
-            f32 r_h = ent->sim.height + test_ent->sim.height;
+            f32 r_w = ent->sim.width + test_ent->width;
+            f32 r_h = ent->sim.height + test_ent->height;
 
             v2 min_corner = { -.5f * v2 { r_w, r_h } };
             v2 max_corner = { .5f * v2 { r_w, r_h } };
-            v2 rel        = ent->sim.pos - test_ent->sim.pos;
+            v2 rel        = ent->sim.pos - test_ent->pos;
 
             // TODO: maybe pull this out into a free function (but why?)
             auto test_wall = [&t_min](f32 wall_x, f32 rel_x, f32 rel_y, f32 player_delta_x,
@@ -244,38 +241,36 @@ move_entity(game_state *state, sim_region *region, entity *ent, const entity_act
 
             if (test_wall(min_corner.x, rel.x, rel.y, player_delta.x, player_delta.y, min_corner.y,
                           max_corner.y)) {
-                wall_nrm    = v2 { -1.f, 0.f };
-                hit_ent_ind = test_ent_i;
+                wall_nrm = v2 { -1.f, 0.f };
+                hit_ent  = test_ent;
             }
             if (test_wall(max_corner.x, rel.x, rel.y, player_delta.x, player_delta.y, min_corner.y,
                           max_corner.y)) {
-                wall_nrm    = v2 { 1.f, 0.f };
-                hit_ent_ind = test_ent_i;
+                wall_nrm = v2 { 1.f, 0.f };
+                hit_ent  = test_ent;
             }
             if (test_wall(min_corner.y, rel.y, rel.x, player_delta.y, player_delta.x, min_corner.x,
                           max_corner.x)) {
-                wall_nrm    = v2 { 0.f, -1.f };
-                hit_ent_ind = test_ent_i;
+                wall_nrm = v2 { 0.f, -1.f };
+                hit_ent  = test_ent;
             }
             if (test_wall(max_corner.y, rel.y, rel.x, player_delta.y, player_delta.x, min_corner.x,
                           max_corner.x)) {
-                wall_nrm    = v2 { 0.f, 1.f };
-                hit_ent_ind = test_ent_i;
+                wall_nrm = v2 { 0.f, 1.f };
+                hit_ent  = test_ent;
             }
         }
 
-        sim_entity *hit_ent = region->sim_entities + hit_ent_ind;
-
-        if (!hit_ent->barrier) {
+        if (hit_ent && !is_flag_set(hit_ent->flags, sim_entity_flags::barrier)) {
             wall_nrm = v2 { 0.f, 0.f };
         }
 
         ent->sim.pos += t_min * player_delta;
-        if (hit_ent_ind) {
+        if (hit_ent) {
             ent->sim.vel -= 1.f * vec::inner(ent->sim.vel, wall_nrm) * wall_nrm;
             player_delta -= 1.f * vec::inner(player_delta, wall_nrm) * wall_nrm;
 
-            // printf("%d hit %d!\n", ent->sim.low->high_i, hit_ent_ind);
+            // printf("%d hit %d!\n", ent->sim.low->high_i, hit_ent);
 
             // TODO: temp player hitting monster logic
             if (ent->sim.hit_cd > .5f) {
@@ -319,9 +314,10 @@ move_entity(game_state *state, sim_region *region, entity *ent, const entity_act
     }
 
     world_pos new_pos = map_into_chunk_space(state->camera.pos, ent->sim.pos);
-    change_entity_location(&state->world_arena, state->world, ent->sim.ent_i,
-                           &state->entities[ent->sim.ent_i].world_pos, &new_pos);
-    state->entities[ent->sim.ent_i].world_pos = new_pos;
+    change_entity_location(&state->world_arena, state->world, ent, new_pos);
+
+    // TODO: move this out of here?
+    // state->entities[ent->sim.ent_i].world_pos = new_pos;
 }
 
 void
@@ -358,6 +354,7 @@ update_familiar(game_state *state, sim_region *region, entity *fam, const f32 dt
     }
 }
 
+// TODO: update this
 void
 update_sword(game_state *state, sim_region *region, entity *sword, const f32 dt)
 {

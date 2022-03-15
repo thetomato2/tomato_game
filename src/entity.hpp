@@ -10,6 +10,7 @@ namespace tom
 struct argb_img;
 struct game_state;
 struct sim_region;
+struct sim_entity;
 
 struct entity_actions
 {
@@ -29,6 +30,18 @@ enum entity_direction : s32
     south,
     west
 };
+
+namespace sim_entity_flags
+{
+enum : u32
+{
+    active     = BIT(1),
+    collides   = BIT(2),
+    barrier    = BIT(3),
+    nonspatial = BIT(4),
+    hurtbox    = BIT(5),
+};
+}
 
 enum class entity_type
 {
@@ -75,18 +88,13 @@ union entity_ref
 
 struct sim_entity
 {
+    u32 flags;
     v2 pos;
     v2 vel;
     u32 chunk_z;
     f32 z;
     f32 vel_z;
-
     f32 hit_cd;
-
-    b32 active;
-    b32 collides;
-    b32 barrier;
-    b32 hurtbox;
     s32 hp;
     u32 max_hp;
     s32 virtual_z;
@@ -118,6 +126,20 @@ inline entity_move_spec
 get_default_move_spec()
 {
     return { 10.0f, 10.0f };
+}
+
+inline void
+make_entity_nonspatial(sim_entity *ent)
+{
+    set_flag(ent->flags, sim_entity_flags::nonspatial);
+}
+
+inline void
+make_entity_spatial(sim_entity *ent, v2 pos, v2 vel = { 0.0f, 0.0f })
+{
+    set_flag(ent->flags, sim_entity_flags::nonspatial);
+    ent->pos = pos;
+    ent->vel = vel;
 }
 
 void

@@ -18,11 +18,12 @@ global_var constexpr u32 max_ent_cnt            = 65536;
 global_var constexpr u32 num_screens            = 10;
 global_var constexpr u32 num_tiles_per_screen_y = 11;
 global_var constexpr s32 chunk_safe_margin      = S32_MAX / 64;
-global_var constexpr f32 chunk_size_meters      = 22.f;
-global_var constexpr f32 meters_to_pixels       = 50.f;
+global_var constexpr f32 chunk_size_meters      = 22.0f;
+global_var constexpr f32 tile_size_meters       = 1.4;
+global_var constexpr f32 meters_to_pixels       = 50.0f;
 global_var constexpr f32 screen_size_x          = chunk_size_meters;
-global_var constexpr f32 screen_size_y          = chunk_size_meters * 9.f / 16.f;
-global_var constexpr f32 jump_vel               = 2.f;
+global_var constexpr f32 screen_size_y          = chunk_size_meters * 9.0f / 16.0f;
+global_var constexpr f32 jump_vel               = 2.0f;
 global_var constexpr f32 gravity                = -9.8f;
 
 }  // namespace global
@@ -90,5 +91,26 @@ zero_size(mem_ind size, void *ptr)
 #define PUSH_STRUCT(arena, type)       (type *)push_size(arena, sizeof(type))
 #define PUSH_ARRAY(arena, count, type) (type *)push_size(arena, (count * sizeof(type)))
 #define ZERO_STRUCT(inst)              zero_size(sizeof(inst), &(inst))
+
+// Generic flag stuff
+
+inline bool
+is_flag_set(u32 flags, u32 flag)
+{
+    return flags & flag;
+}
+
+inline void
+set_flag(u32 &flags, u32 flag)
+{
+    flags |= flag;
+}
+
+inline void
+clear_flag(u32 &flags, u32 flag)
+{
+    flags &= ~flag;
+}
+
 }  // namespace tom
 #endif  // TOMATO_COMMON_HPP_

@@ -629,6 +629,30 @@ init_console()
 }
 
 internal void
+use_fast_pipe()
+{
+    wchar_t PipeName[32];
+    wsprintfW(PipeName, L"\\\\.\\pipe\\fastpipe%x", GetCurrentProcessId());
+    HANDLE FastPipe =
+        CreateFileW(PipeName, GENERIC_READ | GENERIC_WRITE, 0, 0, OPEN_EXISTING, 0, 0);
+    if (FastPipe != INVALID_HANDLE_VALUE) {
+        SetStdHandle(STD_OUTPUT_HANDLE, FastPipe);
+        SetStdHandle(STD_INPUT_HANDLE, FastPipe);
+
+#ifndef _VC_NODEFAULTLIB
+        int StdOut = _open_osfhandle((intptr_t)FastPipe, O_WRONLY | O_TEXT);
+        int StdIn  = _open_osfhandle((intptr_t)FastPipe, O_RDONLY | O_TEXT);
+
+        _dup2(StdOut, _fileno(stdout));
+        _dup2(StdIn, _fileno(stdin));
+
+        _close(StdOut);
+        _close(StdIn);
+#endif
+    }
+}
+
+internal void
 process_pending_messages(win32_state &state, game_input &input)
 {
     MSG msg;
@@ -750,6 +774,7 @@ win32_main(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLine, s32 n
 
     init_console();
     auto cons_hwnd = GetConsoleWindow();
+    use_fast_pipe();
     TOM_ASSERT(cons_hwnd);
     SendMessage(cons_hwnd, WM_SETICON, NULL, (LPARAM)icon);
 

@@ -3,8 +3,13 @@
 
 #include "common.hpp"
 
+#define CHUNK_UNITIALIZED S32_MAX
+
 namespace tom
 {
+
+struct entity;
+
 // TODO: change to v3
 struct world_dif
 {
@@ -41,25 +46,58 @@ struct world
     world_entity_block *first_free;
 };
 
+inline world_pos
+null_world_pos()
+{
+    world_pos result = {};
+    result.chunk_x   = CHUNK_UNITIALIZED;
+    return result;
+}
+
+inline bool
+is_valid(world_pos pos)
+{
+    return pos.chunk_x != CHUNK_UNITIALIZED;
+}
+
+inline bool
+is_valid(world_pos *pos)
+{
+    if (pos) return is_valid(*pos);
+
+    return false;
+}
+
+inline bool
+operator==(world_pos &lhs, world_pos &rhs)
+{
+    return lhs.chunk_x == rhs.chunk_x && lhs.chunk_y == rhs.chunk_y && lhs.chunk_z == rhs.chunk_z &&
+           lhs.offset == rhs.offset;
+}
+
+inline bool
+operator!=(world_pos &lhs, world_pos &rhs)
+{
+    return !(lhs == rhs);
+}
+
 void
 init_world(world *world, f32 tile_sizes_in_meters);
 
 world_dif
-get_world_diff(const world_pos &pos_a, const world_pos &pos_b);
+get_world_diff(world_pos pos_a, world_pos pos_b);
 
 world_pos
-map_into_chunk_space(const world_pos &pos, const v2 offset);
+map_into_chunk_space(world_pos pos, v2 offset);
 
 world_chunk *
-get_world_chunk(world *world, const s32 chunk_x, const s32 chunk_y, const s32 chunk_z,
-                memory_arena *arena = nullptr);
+get_world_chunk(world *world, s32 chunk_x, s32 chunk_y, s32 chunk_z, memory_arena *arena = nullptr);
 
 world_pos
 abs_pos_to_world_pos(f32 abs_x, f32 abs_y, f32 abs_z);
 
 void
-change_entity_location(memory_arena *arena, world *world, u32 ent_i, world_pos *old_pos,
-                       world_pos *new_pos);
+change_entity_location(memory_arena *arena, world *world, entity *ent, world_pos new_pos_init);
 
 }  // namespace tom
 

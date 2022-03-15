@@ -308,7 +308,7 @@ GAME_UPDATE_AND_RENDER(game_update_and_render)
 
         world = state->world;
         TOM_ASSERT(world);
-        init_world(world, 1.4f);
+        init_world(world, global::tile_size_meters);
 
         state->debug_draw_collision = false;
 
@@ -410,7 +410,7 @@ GAME_UPDATE_AND_RENDER(game_update_and_render)
     state->player_acts[1] = player_action;
 
     // player sword attack
-    // TODO:  update this
+    // TODO:  update this to sim region stuff
 #if 0
     if (state->player_acts[1].attack) {
         if (!p1.high->is_attacking) {
@@ -460,10 +460,15 @@ GAME_UPDATE_AND_RENDER(game_update_and_render)
     color clear_color { 0xff'4e'4e'4e };
     clear_buffer(video_buffer, clear_color);
 
-    for (u32 ent_i = 1; ent_i < region->sim_entity_cnt; ++ent_i) {
+    for (sim_entity *sim_ent = region->sim_entities;
+         sim_ent != region->sim_entities + region->sim_entity_cnt; ++sim_ent) {
         piece_group.piece_cnt = 0;
-        entity *ent           = get_entity(state, ent_i);
-        if (!ent->sim.active) continue;  // don't draw inactive entities
+        entity *ent           = get_entity(state, sim_ent->ent_i);
+        TOM_ASSERT(ent);  // there theoretically shoudln't be a null entities
+
+        // TODO: abstract active check into func?
+        if (!is_flag_set(ent->sim.flags, sim_entity_flags::active))
+            continue;  // don't draw inactive entities
 
         auto ent_dif = get_world_diff(ent->world_pos, cam->pos);
         v2 ent_mid   = { (screen_center.x + (ent_dif.dif_xy.x * global::meters_to_pixels)),
@@ -498,8 +503,6 @@ GAME_UPDATE_AND_RENDER(game_update_and_render)
             } break;
             case entity_type::wall: {
                 v2 argb_mid = { ent_mid.x, ent_mid.y - ent->sim.argb_offset };
-                // HACK: trying to get the trees onscreen
-                argb_mid /= 4.0f;
                 push_piece(&piece_group, ent->sprite, argb_mid, ent->sim.z);
             } break;
             case entity_type::stairs: {

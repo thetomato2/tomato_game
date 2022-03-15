@@ -23,6 +23,7 @@
 extern "C"
 {
 #else
+
     #include <stdio.h>
     #include <assert.h>
     #include "math.h"
@@ -33,6 +34,8 @@ extern "C"
     #define rcast(t, v) ((t)(v))
     #define ccast(t, v) ((t)(v))
 #endif
+#include <io.h>
+#include <fcntl.h>
 
 #ifdef _MSVC
     #define MSVC 1
@@ -106,7 +109,7 @@ extern "C"
 #define S64_MIN (-0x7fffffffffffffffll - 1)
 #define S64_MAX 0x7fffffffffffffffll
 
-#define internal static
+#define BIT(x) (1 << x)
 
 #define KILOBYTES(val) ((val)*1024)
 #define MEGABYTES(val) (KILOBYTES(val) * 1024)
