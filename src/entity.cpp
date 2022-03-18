@@ -6,7 +6,7 @@ namespace tom
 {
 
 entity *
-get_entity(game_state *state, u32 ind)
+get_entity(game_state *state, const u32 ind)
 {
     entity *result = nullptr;
 
@@ -87,7 +87,6 @@ add_monster(game_state *state, f32 abs_x, f32 abs_y, f32 abs_z)
 {
     entity *ent = add_new_entity(state, abs_x, abs_y, abs_z);
     TOM_ASSERT(ent);
-    ent->world_pos = abs_pos_to_world_pos(abs_x, abs_y, abs_z);
 
     ent->type            = entity_type::monster;
     ent->color           = { 0xff'dd'dd'dd };
@@ -149,7 +148,6 @@ add_player(game_state *state, u32 player_i, f32 abs_x, f32 abs_y, f32 abs_z)
             player->type            = entity_type::player;
             player->color           = { 0xff'00'00'ff };
             player->sprite          = state->player_sprites;
-            player->world_pos       = abs_pos_to_world_pos(abs_x, abs_y, abs_z);
             player->sim.height      = .6f;
             player->sim.width       = 0.6f * player->sim.height;
             player->sim.argb_offset = 16.f;
@@ -170,31 +168,15 @@ add_player(game_state *state, u32 player_i, f32 abs_x, f32 abs_y, f32 abs_z)
 }
 
 void
-move_entity(game_state *state, sim_region *region, entity *ent, const entity_actions ent_actions,
-            const entity_move_spec move_spec, const f32 dt)
+move_entity(game_state *state, sim_region *region, entity *ent, v2 ent_delta, const f32 dt)
 {
     TOM_ASSERT(state && region);
-
-    v2 ent_accel = ent_actions.dir;
-
-    // NOTE: normalize vector to unit length
-    f32 ent_accel_len = vec::length_sq(ent_accel);
-    // TODO: make speed specific to ent type
-
-    if (ent_accel_len > 1.f) ent_accel *= (1.f / math::sqrt_f32(ent_accel_len));
-    ent_accel *= move_spec.speed;
-    ent_accel -= ent->sim.vel * move_spec.drag;
-
-    v2 player_delta   = (.5f * ent_accel * math::square(dt) + ent->sim.vel * dt);
-    v2 new_player_pos = ent->sim.pos + player_delta;
-
-    ent->sim.vel += ent_accel * dt;
 
     // NOTE: how many iterations/time resolution
     for (u32 i = 0; i < 4; ++i) {
         f32 t_min           = 1.0f;
         v2 wall_nrm         = {};
-        v2 desired_position = ent->sim.pos + player_delta;
+        v2 desired_position = ent->sim.pos + ent_delta;
         sim_entity *hit_ent = nullptr;
 
         // FIXME: this is N * N bad
@@ -239,22 +221,22 @@ move_entity(game_state *state, sim_region *region, entity *ent, const entity_act
                 return hit;
             };
 
-            if (test_wall(min_corner.x, rel.x, rel.y, player_delta.x, player_delta.y, min_corner.y,
+            if (test_wall(min_corner.x, rel.x, rel.y, ent_delta.x, ent_delta.y, min_corner.y,
                           max_corner.y)) {
                 wall_nrm = v2 { -1.f, 0.f };
                 hit_ent  = test_ent;
             }
-            if (test_wall(max_corner.x, rel.x, rel.y, player_delta.x, player_delta.y, min_corner.y,
+            if (test_wall(max_corner.x, rel.x, rel.y, ent_delta.x, ent_delta.y, min_corner.y,
                           max_corner.y)) {
                 wall_nrm = v2 { 1.f, 0.f };
                 hit_ent  = test_ent;
             }
-            if (test_wall(min_corner.y, rel.y, rel.x, player_delta.y, player_delta.x, min_corner.x,
+            if (test_wall(min_corner.y, rel.y, rel.x, ent_delta.y, ent_delta.x, min_corner.x,
                           max_corner.x)) {
                 wall_nrm = v2 { 0.f, -1.f };
                 hit_ent  = test_ent;
             }
-            if (test_wall(max_corner.y, rel.y, rel.x, player_delta.y, player_delta.x, min_corner.x,
+            if (test_wall(max_corner.y, rel.y, rel.x, ent_delta.y, ent_delta.x, min_corner.x,
                           max_corner.x)) {
                 wall_nrm = v2 { 0.f, 1.f };
                 hit_ent  = test_ent;
@@ -265,10 +247,10 @@ move_entity(game_state *state, sim_region *region, entity *ent, const entity_act
             wall_nrm = v2 { 0.f, 0.f };
         }
 
-        ent->sim.pos += t_min * player_delta;
+        ent->sim.pos += t_min * ent_delta;
         if (hit_ent) {
             ent->sim.vel -= 1.f * vec::inner(ent->sim.vel, wall_nrm) * wall_nrm;
-            player_delta -= 1.f * vec::inner(player_delta, wall_nrm) * wall_nrm;
+            ent_delta -= 1.f * vec::inner(ent_delta, wall_nrm) * wall_nrm;
 
             // printf("%d hit %d!\n", ent->sim.low->high_i, hit_ent);
 
@@ -306,11 +288,22 @@ move_entity(game_state *state, sim_region *region, entity *ent, const entity_act
 
     // NOTE: changes the players direction for the sprite
     v2 pv = { ent->sim.vel };
+
+    constexpr f32 dir_eps = 0.1f;
+
     if (math::abs_f32(pv.x) > math::abs_f32(pv.y)) {
-        pv.x > 0.f ? ent->sim.dir = entity_direction::east : ent->sim.dir = entity_direction::west;
+        if (pv.x > 0.0f + dir_eps) {
+            ent->dir = entity_direction::east;
+        } else if (pv.x < 0.0f - dir_eps) {
+            ent->dir = entity_direction::west;
+        }
+
     } else if (math::abs_f32(pv.y) > math::abs_f32(pv.x)) {
-        pv.y > 0.f ? ent->sim.dir = entity_direction::north
-                   : ent->sim.dir = entity_direction::south;
+        if (pv.y > 0.0f + dir_eps) {
+            ent->dir = entity_direction::north;
+        } else if (pv.y < 0.0f - dir_eps) {
+            ent->dir = entity_direction::south;
+        }
     }
 
     world_pos new_pos = map_into_chunk_space(state->camera.pos, ent->sim.pos);
@@ -318,99 +311,6 @@ move_entity(game_state *state, sim_region *region, entity *ent, const entity_act
 
     // TODO: move this out of here?
     // state->entities[ent->sim.ent_i].world_pos = new_pos;
-}
-
-void
-update_familiar(game_state *state, sim_region *region, entity *fam, const f32 dt)
-{
-    entity *closest_player     = nullptr;
-    f32 closest_player_dist_sq = math::square(10.f);
-
-    for (u32 ent_i = 1; ent_i < state->ent_cnt; ++ent_i) {
-        entity *test_ent = get_entity(state, ent_i);
-        if (test_ent->type == entity_type::player) {
-            f32 test_dist_sq = vec::length_sq(test_ent->sim.pos - fam->sim.pos);
-            if (closest_player_dist_sq > test_dist_sq) {
-                closest_player         = test_ent;
-                closest_player_dist_sq = test_dist_sq;
-            }
-        }
-    }
-
-    if (closest_player) {
-        entity_actions fam_acts = {};
-        f32 one_over_len        = 1.f / math::sqrt_f32(closest_player_dist_sq);
-        f32 min_dist            = 2.f;
-        v2 dif                  = closest_player->sim.pos - fam->sim.pos;
-        if (math::abs_f32(dif.x) > min_dist || math::abs_f32(dif.y) > min_dist)
-            fam_acts.dir = one_over_len * (dif);
-
-        auto move_spec = get_default_move_spec();
-        move_entity(state, region, fam, fam_acts, move_spec, dt);
-        if (fam->sim.dir == entity_direction::east)
-            fam->sprite = state->cat_sprites;
-        else if (fam->sim.dir == entity_direction::west)
-            fam->sprite = state->cat_sprites + 1;
-    }
-}
-
-// TODO: update this
-void
-update_sword(game_state *state, sim_region *region, entity *sword, const f32 dt)
-{
-    entity_actions sword_acts = {};
-    constexpr f32 sword_vel   = 5.0f;
-
-    switch (sword->sim.dir) {
-        case entity_direction::north: {
-            sword->sim.vel.y = sword_vel;
-            sword->sprite    = state->sword_sprites + entity_direction::north;
-        } break;
-        case entity_direction::east: {
-            sword->sim.vel.x = sword_vel;
-            sword->sprite    = state->sword_sprites + entity_direction::east;
-        } break;
-        case entity_direction::south: {
-            sword->sim.vel.y = -sword_vel;
-            sword->sprite    = state->sword_sprites + entity_direction::south;
-        } break;
-        case entity_direction::west: {
-            sword->sim.vel.x = -sword_vel;
-            sword->sprite    = state->sword_sprites + entity_direction::west;
-        } break;
-    }
-    auto move_spec = get_default_move_spec();
-    move_spec.drag = 0.0f;
-    move_entity(state, region, sword, sword_acts, move_spec, dt);
-}
-
-void
-update_monster(game_state *state, sim_region *region, entity *monster, f32 dt)
-{
-    // TODO: implement this
-}
-
-void
-update_player(game_state *state, sim_region *region, entity *player, f32 dt)
-{
-    auto move_spec = get_default_move_spec();
-
-    f32 ent_speed = state->player_acts[1].sprint ? move_spec.speed = 25.f : move_spec.speed = 10.f;
-    move_entity(state, region, player, state->player_acts[1], move_spec, dt);
-    switch (player->sim.dir) {
-        case entity_direction::north: {
-            player->sprite = state->player_sprites + entity_direction::north;
-        } break;
-        case entity_direction::east: {
-            player->sprite = state->player_sprites + entity_direction::east;
-        } break;
-        case entity_direction::south: {
-            player->sprite = state->player_sprites + entity_direction::south;
-        } break;
-        case entity_direction::west: {
-            player->sprite = state->player_sprites + entity_direction::west;
-        } break;
-    }
 }
 
 }  // namespace tom

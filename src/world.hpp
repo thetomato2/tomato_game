@@ -88,7 +88,7 @@ world_dif
 get_world_diff(world_pos pos_a, world_pos pos_b);
 
 world_pos
-map_into_chunk_space(world_pos pos, v2 offset);
+map_into_chunk_space(world_pos pos, v2 offset = { 0.0f, 0.0f });
 
 world_chunk *
 get_world_chunk(world *world, s32 chunk_x, s32 chunk_y, s32 chunk_z, memory_arena *arena = nullptr);

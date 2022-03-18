@@ -260,6 +260,22 @@ is_inside(rect rect, v2 test)
                    (test.y <= rect.max.y));
     return result;
 }
+inline rect
+add_radius(rect a, f32 r_width, f32 r_height)
+{
+    rect result;
+
+    result.min = a.min - v2 { r_width, r_width };
+    result.max = a.max + v2 { r_height, r_height };
+
+    return result;
+}
+inline rect
+add_radius(rect a, f32 radius)
+{
+    return add_radius(a, radius, radius);
+}
+
 }  // namespace rec
 
 // ===============================================================================================

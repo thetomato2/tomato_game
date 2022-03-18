@@ -19,12 +19,13 @@ global_var constexpr u32 num_screens            = 10;
 global_var constexpr u32 num_tiles_per_screen_y = 11;
 global_var constexpr s32 chunk_safe_margin      = S32_MAX / 64;
 global_var constexpr f32 chunk_size_meters      = 22.0f;
-global_var constexpr f32 tile_size_meters       = 1.4;
-global_var constexpr f32 meters_to_pixels       = 50.0f;
+global_var constexpr f32 tile_size_meters       = 1.4f;
+global_var constexpr f32 meters_to_pixels       = 60.0f;
 global_var constexpr f32 screen_size_x          = chunk_size_meters;
 global_var constexpr f32 screen_size_y          = chunk_size_meters * 9.0f / 16.0f;
 global_var constexpr f32 jump_vel               = 2.0f;
 global_var constexpr f32 gravity                = -9.8f;
+global_var constexpr f32 epsilon                = 0.0001f;
 
 }  // namespace global
 
@@ -95,19 +96,19 @@ zero_size(mem_ind size, void *ptr)
 // Generic flag stuff
 
 inline bool
-is_flag_set(u32 flags, u32 flag)
+is_flag_set(s32 flags, s32 flag)
 {
     return flags & flag;
 }
 
 inline void
-set_flag(u32 &flags, u32 flag)
+set_flag(s32 &flags, s32 flag)
 {
     flags |= flag;
 }
 
 inline void
-clear_flag(u32 &flags, u32 flag)
+clear_flag(s32 &flags, s32 flag)
 {
     flags &= ~flag;
 }

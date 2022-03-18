@@ -7,9 +7,8 @@ namespace tom
 internal bool
 is_canonical(f32 rel_coord)
 {
-    constexpr f32 epsilon = 0.0001f;
-    return rel_coord >= global::chunk_size_meters * -0.5f - epsilon &&
-           rel_coord <= global::chunk_size_meters * 0.5f + epsilon;
+    return rel_coord >= global::chunk_size_meters * -0.5f - global::epsilon &&
+           rel_coord <= global::chunk_size_meters * 0.5f + global::epsilon;
 }
 
 internal bool
@@ -78,7 +77,7 @@ get_world_diff(world_pos pos_a, world_pos pos_b)
 }
 
 world_pos
-map_into_chunk_space(world_pos pos, v2 offset)
+map_into_chunk_space(world_pos pos, const v2 offset)
 {
     auto result = pos;
 
@@ -148,7 +147,10 @@ abs_pos_to_world_pos(f32 abs_x, f32 abs_y, f32 abs_z)
     result.offset.x = abs_x - (result.chunk_x * global::chunk_size_meters);
     result.offset.y = abs_y - (result.chunk_y * global::chunk_size_meters);
 
-    result = map_into_chunk_space(result, result.offset);
+    recanonicalize_coord(result.chunk_x, result.offset.x);
+    recanonicalize_coord(result.chunk_y, result.offset.y);
+
+    // result = map_into_chunk_space(result, result.offset);
 
     return result;
 }
@@ -225,7 +227,7 @@ change_entity_location(memory_arena *arena, world *world, entity *ent, world_pos
 
     change_entity_location_raw(arena, world, ent->sim.ent_i, old_pos, new_pos);
     if (new_pos) {
-        // ent->world_pos = *new_pos;
+        ent->world_pos = *new_pos;
         clear_flag(ent->sim.flags, sim_entity_flags::nonspatial);
     } else {
         ent->world_pos = null_world_pos();

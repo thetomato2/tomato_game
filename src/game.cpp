@@ -311,6 +311,7 @@ GAME_UPDATE_AND_RENDER(game_update_and_render)
         init_world(world, global::tile_size_meters);
 
         state->debug_draw_collision = false;
+        state->debug_flag           = false;
 
         const char *bg = "uv_color_squares_960x540";
 
@@ -371,6 +372,7 @@ GAME_UPDATE_AND_RENDER(game_update_and_render)
             add_player(state, player_i, 0.f, 0.f, 0.f);
         }
 
+#if 1
         f32 x_len = 55.f;
         for (f32 x = -20.f; x < x_len; ++x) {
             add_tree(state, x, 15, 0.0f);
@@ -385,7 +387,11 @@ GAME_UPDATE_AND_RENDER(game_update_and_render)
                 add_tree(state, x, y, 0.0);
             }
         }
+#endif
 
+        // add_tree(state, 1.0f, 1.0f, 0.0f);
+        // add_tree(state, 0.0f, 1.0f, 0.0f);
+        // add_tree(state, -1.0f, 1.0f, 0.0f);
         add_monster(state, 5.f, 0.f, 0.f);
         add_cat(state, -1.f, 1.f, 0.f);
 
@@ -397,13 +403,15 @@ GAME_UPDATE_AND_RENDER(game_update_and_render)
     // #START
     // ===============================================================================================
 
+    f32 dt      = input.delta_time;
     camera *cam = &state->camera;
     auto p1     = get_entity(state, 1);
+    // printf("%f, %f\n", p1->world_pos.offset.x, p1->world_pos.offset.y);
 
     // get input
     // NOTE: only doing one player
     entity *player = p1;
-    assert(player->type == entity_type::player);
+    TOM_ASSERT(player->type == entity_type::player);
     entity_actions player_action = {};
     process_keyboard(input.keyboard, &player_action);
     process_controller(input.controllers[0], &player_action);
@@ -439,19 +447,20 @@ GAME_UPDATE_AND_RENDER(game_update_and_render)
     entity *cam_ent      = get_entity(state, state->entity_camera_follow_ind);
     world_dif entity_dif = get_world_diff(cam_ent->world_pos, cam->pos);
 
+    // NOTE: cam is following the player
+    cam->pos         = p1->world_pos;
     cam->pos.chunk_z = cam_ent->world_pos.chunk_z;
 
-    // NOTE: cam is following the player
-    world_pos new_cam_pos     = p1->world_pos;
-    f32 screen_test_size_mult = 2.f;
-    v2 test_screen_size       = { (global::screen_size_x * screen_test_size_mult),
-                            global::screen_size_y * screen_test_size_mult };
-    rect cam_bounds           = rec::center_half_dim({ 0.f, 0.f }, test_screen_size);
+    world_pos new_cam_pos  = p1->world_pos;
+    f32 sim_test_size_mult = 2.f;
+    v2 sim_screen_size     = { (global::screen_size_x * sim_test_size_mult),
+                           global::screen_size_y * sim_test_size_mult };
+    rect sim_bounds        = rec::center_half_dim({ 0.f, 0.f }, sim_screen_size);
 
     memory_arena sim_arena;
     init_arena(&sim_arena, memory.transient_storage_size, memory.transient_storage);
 
-    sim_region *region = begin_sim(&sim_arena, state, cam->pos, cam_bounds);
+    sim_region *region = begin_sim(&sim_arena, state, cam->pos, sim_bounds);
 
     v2 screen_center = { .5f * (f32)video_buffer.width, .5f * (f32)video_buffer.height };
     entity_visble_piece_group piece_group = {};
@@ -460,21 +469,127 @@ GAME_UPDATE_AND_RENDER(game_update_and_render)
     color clear_color { 0xff'4e'4e'4e };
     clear_buffer(video_buffer, clear_color);
 
+    rect cam_bounds =
+        rec::center_half_dim({ 0.f, 0.f }, { global::screen_size_x * global::meters_to_pixels,
+                                             global::screen_size_y * global::meters_to_pixels });
+
     for (sim_entity *sim_ent = region->sim_entities;
          sim_ent != region->sim_entities + region->sim_entity_cnt; ++sim_ent) {
         piece_group.piece_cnt = 0;
         entity *ent           = get_entity(state, sim_ent->ent_i);
         TOM_ASSERT(ent);  // there theoretically shoudln't be a null entities
+        if (ent->type == entity_type::null) continue;
 
         // TODO: abstract active check into func?
+        // TODO: active and nonspatial redundant?
         if (!is_flag_set(ent->sim.flags, sim_entity_flags::active))
-            continue;  // don't draw inactive entities
+            continue;  // don't update inactive entities
 
         auto ent_dif = get_world_diff(ent->world_pos, cam->pos);
         v2 ent_mid   = { (screen_center.x + (ent_dif.dif_xy.x * global::meters_to_pixels)),
                        (screen_center.y - (ent_dif.dif_xy.y * global::meters_to_pixels)) };
 
-        // TODO: pull this out?
+        entity_move_spec move_spec = default_move_spec();
+        entity_actions ent_act     = {};
+
+        // update logic
+        if (ent->sim.updateable) {
+            switch (ent->type) {
+                case entity_type::none: {
+                } break;
+                case entity_type::player: {
+                    f32 ent_speed = state->player_acts[1].sprint ? move_spec.speed = 250.0f
+                                                                 : move_spec.speed = 100.0f;
+                    ent_act       = state->player_acts[1];
+
+                } break;
+                case entity_type::wall: {
+                    // do nothing
+                } break;
+                case entity_type::stairs: {
+                    // do nothing
+                } break;
+                case entity_type::familiar: {
+                    entity *closest_player     = nullptr;
+                    f32 closest_player_dist_sq = math::square(10.f);
+
+                    for (u32 ent_i = 1; ent_i < state->ent_cnt; ++ent_i) {
+                        entity *test_ent = get_entity(state, ent_i);
+                        if (test_ent->type == entity_type::player) {
+                            f32 test_dist_sq = vec::length_sq(test_ent->sim.pos - ent->sim.pos);
+                            if (closest_player_dist_sq > test_dist_sq) {
+                                closest_player         = test_ent;
+                                closest_player_dist_sq = test_dist_sq;
+                            }
+                        }
+                    }
+
+                    if (closest_player) {
+                        f32 one_over_len = 1.f / math::sqrt_f32(closest_player_dist_sq);
+                        f32 min_dist     = 2.f;
+                        v2 dif           = closest_player->sim.pos - ent->sim.pos;
+                        if (math::abs_f32(dif.x) > min_dist || math::abs_f32(dif.y) > min_dist)
+                            ent_act.dir = one_over_len * (dif);
+
+                        if (ent->dir == entity_direction::east)
+                            ent->sprite = state->cat_sprites;
+                        else if (ent->dir == entity_direction::west)
+                            ent->sprite = state->cat_sprites + 1;
+                    }
+                } break;
+                case entity_type::monster: {
+                    // TODO: update monster
+                } break;
+                case entity_type::sword: {
+                    constexpr f32 sword_vel = 5.0f;
+
+                    move_spec.drag = 0.0f;
+
+                    switch (ent->dir) {
+                        case entity_direction::north: {
+                            ent->sim.vel.y = sword_vel;
+                            ent->sprite    = state->sword_sprites + entity_direction::north;
+                        } break;
+                        case entity_direction::east: {
+                            ent->sim.vel.x = sword_vel;
+                            ent->sprite    = state->sword_sprites + entity_direction::east;
+                        } break;
+                        case entity_direction::south: {
+                            ent->sim.vel.y = -sword_vel;
+                            ent->sprite    = state->sword_sprites + entity_direction::south;
+                        } break;
+                        case entity_direction::west: {
+                            ent->sim.vel.x = -sword_vel;
+                            ent->sprite    = state->sword_sprites + entity_direction::west;
+                        } break;
+                    }
+
+                } break;
+                default: {
+                    INVALID_CODE_PATH;
+                } break;
+            }
+        }
+
+        v2 ent_accel = ent_act.dir;
+
+        // NOTE: normalize vector to unit length
+        f32 ent_accel_len = vec::length_sq(ent_accel);
+        // TODO: make speed specific to ent type
+
+        if (ent_accel_len > 1.f) ent_accel *= (1.f / math::sqrt_f32(ent_accel_len));
+        ent_accel *= move_spec.speed;
+        ent_accel -= ent->sim.vel * move_spec.drag;
+
+        v2 ent_delta = (.5f * ent_accel * math::square(dt) + ent->sim.vel * dt);
+
+        ent->sim.vel += ent_accel * dt;
+
+        if (math::abs_f32(ent->sim.vel.x) > 0.0f + global::epsilon ||
+            math::abs_f32(ent->sim.vel.y) > 0.0f + global::epsilon)
+            move_entity(state, region, ent, ent_delta, dt);
+
+        // TODO: pull this out in render code?
         auto push_hp = [](entity_visble_piece_group *piece_group, entity *ent, v2 argb_mid) {
             for (u32 i = 0; i < ent->sim.hp; ++i) {
                 push_piece(piece_group, 3.f, 6.f, { colors::red },
@@ -485,49 +600,62 @@ GAME_UPDATE_AND_RENDER(game_update_and_render)
             }
         };
 
-        switch (ent->type) {
-            case entity_type::none: {
-                draw_rect(
-                    video_buffer, ent_mid.x - (ent->sim.width * global::meters_to_pixels) / 2.f,
-                    ent_mid.y - (ent->sim.height * global::meters_to_pixels) / 2.f,
-                    ent_mid.x + (ent->sim.width * global::meters_to_pixels) / 2.f,
-                    ent_mid.y + (ent->sim.height * global::meters_to_pixels) / 2.f, { 0xffff00ff });
-            } break;
-            case entity_type::player: {
-                // TODO: get player index from entity?
-                update_player(state, region, ent, input.delta_time);
-                v2 argb_mid = { ent_mid.x, ent_mid.y - ent->sim.argb_offset };
-                push_piece(&piece_group, ent->sprite, argb_mid, ent->sim.z);
-                push_hp(&piece_group, ent, argb_mid);
-
-            } break;
-            case entity_type::wall: {
-                v2 argb_mid = { ent_mid.x, ent_mid.y - ent->sim.argb_offset };
-                push_piece(&piece_group, ent->sprite, argb_mid, ent->sim.z);
-            } break;
-            case entity_type::stairs: {
-                v2 argb_mid = { ent_mid.x, ent_mid.y - ent->sim.argb_offset };
-                push_piece(&piece_group, ent->sprite, argb_mid, ent->sim.z);
-            } break;
-            case entity_type::familiar: {
-                update_familiar(state, region, ent, input.delta_time);
-                v2 argb_mid = { ent_mid.x, ent_mid.y - ent->sim.argb_offset };
-                push_piece(&piece_group, ent->sprite, argb_mid, ent->sim.z);
-            } break;
-            case entity_type::monster: {
-                update_monster(state, region, ent, input.delta_time);
-                v2 argb_mid = { ent_mid.x, ent_mid.y - ent->sim.argb_offset };
-                push_piece(&piece_group, ent->sprite, argb_mid, ent->sim.z);
-                push_hp(&piece_group, ent, argb_mid);
-            } break;
-            case entity_type::sword: {
-                update_monster(state, region, ent, input.delta_time);
-                v2 argb_mid = { ent_mid.x, ent_mid.y - ent->sim.argb_offset };
-                push_piece(&piece_group, ent->sprite, argb_mid, ent->sim.z);
-            } break;
-            default: {
-                INVALID_CODE_PATH;
-            } break;
+        // draw only inside window
+        if (rec::is_inside(cam_bounds, ent_mid)) {
+            switch (ent->type) {
+                case entity_type::none: {
+                    draw_rect(video_buffer,
+                              ent_mid.x - (ent->sim.width * global::meters_to_pixels) / 2.f,
+                              ent_mid.y - (ent->sim.height * global::meters_to_pixels) / 2.f,
+                              ent_mid.x + (ent->sim.width * global::meters_to_pixels) / 2.f,
+                              ent_mid.y + (ent->sim.height * global::meters_to_pixels) / 2.f,
+                              { 0xffff00ff });
+                } break;
+                case entity_type::player: {
+                    // TODO: get player index from entity?
+                    v2 argb_mid = { ent_mid.x, ent_mid.y - ent->sim.argb_offset };
+                    switch (ent->dir) {
+                        case entity_direction::north: {
+                            ent->sprite = state->player_sprites + entity_direction::north;
+                        } break;
+                        case entity_direction::east: {
+                            ent->sprite = state->player_sprites + entity_direction::east;
+                        } break;
+                        case entity_direction::south: {
+                            ent->sprite = state->player_sprites + entity_direction::south;
+                        } break;
+                        case entity_direction::west: {
+                            ent->sprite = state->player_sprites + entity_direction::west;
+                        } break;
+                    }
+                    push_piece(&piece_group, ent->sprite, argb_mid, ent->sim.z);
+                    push_hp(&piece_group, ent, argb_mid);
+                } break;
+                case entity_type::wall: {
+                    v2 argb_mid = { ent_mid.x, ent_mid.y - ent->sim.argb_offset };
+                    push_piece(&piece_group, ent->sprite, argb_mid, ent->sim.z);
+                } break;
+                case entity_type::stairs: {
+                    v2 argb_mid = { ent_mid.x, ent_mid.y - ent->sim.argb_offset };
+                    push_piece(&piece_group, ent->sprite, argb_mid, ent->sim.z);
+                } break;
+                case entity_type::familiar: {
+                    v2 argb_mid = { ent_mid.x, ent_mid.y - ent->sim.argb_offset };
+                    push_piece(&piece_group, ent->sprite, argb_mid, ent->sim.z);
+                } break;
+                case entity_type::monster: {
+                    v2 argb_mid = { ent_mid.x, ent_mid.y - ent->sim.argb_offset };
+                    push_piece(&piece_group, ent->sprite, argb_mid, ent->sim.z);
+                    push_hp(&piece_group, ent, argb_mid);
+                } break;
+                case entity_type::sword: {
+                    v2 argb_mid = { ent_mid.x, ent_mid.y - ent->sim.argb_offset };
+                    push_piece(&piece_group, ent->sprite, argb_mid, ent->sim.z);
+                } break;
+                default: {
+                    INVALID_CODE_PATH;
+                } break;
+            }
         }
 
         // ===============================================================================================

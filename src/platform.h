@@ -131,22 +131,22 @@ extern "C"
     #define TOM_DLL_EXPORT
 #endif
 #ifdef TOM_INTERNAL
-    #if _MSVC
-        #define TOM_ASSERT(x)                                               \
-            if (!(x)) {                                                     \
-                printf("FAILED ASSERT -> %s at :%d\n", __FILE__, __LINE__); \
-                __debugbreak();                                             \
-            }                                                               \
-            assert(x)
-    #else
-        #define TOM_ASSERT(x)                                               \
-            if (!(x)) {                                                     \
-                printf("FAILED ASSERT -> %s at :%d\n", __FILE__, __LINE__); \
-            }                                                               \
-            assert(x)
-    #endif
+    #define TOM_ASSERT(x)                                               \
+        if (!(x)) {                                                     \
+            printf("FAILED ASSERT -> %s at :%d\n", __FILE__, __LINE__); \
+            __debugbreak();                                             \
+        }                                                               \
+        assert(x)
+
+    #define TOM_ASSERT_MSG(x, msg)                                                \
+        if (!(x)) {                                                               \
+            printf("FAILED ASSERT -> %s at :%d - %s\n", __FILE__, __LINE__, msg); \
+            __debugbreak();                                                       \
+        }                                                                         \
+        assert(x)
 #else
     #define TOM_ASSERT(x)
+    #define TOM_ASSERT_MSG(x, msg)
 #endif
 
 #define INVALID_CODE_PATH TOM_ASSERT(!"Invalid code path!")

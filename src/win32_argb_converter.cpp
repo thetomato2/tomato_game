@@ -28,7 +28,7 @@ using wchar_t = uint16_t;
 
 #pragma pack(push, 1)
 
-struct Bitmap_Header
+struct bitmap_header
 {
     u16 file_type;
     u32 file_size;
@@ -42,7 +42,7 @@ struct Bitmap_Header
     u16 bits_per_pixel;
 };
 
-struct ARGB_Header
+struct argb_header
 {
     u32 width;
     u32 height;
@@ -50,7 +50,7 @@ struct ARGB_Header
 };
 #pragma pack(pop)
 
-struct Bitmap_Img
+struct bitmap_img
 {
     s32 width;
     s32 height;
@@ -118,18 +118,18 @@ win32_write_file(const char *file_name, u64 memory_size_, void *memory_)
     }
     return success;
 }
-Bitmap_Img
+bitmap_img
 load_bmp(const char *file_name)
 {
     debug_read_file_result read_result = win32_read_file(file_name);
-    Bitmap_Img result;
+    bitmap_img result;
 
     if (read_result.content_size != 0) {
-        Bitmap_Header *header = (Bitmap_Header *)read_result.contents;
-        u32 *pixels           = (u32 *)((byt *)read_result.contents + header->bitmap_offset);
-        result.width          = header->width;
-        result.height         = header->height;
-        result.pixel_ptr      = pixels;
+        bitmap_header *header = (bitmap_header *)read_result.contents;
+        u32 *pixels   = rcast(u32 *, (scast(byt *, read_result.contents) + header->bitmap_offset));
+        result.width  = header->width;
+        result.height = header->height;
+        result.pixel_ptr = pixels;
     }
     return result;
 }
@@ -159,11 +159,12 @@ main(s32 argc, char *argv[])
         printf("Loaded: \"%s\"\n", argv[1]);
     }
 
-    ARGB_Header argb;
-    argb.width      = (u32)width;
-    argb.height     = (u32)height;
-    argb.size       = sizeof(ARGB_Header) + sizeof(u32) * (u32)argb.width * (u32)argb.height;
-    auto *pixel_ptr = (u32 *)image;
+    argb_header argb;
+    argb.width  = scast(u32, width);
+    argb.height = scast(u32, height);
+    argb.size =
+        sizeof(argb_header) + sizeof(u32) * scast(u32, argb.width) * scast(u32, argb.height);
+    auto *pixel_ptr = rcast(u32 *, image);
 
     for (u32 pixel {}; pixel < width * height; ++pixel) {
         u8 temp = *image;
@@ -174,7 +175,7 @@ main(s32 argc, char *argv[])
     }
 
     auto *argb_buf_ptr =
-        (u32 *)VirtualAlloc(0, argb.size, MEM_RESERVE | MEM_COMMIT, PAGE_READWRITE);
+        scast(u32 *, VirtualAlloc(0, argb.size, MEM_RESERVE | MEM_COMMIT, PAGE_READWRITE));
 
     auto *write_ptr = argb_buf_ptr;
     *write_ptr++    = argb.width;
@@ -209,7 +210,7 @@ main(s32 argc, char *argv[])
     *img_path_buf_ptr++ = 'b';
     *img_path_buf_ptr++ = '\0';
 
-    win32_write_file(img_path_buf, (u64)argb.size, argb_buf_ptr);
+    win32_write_file(img_path_buf, scast(u64, argb.size), argb_buf_ptr);
 
     printf("Wrote: %s\n", img_path_buf);
 

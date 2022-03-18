@@ -101,14 +101,14 @@ add_sim_entity_to_region_raw(game_state *state, sim_region *region, u32 ent_i, e
         // TODO: should be a decrompression step, not a copy!
         entity = region->sim_entities + region->sim_entity_cnt++;
         map_storage_ind_to_ent(region, ent_i, *entity);
-
         if (source_ent) {
             *entity = source_ent->sim;
+            TOM_ASSERT(!is_flag_set(entity->flags, sim_entity_flags::simming));
+            set_flag(entity->flags, sim_entity_flags::simming);
             // load_entity_ref(state, region, entity->weapon_i);
         }
-
-        entity->ent_i = ent_i;
-
+        entity->ent_i      = ent_i;
+        entity->updateable = false;
     } else {
         INVALID_CODE_PATH;
     }
@@ -126,7 +126,8 @@ add_sim_entity_to_region(game_state *state, sim_region *region, u32 ent_i, entit
     sim_entity *dest_ent = add_sim_entity_to_region_raw(state, region, ent_i, source_ent);
     if (dest_ent) {
         if (sim_pos) {
-            dest_ent->pos = *sim_pos;
+            dest_ent->pos        = *sim_pos;
+            dest_ent->updateable = rec::is_inside(region->update_bounds, dest_ent->pos);
         } else {
             dest_ent->pos = get_sim_space_pos(*region, *source_ent);
         }
@@ -144,8 +145,13 @@ begin_sim(memory_arena *arena, game_state *state, world_pos origin, rect bounds)
     sim_region *region = PUSH_STRUCT(arena, sim_region);
     ZERO_STRUCT(region->hash);
 
-    region->origin             = origin;
-    region->bounds             = bounds;
+    // TODO: IMPORTANT-> calc this from the max value of all entities radius + speed
+    f32 update_safety_margin = 1.0f;
+
+    region->origin        = origin;
+    region->update_bounds = bounds;
+    region->bounds        = rec::add_radius(bounds, update_safety_margin);
+
     region->max_sim_entity_cnt = 4096;  // TODO: how many max entities?
     region->sim_entity_cnt     = 0;
     region->sim_entities       = PUSH_ARRAY(arena, region->max_sim_entity_cnt, sim_entity);
@@ -168,9 +174,9 @@ begin_sim(memory_arena *arena, game_state *state, world_pos origin, rect bounds)
                             if (rec::is_inside(region->bounds, sim_space_pos)) {
                                 add_sim_entity_to_region(state, region, block_ent_i, ent,
                                                          &sim_space_pos);
-                                local_persist u32 ent_cnt = 0;
-                                printf("added ent %d - %d : %d\n", block_ent_i, ent_cnt++,
-                                       region->sim_entity_cnt);
+                                // local_persist u32 ent_cnt = 0;
+                                // printf("added ent %d - %d : %d\n", block_ent_i, ent_cnt++,
+                                //        region->sim_entity_cnt);
                             }
                         }
                     }
@@ -190,9 +196,12 @@ end_sim(game_state *state, sim_region *region)
          sim_ent != region->sim_entities + region->sim_entity_cnt; ++sim_ent) {
         entity *ent = state->entities + sim_ent->ent_i;
         ent->sim    = *sim_ent;
+        // if (ent->type == entity_type::player && state->debug_flag) __debugbreak();
 
         // store_entity_ref(&ent->sim.weapon_i);
 
+#if 0
+        // REVIEW: do I need this since I am using pointers everywhere?
         // TODO: save state back to stored sim_entity, once high entities do state decompression
         world_pos new_pos = !is_flag_set(ent->sim.flags, sim_entity_flags::nonspatial)
                                 ? map_into_chunk_space(region->origin, sim_ent->pos)
@@ -200,6 +209,9 @@ end_sim(game_state *state, sim_region *region)
         // TODO: this is unneeded? I already do this in the update
         if (ent->world_pos != new_pos)
             change_entity_location(&state->world_arena, state->world, ent, new_pos);
+#endif
+        TOM_ASSERT(is_flag_set(ent->sim.flags, sim_entity_flags::simming));
+        clear_flag(ent->sim.flags, sim_entity_flags::simming);
     }
 }
 

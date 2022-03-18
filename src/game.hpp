@@ -44,6 +44,7 @@ struct game_state
     world_pos test_pos;
 
     b32 debug_draw_collision;
+    b32 debug_flag;
 };
 
 inline bool

@@ -19,6 +19,7 @@ struct sim_region
 {
     world_pos origin;
     rect bounds;
+    rect update_bounds;
 
     u32 max_sim_entity_cnt;
     u32 sim_entity_cnt;

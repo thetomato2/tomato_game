@@ -33,13 +33,15 @@ enum entity_direction : s32
 
 namespace sim_entity_flags
 {
-enum : u32
+enum : s32
 {
-    active     = BIT(1),
-    collides   = BIT(2),
-    barrier    = BIT(3),
-    nonspatial = BIT(4),
-    hurtbox    = BIT(5),
+    active     = BIT(0),
+    collides   = BIT(1),
+    barrier    = BIT(2),
+    nonspatial = BIT(3),
+    hurtbox    = BIT(4),
+
+    simming = BIT(31),
 };
 }
 
@@ -88,7 +90,10 @@ union entity_ref
 
 struct sim_entity
 {
-    u32 flags;
+    u32 ent_i;
+    b32 updateable;
+
+    s32 flags;
     v2 pos;
     v2 vel;
     u32 chunk_z;
@@ -102,9 +107,6 @@ struct sim_entity
     f32 argb_offset;
     u32 weapon_i;
     u32 parent_i;
-    entity_direction dir;
-
-    u32 ent_i;
 };
 
 struct entity
@@ -113,6 +115,7 @@ struct entity
     entity_type type;
     world_pos world_pos;
     color color;
+    entity_direction dir;
     argb_img *sprite;
 };
 
@@ -123,9 +126,9 @@ struct entity_move_spec
 };
 
 inline entity_move_spec
-get_default_move_spec()
+default_move_spec()
 {
-    return { 10.0f, 10.0f };
+    return { 100.0f, 10.0f };
 }
 
 inline void
@@ -143,8 +146,7 @@ make_entity_spatial(sim_entity *ent, v2 pos, v2 vel = { 0.0f, 0.0f })
 }
 
 void
-move_entity(game_state *state, sim_region *region, sim_entity *ent, entity_actions ent_actions,
-            entity_move_spec move_spec, f32 dt);
+move_entity(game_state *state, sim_region *region, entity *ent, v2 ent_delta, f32 dt);
 
 entity *
 get_entity(game_state *state, u32 ind);
