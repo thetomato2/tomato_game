@@ -943,9 +943,9 @@ win32_main(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLine, s32 n
     DWORD last_play_cursor   = {};
     DWORD last_write_cursor  = {};
 
-    // =============================================================================================
+    // ===========================================================================================
     // #MAIN LOOP
-    // =============================================================================================
+    // ===========================================================================================
     while (running) {
         do_controller_input(*old_input, *new_input, hwnd);
         process_pending_messages(state, *new_input);

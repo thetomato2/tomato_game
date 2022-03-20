@@ -10,6 +10,147 @@ internal sim_entity *
 add_sim_entity_to_region(game_state *state, sim_region *region, u32 ent_i, entity *source_ent,
                          v2 *sim_pos);
 
+internal void
+add_hit_points(sim_entity *ent, s32 hp)
+{
+    ent->hp += hp;
+    if (ent->hp > ent->max_hp) ent->hp = ent->max_hp;
+}
+
+internal void
+subtract_hit_points(sim_entity *ent, s32 hp)
+{
+    ent->hp -= hp;
+    if (ent->hp < 0) {
+        ent->hp = 0;
+        clear_flag(ent->flags, sim_entity_flags::active);
+    }
+}
+
+internal void
+handle_collision(sim_entity *ent_a, sim_entity *ent_b)
+{
+    if (ent_a->type == entity_type::monster && ent_b->type == entity_type::sword) {
+        subtract_hit_points(ent_a, 1);
+    }
+}
+
+void
+move_entity(game_state *state, sim_region *region, sim_entity *ent, v2 ent_delta, const f32 dt)
+{
+    TOM_ASSERT(state && region && ent);
+
+    f32 dist_remain = ent->dist_limit;
+    if (dist_remain == 0.0f) {
+        dist_remain = 1000.0f;
+    }
+
+    // NOTE: how many iterations/time resolution
+    for (u32 i = 0; i < 4; ++i) {
+        f32 t_min         = 1.0f;
+        f32 ent_delta_len = vec::length(ent_delta);
+        // REVIEW: use epsilon?
+        if (!(ent_delta_len > 0.0f)) break;  // if the ent delta is 0 that means no movmement
+        if (ent_delta_len > dist_remain) t_min = dist_remain / ent_delta_len;
+        v2 wall_nrm         = {};
+        v2 desired_position = ent->pos + ent_delta;
+        sim_entity *hit_ent = nullptr;
+
+        if (is_flag_set(ent->flags, sim_entity_flags::collides)) {
+            // FIXME: this is N * N bad
+            for (sim_entity *test_ent = region->sim_entities;
+                 test_ent != region->sim_entities + region->sim_entity_cnt; ++test_ent) {
+                if (test_ent->ent_i == ent->ent_i) continue;  // don't test against self
+
+                TOM_ASSERT(test_ent);  // ent_a nullptr probably means something broke
+                if (!is_flag_set(test_ent->flags, sim_entity_flags::active) ||
+                    !is_flag_set(test_ent->flags, sim_entity_flags::barrier))
+                    continue;  // skip inactive and non-barreirr entities
+                if (ent->weapon_i == test_ent->ent_i || ent->parent_i == test_ent->ent_i)
+                    continue;  // skip parent and weapon
+
+                // NOTE: Minkowski sum
+                f32 r_w = ent->width + test_ent->width;
+                f32 r_h = ent->height + test_ent->height;
+
+                v2 min_corner = { -.5f * v2 { r_w, r_h } };
+                v2 max_corner = { .5f * v2 { r_w, r_h } };
+                v2 rel        = ent->pos - test_ent->pos;
+
+                // TODO: maybe pull this out into a free function (but why?)
+                auto test_wall = [&t_min](f32 wall_x, f32 rel_x, f32 rel_y, f32 player_delta_x,
+                                          f32 player_delta_y, f32 min_y, f32 max_y) -> bool {
+                    bool hit = false;
+
+                    f32 t_esp = .001f;
+                    if (player_delta_x != 0.f) {
+                        f32 t_res = (wall_x - rel_x) / player_delta_x;
+                        f32 y     = rel_y + t_res * player_delta_y;
+
+                        if (t_res >= 0.f && (t_min > t_res)) {
+                            if (y >= min_y && y <= max_y) {
+                                t_min = math::max(0.f, t_res - t_esp);
+                                hit   = true;
+                            }
+                        }
+                    }
+
+                    return hit;
+                };
+
+                if (test_wall(min_corner.x, rel.x, rel.y, ent_delta.x, ent_delta.y, min_corner.y,
+                              max_corner.y)) {
+                    wall_nrm = v2 { -1.f, 0.f };
+                    hit_ent  = test_ent;
+                }
+                if (test_wall(max_corner.x, rel.x, rel.y, ent_delta.x, ent_delta.y, min_corner.y,
+                              max_corner.y)) {
+                    wall_nrm = v2 { 1.f, 0.f };
+                    hit_ent  = test_ent;
+                }
+                if (test_wall(min_corner.y, rel.y, rel.x, ent_delta.y, ent_delta.x, min_corner.x,
+                              max_corner.x)) {
+                    wall_nrm = v2 { 0.f, -1.f };
+                    hit_ent  = test_ent;
+                }
+                if (test_wall(max_corner.y, rel.y, rel.x, ent_delta.y, ent_delta.x, min_corner.x,
+                              max_corner.x)) {
+                    wall_nrm = v2 { 0.f, 1.f };
+                    hit_ent  = test_ent;
+                }
+            }
+        }
+
+        if (hit_ent && !is_flag_set(hit_ent->flags, sim_entity_flags::barrier)) {
+            wall_nrm = v2 { 0.f, 0.f };
+        }
+
+        ent->pos += t_min * ent_delta;
+        dist_remain -= t_min * ent_delta_len;
+
+        if (hit_ent) {
+            if (ent->dist_limit != 0.0f) {
+                ent->dist_limit = 0.0f;
+            }
+            ent->vel -= 1.f * vec::inner(ent->vel, wall_nrm) * wall_nrm;
+            ent_delta -= 1.f * vec::inner(ent_delta, wall_nrm) * wall_nrm;
+
+            sim_entity *ent_a = ent;
+            sim_entity *ent_b = hit_ent;
+            if (ent_a->type > ent_b->type) {
+                // TODO: swap func/template/macro?
+                auto temp = ent_a;
+                ent_a     = ent_b;
+                ent_b     = temp;
+            }
+            handle_collision(ent_a, ent_b);
+        }
+    }
+    if (ent->dist_limit != 0.0f) {
+        ent->dist_limit = dist_remain;
+    }
+}
+
 internal sim_entity_hash *
 get_hash_from_ind(sim_region *region, u32 stored_i)
 {
@@ -69,9 +210,9 @@ load_entity_ref(game_state *state, sim_region *region, entity_ref *ref)
 }
 
 internal v2
-get_cam_space_pos(const game_state &state, entity *stored_ent)
+get_cam_space_pos(const game_state &state, entity *ent)
 {
-    world_dif diff = get_world_diff(stored_ent->world_pos, state.camera.pos);
+    world_dif diff = get_world_diff(ent->world_pos, state.camera.pos);
     v2 result      = { diff.dif_xy };
 
     return result;
@@ -82,6 +223,20 @@ get_sim_space_pos(const sim_region &region, const entity &ent)
 {
     // TODO: what is the null/invalid value here?
     v2 result = { 100'000'000.0f, 100'000'000.0f };
+    if (!is_flag_set(ent.sim.flags, sim_entity_flags::nonspatial)) {
+        world_dif dif = get_world_diff(ent.world_pos, region.origin);
+        result        = dif.dif_xy;
+    }
+
+    return result;
+}
+
+v2
+get_sim_space_pos(const game_state &state, const sim_region &region, u32 ent_i)
+{
+    // TODO: what is the null/invalid value here?
+    v2 result         = { 100'000'000.0f, 100'000'000.0f };
+    const entity &ent = state.entities[ent_i];
     if (!is_flag_set(ent.sim.flags, sim_entity_flags::nonspatial)) {
         world_dif dif = get_world_diff(ent.world_pos, region.origin);
         result        = dif.dif_xy;
@@ -200,16 +355,12 @@ end_sim(game_state *state, sim_region *region)
 
         // store_entity_ref(&ent->sim.weapon_i);
 
-#if 0
-        // REVIEW: do I need this since I am using pointers everywhere?
         // TODO: save state back to stored sim_entity, once high entities do state decompression
         world_pos new_pos = !is_flag_set(ent->sim.flags, sim_entity_flags::nonspatial)
                                 ? map_into_chunk_space(region->origin, sim_ent->pos)
                                 : null_world_pos();
-        // TODO: this is unneeded? I already do this in the update
         if (ent->world_pos != new_pos)
             change_entity_location(&state->world_arena, state->world, ent, new_pos);
-#endif
         TOM_ASSERT(is_flag_set(ent->sim.flags, sim_entity_flags::simming));
         clear_flag(ent->sim.flags, sim_entity_flags::simming);
     }

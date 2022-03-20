@@ -29,7 +29,7 @@ global_var constexpr f32 epsilon                = 0.0001f;
 
 }  // namespace global
 
-struct color
+struct color_argb
 {
     union
     {
@@ -47,11 +47,11 @@ struct color
 namespace colors
 {
 // note: argb
-global_var constexpr color red   = { 0xff'ff'00'00 };
-global_var constexpr color green = { 0xff'00'ff'00 };
-global_var constexpr color blue  = { 0xff'00'00'ff };
-global_var constexpr color pink  = { 0xff'ff'00'ff };
-global_var constexpr color black = { 0xff'ff'ff'ff };
+global_var constexpr color_argb red   = { 0xff'ff'00'00 };
+global_var constexpr color_argb green = { 0xff'00'ff'00 };
+global_var constexpr color_argb blue  = { 0xff'00'00'ff };
+global_var constexpr color_argb pink  = { 0xff'ff'00'ff };
+global_var constexpr color_argb black = { 0xff'ff'ff'ff };
 }  // namespace colors
 
 struct memory_arena

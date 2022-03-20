@@ -70,7 +70,7 @@ struct entity_visible_piece
     f32 z;
     f32 alpha;
     rect rect;
-    color color;
+    color_argb color;
 };
 
 struct entity_visble_piece_group
@@ -100,6 +100,8 @@ struct sim_entity
     f32 z;
     f32 vel_z;
     f32 hit_cd;
+    f32 exists_cd;
+    f32 dist_limit;
     s32 hp;
     u32 max_hp;
     s32 virtual_z;
@@ -107,16 +109,15 @@ struct sim_entity
     f32 argb_offset;
     u32 weapon_i;
     u32 parent_i;
+    s32 cur_sprite;
+    entity_direction dir;
+    entity_type type;
 };
 
 struct entity
 {
     sim_entity sim;
-    entity_type type;
     world_pos world_pos;
-    color color;
-    entity_direction dir;
-    argb_img *sprite;
 };
 
 struct entity_move_spec
@@ -128,7 +129,7 @@ struct entity_move_spec
 inline entity_move_spec
 default_move_spec()
 {
-    return { 100.0f, 10.0f };
+    return { 10.0f, 10.0f };
 }
 
 inline void
@@ -144,9 +145,6 @@ make_entity_spatial(sim_entity *ent, v2 pos, v2 vel = { 0.0f, 0.0f })
     ent->pos = pos;
     ent->vel = vel;
 }
-
-void
-move_entity(game_state *state, sim_region *region, entity *ent, v2 ent_delta, f32 dt);
 
 entity *
 get_entity(game_state *state, u32 ind);
@@ -164,7 +162,7 @@ entity *
 add_cat(game_state *state, f32 abs_x, f32 abs_y, f32 abs_z);
 
 entity *
-add_sword(game_state *state, u32 parent_i, argb_img *sprite = nullptr);
+add_sword(game_state *state, u32 parent_i);
 
 void
 add_player(game_state *state, u32 player_i, f32 abs_x, f32 abs_y, f32 abs_z);

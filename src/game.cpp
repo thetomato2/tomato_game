@@ -5,7 +5,7 @@ namespace tom
 {
 
 internal void
-clear_buffer(game_offscreen_buffer &buffer, const color color = colors::pink)
+clear_buffer(game_offscreen_buffer &buffer, const color_argb color = colors::pink)
 {
     const s32 width  = buffer.width;
     const s32 height = buffer.height;
@@ -22,7 +22,7 @@ clear_buffer(game_offscreen_buffer &buffer, const color color = colors::pink)
 
 internal void
 draw_rect(game_offscreen_buffer &buffer, const f32 min_x_f32, const f32 min_y_f32,
-          const f32 max_x_f32, const f32 max_y_f32, const color color = colors::pink)
+          const f32 max_x_f32, const f32 max_y_f32, const color_argb color = colors::pink)
 {
     s32 min_x = math::round_f32_to_s32(min_x_f32);
     s32 min_y = math::round_f32_to_s32(min_y_f32);
@@ -46,7 +46,7 @@ draw_rect(game_offscreen_buffer &buffer, const f32 min_x_f32, const f32 min_y_f3
 }
 
 internal void
-draw_rect(game_offscreen_buffer &buffer, const rect rect, const color color = colors::pink)
+draw_rect(game_offscreen_buffer &buffer, const rect rect, const color_argb color = colors::pink)
 {
     s32 min_x = math::round_f32_to_s32(rect.min.x);
     s32 min_y = math::round_f32_to_s32(rect.min.y);
@@ -72,7 +72,7 @@ draw_rect(game_offscreen_buffer &buffer, const rect rect, const color color = co
 internal void
 draw_rect_outline(game_offscreen_buffer &buffer, const f32 min_x_f32, const f32 min_y_f32,
                   const f32 max_x_f32, const f32 max_y_f32, const s32 thickness,
-                  const color color = colors::pink)
+                  const color_argb color = colors::pink)
 {
     s32 min_x = math::round_f32_to_s32(min_x_f32);
     s32 min_y = math::round_f32_to_s32(min_y_f32);
@@ -130,9 +130,9 @@ draw_argb(game_offscreen_buffer &buffer, const argb_img &img, const v2 pos)
         u32 *dest = rcast(u32 *, row);
         source += x_offset_left;
         for (s32 x = min_x; x < max_x; ++x) {
-            color dest_col   = { *dest };
-            color source_col = { *source };
-            color blended_col;
+            color_argb dest_col   = { *dest };
+            color_argb source_col = { *source };
+            color_argb blended_col;
             blended_col.a = 0xff;
 
             f32 alpha = scast(f32, source_col.a) / 255.f;
@@ -166,8 +166,8 @@ push_piece(entity_visble_piece_group *group, argb_img *img, const v2 mid_p, cons
 }
 
 internal void
-push_piece(entity_visble_piece_group *group, const f32 width, const f32 height, const color color,
-           const v2 mid_p, const f32 z_offset, const f32 alpha = 1.0f)
+push_piece(entity_visble_piece_group *group, const f32 width, const f32 height,
+           const color_argb color, const v2 mid_p, const f32 z_offset, const f32 alpha = 1.0f)
 {
     TOM_ASSERT(group->piece_cnt < ARRAY_COUNT(group->pieces));
     entity_visible_piece *piece = group->pieces + group->piece_cnt++;
@@ -252,6 +252,7 @@ process_keyboard(const game_keyboard_input &keyboard, entity_actions *entity_act
 {
     if (entity_action) {
         if (is_key_up(keyboard.t)) entity_action->start = true;
+        if (is_key_up(keyboard.space)) entity_action->attack = true;
         if (keyboard.space.ended_down) entity_action->jump = true;
         if (keyboard.w.ended_down) entity_action->dir.y += 1.f;
         if (keyboard.s.ended_down) entity_action->dir.y += -1.f;
@@ -371,6 +372,8 @@ GAME_UPDATE_AND_RENDER(game_update_and_render)
         for (u32 player_i = 1; player_i <= state->player_cnt; ++player_i) {
             add_player(state, player_i, 0.f, 0.f, 0.f);
         }
+        add_sword(state, 1);
+        state->entities[2].world_pos = state->entities[1].world_pos;
 
 #if 1
         f32 x_len = 55.f;
@@ -411,38 +414,41 @@ GAME_UPDATE_AND_RENDER(game_update_and_render)
     // get input
     // NOTE: only doing one player
     entity *player = p1;
-    TOM_ASSERT(player->type == entity_type::player);
+    TOM_ASSERT(player->sim.type == entity_type::player);
     entity_actions player_action = {};
     process_keyboard(input.keyboard, &player_action);
     process_controller(input.controllers[0], &player_action);
     state->player_acts[1] = player_action;
 
-    // player sword attack
-    // TODO:  update this to sim region stuff
-#if 0
-    if (state->player_acts[1].attack) {
-        if (!p1.high->is_attacking) {
-            p1.high->is_attacking = true;
-            entity sword          = force_entity_into_high(state, p1.low->weapon_i);
-            sword.high->dir       = p1.high->dir;
-            sword.low->active     = true;
-            // TODO: player weapon pos offset
-            sword.high->pos    = p1.high->pos;
-            p1.high->attack_cd = 0.5f;
-        }
-    }
-    if (p1.high->is_attacking) {
-        p1.high->attack_cd -= input.delta_time;
-        entity sword = force_entity_into_high(state, p1.low->weapon_i);
-        update_sword(state, sword, input.delta_time);
-        if (p1.high->attack_cd <= 0.f) {
-            p1.high->is_attacking = false;
-            sword.low->active     = false;
-        }
-    }
-#endif
-
     if (is_key_up(input.keyboard.d1)) state->debug_draw_collision = !state->debug_draw_collision;
+
+    // sword attack
+    if (state->player_acts[1].attack && p1->sim.weapon_i &&
+        is_flag_set(state->entities[p1->sim.weapon_i].sim.flags, sim_entity_flags::nonspatial)) {
+        entity *sword_ent = state->entities + p1->sim.weapon_i;
+        clear_flag(sword_ent->sim.flags, sim_entity_flags::nonspatial);
+        sword_ent->world_pos      = p1->world_pos;
+        constexpr f32 sword_vel   = 5.0f;
+        sword_ent->sim.dist_limit = 5.0f;
+        switch (p1->sim.dir) {
+            case entity_direction::north: {
+                sword_ent->sim.vel.y      = sword_vel;
+                sword_ent->sim.cur_sprite = 0;
+            } break;
+            case entity_direction::east: {
+                sword_ent->sim.vel.x      = sword_vel;
+                sword_ent->sim.cur_sprite = 1;
+            } break;
+            case entity_direction::south: {
+                sword_ent->sim.vel.y      = -sword_vel;
+                sword_ent->sim.cur_sprite = 2;
+            } break;
+            case entity_direction::west: {
+                sword_ent->sim.vel.x      = -sword_vel;
+                sword_ent->sim.cur_sprite = 3;
+            } break;
+        }
+    }
 
     entity *cam_ent      = get_entity(state, state->entity_camera_follow_ind);
     world_dif entity_dif = get_world_diff(cam_ent->world_pos, cam->pos);
@@ -451,11 +457,10 @@ GAME_UPDATE_AND_RENDER(game_update_and_render)
     cam->pos         = p1->world_pos;
     cam->pos.chunk_z = cam_ent->world_pos.chunk_z;
 
-    world_pos new_cam_pos  = p1->world_pos;
     f32 sim_test_size_mult = 2.f;
     v2 sim_screen_size     = { (global::screen_size_x * sim_test_size_mult),
                            global::screen_size_y * sim_test_size_mult };
-    rect sim_bounds        = rec::center_half_dim({ 0.f, 0.f }, sim_screen_size);
+    rect sim_bounds        = rec::center_dim({ 0.f, 0.f }, sim_screen_size);
 
     memory_arena sim_arena;
     init_arena(&sim_arena, memory.transient_storage_size, memory.transient_storage);
@@ -464,42 +469,36 @@ GAME_UPDATE_AND_RENDER(game_update_and_render)
 
     v2 screen_center = { .5f * (f32)video_buffer.width, .5f * (f32)video_buffer.height };
     entity_visble_piece_group piece_group = {};
+    argb_img *sprite                      = nullptr;
 
     // NOTE: *not* using PatBlt in the win32 layer
-    color clear_color { 0xff'4e'4e'4e };
+    color_argb clear_color { 0xff'4e'4e'4e };
     clear_buffer(video_buffer, clear_color);
 
     rect cam_bounds =
-        rec::center_half_dim({ 0.f, 0.f }, { global::screen_size_x * global::meters_to_pixels,
-                                             global::screen_size_y * global::meters_to_pixels });
+        rec::center_dim({ 0.f, 0.f }, { global::screen_size_x * global::meters_to_pixels,
+                                        global::screen_size_y * global::meters_to_pixels });
 
     for (sim_entity *sim_ent = region->sim_entities;
          sim_ent != region->sim_entities + region->sim_entity_cnt; ++sim_ent) {
-        piece_group.piece_cnt = 0;
-        entity *ent           = get_entity(state, sim_ent->ent_i);
-        TOM_ASSERT(ent);  // there theoretically shoudln't be a null entities
-        if (ent->type == entity_type::null) continue;
+        if (sim_ent->type == entity_type::null) continue;
 
         // TODO: abstract active check into func?
         // TODO: active and nonspatial redundant?
-        if (!is_flag_set(ent->sim.flags, sim_entity_flags::active))
+        if (!is_flag_set(sim_ent->flags, sim_entity_flags::active))
             continue;  // don't update inactive entities
-
-        auto ent_dif = get_world_diff(ent->world_pos, cam->pos);
-        v2 ent_mid   = { (screen_center.x + (ent_dif.dif_xy.x * global::meters_to_pixels)),
-                       (screen_center.y - (ent_dif.dif_xy.y * global::meters_to_pixels)) };
 
         entity_move_spec move_spec = default_move_spec();
         entity_actions ent_act     = {};
 
         // update logic
-        if (ent->sim.updateable) {
-            switch (ent->type) {
+        if (sim_ent->updateable) {
+            switch (sim_ent->type) {
                 case entity_type::none: {
                 } break;
                 case entity_type::player: {
-                    f32 ent_speed = state->player_acts[1].sprint ? move_spec.speed = 250.0f
-                                                                 : move_spec.speed = 100.0f;
+                    f32 ent_speed = state->player_acts[1].sprint ? move_spec.speed = 25.0f
+                                                                 : move_spec.speed = 10.0f;
                     ent_act       = state->player_acts[1];
 
                 } break;
@@ -510,13 +509,13 @@ GAME_UPDATE_AND_RENDER(game_update_and_render)
                     // do nothing
                 } break;
                 case entity_type::familiar: {
-                    entity *closest_player     = nullptr;
+                    sim_entity *closest_player = nullptr;
                     f32 closest_player_dist_sq = math::square(10.f);
 
-                    for (u32 ent_i = 1; ent_i < state->ent_cnt; ++ent_i) {
-                        entity *test_ent = get_entity(state, ent_i);
+                    for (sim_entity *test_ent = region->sim_entities;
+                         test_ent != region->sim_entities + region->sim_entity_cnt; ++test_ent) {
                         if (test_ent->type == entity_type::player) {
-                            f32 test_dist_sq = vec::length_sq(test_ent->sim.pos - ent->sim.pos);
+                            f32 test_dist_sq = vec::length_sq(test_ent->pos - sim_ent->pos);
                             if (closest_player_dist_sq > test_dist_sq) {
                                 closest_player         = test_ent;
                                 closest_player_dist_sq = test_dist_sq;
@@ -527,43 +526,20 @@ GAME_UPDATE_AND_RENDER(game_update_and_render)
                     if (closest_player) {
                         f32 one_over_len = 1.f / math::sqrt_f32(closest_player_dist_sq);
                         f32 min_dist     = 2.f;
-                        v2 dif           = closest_player->sim.pos - ent->sim.pos;
+                        v2 dif           = closest_player->pos - sim_ent->pos;
                         if (math::abs_f32(dif.x) > min_dist || math::abs_f32(dif.y) > min_dist)
                             ent_act.dir = one_over_len * (dif);
-
-                        if (ent->dir == entity_direction::east)
-                            ent->sprite = state->cat_sprites;
-                        else if (ent->dir == entity_direction::west)
-                            ent->sprite = state->cat_sprites + 1;
                     }
                 } break;
                 case entity_type::monster: {
                     // TODO: update monster
                 } break;
                 case entity_type::sword: {
-                    constexpr f32 sword_vel = 5.0f;
-
                     move_spec.drag = 0.0f;
-
-                    switch (ent->dir) {
-                        case entity_direction::north: {
-                            ent->sim.vel.y = sword_vel;
-                            ent->sprite    = state->sword_sprites + entity_direction::north;
-                        } break;
-                        case entity_direction::east: {
-                            ent->sim.vel.x = sword_vel;
-                            ent->sprite    = state->sword_sprites + entity_direction::east;
-                        } break;
-                        case entity_direction::south: {
-                            ent->sim.vel.y = -sword_vel;
-                            ent->sprite    = state->sword_sprites + entity_direction::south;
-                        } break;
-                        case entity_direction::west: {
-                            ent->sim.vel.x = -sword_vel;
-                            ent->sprite    = state->sword_sprites + entity_direction::west;
-                        } break;
+                    if (!is_flag_set(sim_ent->flags, sim_entity_flags::nonspatial) &&
+                        sim_ent->dist_limit == 0.0f) {
+                        set_flag(sim_ent->flags, sim_entity_flags::nonspatial);
                     }
-
                 } break;
                 default: {
                     INVALID_CODE_PATH;
@@ -574,83 +550,114 @@ GAME_UPDATE_AND_RENDER(game_update_and_render)
         v2 ent_accel = ent_act.dir;
 
         // NOTE: normalize vector to unit length
-        f32 ent_accel_len = vec::length_sq(ent_accel);
+        f32 ent_accel_len = vec::length(ent_accel);
         // TODO: make speed specific to ent type
 
         if (ent_accel_len > 1.f) ent_accel *= (1.f / math::sqrt_f32(ent_accel_len));
         ent_accel *= move_spec.speed;
-        ent_accel -= ent->sim.vel * move_spec.drag;
+        ent_accel -= sim_ent->vel * move_spec.drag;
 
-        v2 ent_delta = (.5f * ent_accel * math::square(dt) + ent->sim.vel * dt);
+        v2 ent_delta = (.5f * ent_accel * math::square(dt) + sim_ent->vel * dt);
 
-        ent->sim.vel += ent_accel * dt;
+        sim_ent->vel += ent_accel * dt;
 
-        if (math::abs_f32(ent->sim.vel.x) > 0.0f + global::epsilon ||
-            math::abs_f32(ent->sim.vel.y) > 0.0f + global::epsilon)
-            move_entity(state, region, ent, ent_delta, dt);
+        if (math::abs_f32(sim_ent->vel.x) > 0.0f + global::epsilon ||
+            math::abs_f32(sim_ent->vel.y) > 0.0f + global::epsilon)
+            move_entity(state, region, sim_ent, ent_delta, dt);
+
+        // NOTE: changes the players direction for the sprite
+        v2 pv = sim_ent->vel;
+
+        constexpr f32 dir_eps = 0.1f;
+
+        if (math::abs_f32(pv.x) > math::abs_f32(pv.y)) {
+            if (pv.x > 0.0f + dir_eps) {
+                sim_ent->dir = entity_direction::east;
+            } else if (pv.x < 0.0f - dir_eps) {
+                sim_ent->dir = entity_direction::west;
+            }
+
+        } else if (math::abs_f32(pv.y) > math::abs_f32(pv.x)) {
+            if (pv.y > 0.0f + dir_eps) {
+                sim_ent->dir = entity_direction::north;
+            } else if (pv.y < 0.0f - dir_eps) {
+                sim_ent->dir = entity_direction::south;
+            }
+        }
+
+        sim_ent->hit_cd += dt;
+
+        // ===============================================================================================
+        // #PUSH TO RENDER
+        // ===============================================================================================
+        piece_group.piece_cnt = 0;
+        sprite                = nullptr;
+        // the regions origin should be the center of the camera so this should line up
+        v2 sim_space_pos  = get_sim_space_pos(*state, *region, sim_ent->ent_i);
+        v2 ent_screen_pos = { (screen_center.x + (sim_space_pos.x * global::meters_to_pixels)),
+                              (screen_center.y - (sim_space_pos.y * global::meters_to_pixels)) };
 
         // TODO: pull this out in render code?
-        auto push_hp = [](entity_visble_piece_group *piece_group, entity *ent, v2 argb_mid) {
-            for (u32 i = 0; i < ent->sim.hp; ++i) {
+        auto push_hp = [](entity_visble_piece_group *piece_group, sim_entity *ent, v2 argb_mid) {
+            for (u32 i = 0; i < ent->hp; ++i) {
                 push_piece(piece_group, 3.f, 6.f, { colors::red },
-                           v2 { argb_mid.x - (ent->sim.width / 2.f) * global::meters_to_pixels -
-                                    10.f + scast(f32, i) * 4.f,
-                                argb_mid.y - ent->sim.height * global::meters_to_pixels - 10.f },
-                           ent->sim.z);
+                           v2 { argb_mid.x - (ent->width / 2.f) * global::meters_to_pixels - 10.f +
+                                    scast(f32, i) * 4.f,
+                                argb_mid.y - ent->height * global::meters_to_pixels - 10.f },
+                           ent->z);
             }
         };
 
         // draw only inside window
-        if (rec::is_inside(cam_bounds, ent_mid)) {
-            switch (ent->type) {
+        if (rec::is_inside(cam_bounds, ent_screen_pos)) {
+            switch (sim_ent->type) {
                 case entity_type::none: {
                     draw_rect(video_buffer,
-                              ent_mid.x - (ent->sim.width * global::meters_to_pixels) / 2.f,
-                              ent_mid.y - (ent->sim.height * global::meters_to_pixels) / 2.f,
-                              ent_mid.x + (ent->sim.width * global::meters_to_pixels) / 2.f,
-                              ent_mid.y + (ent->sim.height * global::meters_to_pixels) / 2.f,
-                              { 0xffff00ff });
+                              ent_screen_pos.x - (sim_ent->width * global::meters_to_pixels) / 2.f,
+                              ent_screen_pos.y - (sim_ent->height * global::meters_to_pixels) / 2.f,
+                              ent_screen_pos.x + (sim_ent->width * global::meters_to_pixels) / 2.f,
+                              ent_screen_pos.y + (sim_ent->height * global::meters_to_pixels) / 2.f,
+                              colors::pink);
                 } break;
                 case entity_type::player: {
                     // TODO: get player index from entity?
-                    v2 argb_mid = { ent_mid.x, ent_mid.y - ent->sim.argb_offset };
-                    switch (ent->dir) {
-                        case entity_direction::north: {
-                            ent->sprite = state->player_sprites + entity_direction::north;
-                        } break;
-                        case entity_direction::east: {
-                            ent->sprite = state->player_sprites + entity_direction::east;
-                        } break;
-                        case entity_direction::south: {
-                            ent->sprite = state->player_sprites + entity_direction::south;
-                        } break;
-                        case entity_direction::west: {
-                            ent->sprite = state->player_sprites + entity_direction::west;
-                        } break;
-                    }
-                    push_piece(&piece_group, ent->sprite, argb_mid, ent->sim.z);
-                    push_hp(&piece_group, ent, argb_mid);
+                    v2 argb_mid = { ent_screen_pos.x, ent_screen_pos.y - sim_ent->argb_offset };
+                    // TODO: this can probably be extracted out for general use
+                    sim_ent->cur_sprite = sim_ent->dir;
+                    sprite              = state->player_sprites + sim_ent->cur_sprite;
+                    push_piece(&piece_group, sprite, argb_mid, sim_ent->z);
+                    push_hp(&piece_group, sim_ent, argb_mid);
                 } break;
                 case entity_type::wall: {
-                    v2 argb_mid = { ent_mid.x, ent_mid.y - ent->sim.argb_offset };
-                    push_piece(&piece_group, ent->sprite, argb_mid, ent->sim.z);
+                    v2 argb_mid = { ent_screen_pos.x, ent_screen_pos.y - sim_ent->argb_offset };
+                    sprite      = &state->tree_sprite;
+                    push_piece(&piece_group, sprite, argb_mid, sim_ent->z);
                 } break;
                 case entity_type::stairs: {
-                    v2 argb_mid = { ent_mid.x, ent_mid.y - ent->sim.argb_offset };
-                    push_piece(&piece_group, ent->sprite, argb_mid, ent->sim.z);
+                    v2 argb_mid = { ent_screen_pos.x, ent_screen_pos.y - sim_ent->argb_offset };
+                    sprite      = &state->stair_sprite;
+                    push_piece(&piece_group, sprite, argb_mid, sim_ent->z);
                 } break;
                 case entity_type::familiar: {
-                    v2 argb_mid = { ent_mid.x, ent_mid.y - ent->sim.argb_offset };
-                    push_piece(&piece_group, ent->sprite, argb_mid, ent->sim.z);
+                    if (sim_ent->dir == entity_direction::east)
+                        sim_ent->cur_sprite = 0;
+                    else if (sim_ent->dir == entity_direction::west)
+                        sim_ent->cur_sprite = 1;
+                    sprite      = state->cat_sprites + sim_ent->cur_sprite;
+                    v2 argb_mid = { ent_screen_pos.x, ent_screen_pos.y - sim_ent->argb_offset };
+                    push_piece(&piece_group, sprite, argb_mid, sim_ent->z);
                 } break;
                 case entity_type::monster: {
-                    v2 argb_mid = { ent_mid.x, ent_mid.y - ent->sim.argb_offset };
-                    push_piece(&piece_group, ent->sprite, argb_mid, ent->sim.z);
-                    push_hp(&piece_group, ent, argb_mid);
+                    v2 argb_mid = { ent_screen_pos.x, ent_screen_pos.y - sim_ent->argb_offset };
+                    sprite      = state->monster_sprites;
+                    push_piece(&piece_group, sprite, argb_mid, sim_ent->z);
+                    push_hp(&piece_group, sim_ent, argb_mid);
                 } break;
                 case entity_type::sword: {
-                    v2 argb_mid = { ent_mid.x, ent_mid.y - ent->sim.argb_offset };
-                    push_piece(&piece_group, ent->sprite, argb_mid, ent->sim.z);
+                    sim_ent->cur_sprite = sim_ent->dir;
+                    sprite              = state->sword_sprites + sim_ent->cur_sprite;
+                    v2 argb_mid = { ent_screen_pos.x, ent_screen_pos.y - sim_ent->argb_offset };
+                    push_piece(&piece_group, sprite, argb_mid, sim_ent->z);
                 } break;
                 default: {
                     INVALID_CODE_PATH;
@@ -673,11 +680,12 @@ GAME_UPDATE_AND_RENDER(game_update_and_render)
 
         // NOTE:collision box
         if (state->debug_draw_collision) {
-            draw_rect_outline(
-                video_buffer, ent_mid.x - (ent->sim.width * global::meters_to_pixels) / 2.f,
-                ent_mid.y - (ent->sim.height * global::meters_to_pixels) / 2.f,
-                ent_mid.x + (ent->sim.width * global::meters_to_pixels) / 2.f,
-                ent_mid.y + (ent->sim.height * global::meters_to_pixels) / 2.f, 1, { 0xffff0000 });
+            draw_rect_outline(video_buffer,
+                              ent_screen_pos.x - (sim_ent->width * global::meters_to_pixels) / 2.f,
+                              ent_screen_pos.y - (sim_ent->height * global::meters_to_pixels) / 2.f,
+                              ent_screen_pos.x + (sim_ent->width * global::meters_to_pixels) / 2.f,
+                              ent_screen_pos.y + (sim_ent->height * global::meters_to_pixels) / 2.f,
+                              1, { 0xffff0000 });
         }
     }
 

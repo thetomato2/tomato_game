@@ -19,6 +19,7 @@
     #define scast(t, v) static_cast<t>(v)
     #define rcast(t, v) reinterpret_cast<t>(v)
     #define ccast(t, v) const_cast<t>(v)
+    #define cast(t, v)  ((t)(v))
 
 extern "C"
 {
@@ -33,6 +34,7 @@ extern "C"
     #define scast(t, v) ((t)(v))
     #define rcast(t, v) ((t)(v))
     #define ccast(t, v) ((t)(v))
+    #define cast(t, v)  ((t)(v))
 #endif
 #include <io.h>
 #include <fcntl.h>

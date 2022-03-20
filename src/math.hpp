@@ -180,9 +180,16 @@ inline f32
 length_sq(const v2 a)
 {
     f32 result = inner(a, a);
-
     return result;
 }
+
+inline f32
+length(const v2 a)
+{
+    f32 result = math::sqrt_f32(length_sq(a));
+    return result;
+}
+
 }  // namespace vec
 
 // ===============================================================================================
@@ -235,12 +242,21 @@ min_dim(v2 min, v2 dim)
 }
 
 inline rect
-center_half_dim(v2 center, v2 half_dim)
+center_dim(v2 center, v2 dim)
 {
     rect result;
 
-    result.min = center - half_dim;
-    result.max = center + half_dim;
+    result.min = center - dim;
+    result.max = center + dim;
+
+    return result;
+}
+
+inline rect
+center_half_dim(v2 center, v2 half_dim)
+{
+    half_dim /= 2.0f;
+    rect result = center_dim(center, half_dim);
 
     return result;
 }
