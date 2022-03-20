@@ -488,6 +488,8 @@ GAME_UPDATE_AND_RENDER(game_update_and_render)
         if (!is_flag_set(sim_ent->flags, sim_entity_flags::active))
             continue;  // don't update inactive entities
 
+        sim_ent->hit_cd += dt;
+
         entity_move_spec move_spec = default_move_spec();
         entity_actions ent_act     = {};
 

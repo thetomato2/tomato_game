@@ -30,8 +30,26 @@ subtract_hit_points(sim_entity *ent, s32 hp)
 internal void
 handle_collision(sim_entity *ent_a, sim_entity *ent_b)
 {
+    constexpr f32 hit_cd = 0.2f;
+
+    if (ent_a->type == entity_type::player && ent_b->type == entity_type::monster) {
+        if (ent_a->hit_cd > hit_cd) {
+            ent_a->hit_cd = 0.0f;
+            subtract_hit_points(ent_a, 1);
+        }
+    }
+
+    if (ent_a->type == entity_type::player && ent_b->type == entity_type::familiar) {
+        if (ent_a->hit_cd > hit_cd) {
+            ent_a->hit_cd = 0.0f;
+            add_hit_points(ent_a, 1);
+        }
+    }
     if (ent_a->type == entity_type::monster && ent_b->type == entity_type::sword) {
-        subtract_hit_points(ent_a, 1);
+        if (ent_a->hit_cd > hit_cd) {
+            ent_a->hit_cd = 0.0f;
+            subtract_hit_points(ent_a, 1);
+        }
     }
 }
 
@@ -128,6 +146,7 @@ move_entity(game_state *state, sim_region *region, sim_entity *ent, v2 ent_delta
         ent->pos += t_min * ent_delta;
         dist_remain -= t_min * ent_delta_len;
 
+        // TODO: collision table
         if (hit_ent) {
             if (ent->dist_limit != 0.0f) {
                 ent->dist_limit = 0.0f;

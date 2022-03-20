@@ -106,8 +106,8 @@ add_sword(game_state *state, u32 parent_i)
 
     ent->sim.type        = entity_type::sword;
     ent->sim.pos         = {};
-    ent->sim.height      = 0.6f;
-    ent->sim.width       = 0.8f;
+    ent->sim.height      = 0.2f;
+    ent->sim.width       = 0.2f;
     ent->sim.argb_offset = 5.0f;
     ent->sim.parent_i    = parent_i;
     ent->sim.flags       = sim_entity_flags::active | sim_entity_flags::collides |
