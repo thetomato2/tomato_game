@@ -20,8 +20,13 @@ set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${Build_Dir})
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${Build_Dir})
 # set(CMAKE_SUPPRESS_REGENERATION true) #feck off ZERO_CHECK
 
-option(Emacs "Emacs" OFF)
+option(EMACS "EMACS" OFF)
+
 option(argb_converter "ARGB_Converter" OFF)
+
+if (EMACS)
+    set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+endif()
 
 if (MSVC)
     list(APPEND Common_Compile_Flags
@@ -175,7 +180,7 @@ endif()
 
 
 
-if (Emacs)
+if (EMACS)
     set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
     set (CMAKE_CXX_FLAGS "-fdeclspec -target x86_64-pc-windows-gnu")
