@@ -27,16 +27,70 @@ subtract_hit_points(sim_entity *ent, s32 hp)
     }
 }
 
-internal void
+internal bool
+should_collide(game_state *state, sim_entity *ent_a, sim_entity *ent_b)
+{
+    TOM_ASSERT(ent_a && ent_b);
+
+    bool result = false;
+
+    if (ent_a->type > ent_b->type) {
+        // TODO: swap func/template/macro?
+        auto temp = ent_a;
+        ent_a     = ent_b;
+        ent_b     = temp;
+    }
+
+    // if and entity "collides" barriers will stop them
+    if ((is_flag_set(ent_a, sim_entity_flags::barrier) &&
+         is_flag_set(ent_b, sim_entity_flags::collides)) ||
+        (is_flag_set(ent_b, sim_entity_flags::barrier) &&
+         is_flag_set(ent_a, sim_entity_flags::collides)))
+        result = true;
+
+    // DEBUG_BREAK(ent_a->type == entity_type::monster && ent_b->type == entity_type::sword);
+
+    // TODO: better hash function (lol)
+    u32 hash_bucket = ent_a->ent_i & (ARRAY_COUNT(state->collision_rule_hash) - 1);
+    for (pairwise_collision_rule *rule = state->collision_rule_hash[hash_bucket]; rule;
+         rule                          = rule->next) {
+        if (rule->ent_i_a == ent_a->ent_i && rule->ent_i_b == ent_b->ent_i) {
+            result = rule->should_collide;
+            break;
+        }
+    }
+
+    return result;
+}
+
+internal bool
 handle_collision(sim_entity *ent_a, sim_entity *ent_b)
 {
+    TOM_ASSERT(ent_a && ent_b);
+
+    bool stop            = false;
     constexpr f32 hit_cd = 0.2f;
+
+    if (ent_a->type > ent_b->type) {
+        // TODO: swap func/template/macro?
+        auto temp = ent_a;
+        ent_a     = ent_b;
+        ent_b     = temp;
+    }
+
+    // if and entity "collides" barriers will stop them
+    if ((is_flag_set(ent_a, sim_entity_flags::barrier) &&
+         is_flag_set(ent_b, sim_entity_flags::collides)) ||
+        (is_flag_set(ent_b, sim_entity_flags::barrier) &&
+         is_flag_set(ent_a, sim_entity_flags::collides)))
+        stop = true;
 
     if (ent_a->type == entity_type::player && ent_b->type == entity_type::monster) {
         if (ent_a->hit_cd > hit_cd) {
             ent_a->hit_cd = 0.0f;
             subtract_hit_points(ent_a, 1);
         }
+        stop = true;
     }
 
     if (ent_a->type == entity_type::player && ent_b->type == entity_type::familiar) {
@@ -44,6 +98,7 @@ handle_collision(sim_entity *ent_a, sim_entity *ent_b)
             ent_a->hit_cd = 0.0f;
             add_hit_points(ent_a, 1);
         }
+        stop = true;
     }
     if (ent_a->type == entity_type::monster && ent_b->type == entity_type::sword) {
         if (ent_a->hit_cd > hit_cd) {
@@ -51,6 +106,8 @@ handle_collision(sim_entity *ent_a, sim_entity *ent_b)
             subtract_hit_points(ent_a, 1);
         }
     }
+
+    return stop;
 }
 
 void
@@ -71,19 +128,19 @@ move_entity(game_state *state, sim_region *region, sim_entity *ent, v2 ent_delta
         if (!(ent_delta_len > 0.0f)) break;  // if the ent delta is 0 that means no movmement
         if (ent_delta_len > dist_remain) t_min = dist_remain / ent_delta_len;
         v2 wall_nrm         = {};
-        v2 desired_position = ent->pos + ent_delta;
         sim_entity *hit_ent = nullptr;
 
-        if (is_flag_set(ent->flags, sim_entity_flags::collides)) {
+        if (!is_flag_set(ent, sim_entity_flags::nonspatial)) {
             // FIXME: this is N * N bad
             for (sim_entity *test_ent = region->sim_entities;
                  test_ent != region->sim_entities + region->sim_entity_cnt; ++test_ent) {
                 if (test_ent->ent_i == ent->ent_i) continue;  // don't test against self
 
-                TOM_ASSERT(test_ent);  // ent_a nullptr probably means something broke
-                if (!is_flag_set(test_ent->flags, sim_entity_flags::active) ||
-                    !is_flag_set(test_ent->flags, sim_entity_flags::barrier))
-                    continue;  // skip inactive and non-barreirr entities
+                TOM_ASSERT(test_ent);  // nullptr probably means something broke
+                if (!should_collide(state, ent, test_ent)) continue;
+                // TODO: need this flag anymore?
+
+                // TODO: this is redundant, leaving it for now
                 if (ent->weapon_i == test_ent->ent_i || ent->parent_i == test_ent->ent_i)
                     continue;  // skip parent and weapon
 
@@ -100,14 +157,13 @@ move_entity(game_state *state, sim_region *region, sim_entity *ent, v2 ent_delta
                                           f32 player_delta_y, f32 min_y, f32 max_y) -> bool {
                     bool hit = false;
 
-                    f32 t_esp = .001f;
                     if (player_delta_x != 0.f) {
                         f32 t_res = (wall_x - rel_x) / player_delta_x;
                         f32 y     = rel_y + t_res * player_delta_y;
 
                         if (t_res >= 0.f && (t_min > t_res)) {
                             if (y >= min_y && y <= max_y) {
-                                t_min = math::max(0.f, t_res - t_esp);
+                                t_min = math::max(0.f, t_res - global::epsilon);
                                 hit   = true;
                             }
                         }
@@ -139,33 +195,20 @@ move_entity(game_state *state, sim_region *region, sim_entity *ent, v2 ent_delta
             }
         }
 
-        if (hit_ent && !is_flag_set(hit_ent->flags, sim_entity_flags::barrier)) {
-            wall_nrm = v2 { 0.f, 0.f };
+        if (hit_ent) {
+            bool stop_on_collision = handle_collision(ent, hit_ent);
+            if (stop_on_collision) {
+                ent->vel -= 1.f * vec::inner(ent->vel, wall_nrm) * wall_nrm;
+                ent_delta -= 1.f * vec::inner(ent_delta, wall_nrm) * wall_nrm;
+            } else {
+                t_min = 1.f;
+            }
         }
-
+        // TODO: t_min is causing collision to always happen
         ent->pos += t_min * ent_delta;
         dist_remain -= t_min * ent_delta_len;
-
-        // TODO: collision table
-        if (hit_ent) {
-            if (ent->dist_limit != 0.0f) {
-                ent->dist_limit = 0.0f;
-            }
-            ent->vel -= 1.f * vec::inner(ent->vel, wall_nrm) * wall_nrm;
-            ent_delta -= 1.f * vec::inner(ent_delta, wall_nrm) * wall_nrm;
-
-            sim_entity *ent_a = ent;
-            sim_entity *ent_b = hit_ent;
-            if (ent_a->type > ent_b->type) {
-                // TODO: swap func/template/macro?
-                auto temp = ent_a;
-                ent_a     = ent_b;
-                ent_b     = temp;
-            }
-            handle_collision(ent_a, ent_b);
-        }
     }
-    if (ent->dist_limit != 0.0f) {
+    if (ent->dist_limit != 0.f) {
         ent->dist_limit = dist_remain;
     }
 }
@@ -348,9 +391,6 @@ begin_sim(memory_arena *arena, game_state *state, world_pos origin, rect bounds)
                             if (rec::is_inside(region->bounds, sim_space_pos)) {
                                 add_sim_entity_to_region(state, region, block_ent_i, ent,
                                                          &sim_space_pos);
-                                // local_persist u32 ent_cnt = 0;
-                                // printf("added ent %d - %d : %d\n", block_ent_i, ent_cnt++,
-                                //        region->sim_entity_cnt);
                             }
                         }
                     }

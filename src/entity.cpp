@@ -35,6 +35,7 @@ add_new_entity(game_state *state, f32 abs_x, f32 abs_y, f32 abs_z)
         *ent           = {};
         ent->sim.ent_i = ent_i;
         ent->sim.type  = entity_type::null;
+        ent->sim.flags = sim_entity_flags::active;
         ent->world_pos = null_world_pos();
 
         // NOTE: this inserts the entity into the corresponding  world chunk
@@ -57,8 +58,7 @@ add_tree(game_state *state, f32 abs_x, f32 abs_y, f32 abs_z)
     ent->sim.type   = entity_type::wall;
     ent->sim.height = 1.f;
     ent->sim.width  = 1.f;
-    ent->sim.flags =
-        sim_entity_flags::active | sim_entity_flags::collides | sim_entity_flags::barrier;
+    set_flag(ent, sim_entity_flags::barrier);
 
     return ent;
 }
@@ -73,8 +73,7 @@ add_monster(game_state *state, f32 abs_x, f32 abs_y, f32 abs_z)
     ent->sim.height      = .6f;
     ent->sim.width       = .6f * .6f;
     ent->sim.argb_offset = 16.f;
-    ent->sim.flags =
-        sim_entity_flags::active | sim_entity_flags::collides | sim_entity_flags::barrier;
+    set_flag(ent, sim_entity_flags::collides);
 
     init_hit_points(&ent->sim, 6);
 
@@ -92,8 +91,7 @@ add_cat(game_state *state, f32 abs_x, f32 abs_y, f32 abs_z)
     ent->sim.height      = 0.6f;
     ent->sim.width       = 0.8f;
     ent->sim.argb_offset = 5.0f;
-    ent->sim.flags =
-        sim_entity_flags::active | sim_entity_flags::collides | sim_entity_flags::barrier;
+    set_flag(ent, sim_entity_flags::collides);
 
     return ent;
 }
@@ -110,8 +108,7 @@ add_sword(game_state *state, u32 parent_i)
     ent->sim.width       = 0.2f;
     ent->sim.argb_offset = 5.0f;
     ent->sim.parent_i    = parent_i;
-    ent->sim.flags       = sim_entity_flags::active | sim_entity_flags::collides |
-                     sim_entity_flags::hurtbox | sim_entity_flags::nonspatial;
+    set_flag(ent, sim_entity_flags::hurtbox | sim_entity_flags::nonspatial);
 
     // REVIEW: what happens if I add a second weapon?
     entity *parent_ent       = state->entities + parent_i;
@@ -131,8 +128,7 @@ add_player(game_state *state, u32 player_i, f32 abs_x, f32 abs_y, f32 abs_z)
             player->sim.height      = 0.6f;
             player->sim.width       = 0.6f * player->sim.height;
             player->sim.argb_offset = 16.0f;
-            player->sim.flags =
-                sim_entity_flags::active | sim_entity_flags::collides | sim_entity_flags::barrier;
+            set_flag(player, sim_entity_flags::collides);
 
             init_hit_points(&player->sim, 10);
 

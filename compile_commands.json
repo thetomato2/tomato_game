@@ -1,31 +1,31 @@
 [
     {
-        "directory": "/mnt/c/dev/tomato_game/emacs",
-        "command": "clang++ -DTomato_Game_Lib_EXPORTS -I/mnt/c/dev/tomato_game/src -fdeclspec -target x86_64-pc-windows-gnu -g  -std=c++20 -o CMakeFiles/Tomato_Game_Lib.dir/src/entity.cpp.o -c /mnt/c/dev/tomato_game/src/entity.cpp",
+        "directory": "/mnt/c/dev/tomato_game",
+        "command": "clang++ -DTomato_Game_Lib_EXPORTS -DTOM_INTERNAL  -I/mnt/c/dev/tomato_game/src -fdeclspec -target x86_64-pc-windows-gnu -g  -std=c++20 -o CMakeFiles/Tomato_Game_Lib.dir/src/entity.cpp.o -c /mnt/c/dev/tomato_game/src/entity.cpp",
         "file": "/mnt/c/dev/tomato_game/src/entity.cpp"
     },
     {
-        "directory": "/mnt/c/dev/tomato_game/emacs",
-        "command": "clang++ -DTomato_Game_Lib_EXPORTS -I/mnt/c/dev/tomato_game/src -fdeclspec -target x86_64-pc-windows-gnu -g  -std=c++20 -o CMakeFiles/Tomato_Game_Lib.dir/src/game.cpp.o -c /mnt/c/dev/tomato_game/src/game.cpp",
+        "directory": "/mnt/c/dev/tomato_game",
+        "command": "clang++ -DTomato_Game_Lib_EXPORTS -DTOM_INTERNAL  -I/mnt/c/dev/tomato_game/src -fdeclspec -target x86_64-pc-windows-gnu -g  -std=c++20 -o CMakeFiles/Tomato_Game_Lib.dir/src/game.cpp.o -c /mnt/c/dev/tomato_game/src/game.cpp",
         "file": "/mnt/c/dev/tomato_game/src/game.cpp"
     },
     {
-        "directory": "/mnt/c/dev/tomato_game/emacs",
-        "command": "clang++ -DTomato_Game_Lib_EXPORTS -I/mnt/c/dev/tomato_game/src -fdeclspec -target x86_64-pc-windows-gnu -g  -std=c++20 -o CMakeFiles/Tomato_Game_Lib.dir/src/sim_region.cpp.o -c /mnt/c/dev/tomato_game/src/sim_region.cpp",
+        "directory": "/mnt/c/dev/tomato_game",
+        "command": "clang++ -DTomato_Game_Lib_EXPORTS -DTOM_INTERNAL  -I/mnt/c/dev/tomato_game/src -fdeclspec -target x86_64-pc-windows-gnu -g  -std=c++20 -o CMakeFiles/Tomato_Game_Lib.dir/src/sim_region.cpp.o -c /mnt/c/dev/tomato_game/src/sim_region.cpp",
         "file": "/mnt/c/dev/tomato_game/src/sim_region.cpp"
     },
     {
-        "directory": "/mnt/c/dev/tomato_game/emacs",
-        "command": "clang++ -DTomato_Game_Lib_EXPORTS -I/mnt/c/dev/tomato_game/src -fdeclspec -target x86_64-pc-windows-gnu -g  -std=c++20 -o CMakeFiles/Tomato_Game_Lib.dir/src/world.cpp.o -c /mnt/c/dev/tomato_game/src/world.cpp",
+        "directory": "/mnt/c/dev/tomato_game",
+        "command": "clang++  -DTomato_Game_Lib_EXPORTS -DTOM_INTERNAL  -I/mnt/c/dev/tomato_game/src -fdeclspec -target x86_64-pc-windows-gnu -g  -std=c++20 -o CMakeFiles/Tomato_Game_Lib.dir/src/world.cpp.o -c /mnt/c/dev/tomato_game/src/world.cpp",
         "file": "/mnt/c/dev/tomato_game/src/world.cpp"
     },
     {
-        "directory": "/mnt/c/dev/tomato_game/emacs",
+        "directory": "/mnt/c/dev/tomato_game",
         "command": "clang++ -DEMACS -DTOM_INTERNAL -DUNICODE -D_UNICODE -D_WIN32 -I/mnt/c/dev/tomato_game/src -I/usr/i686-w64-mingw32/include -I/mnt/c/dev/include/for_emacs/c++ -fdeclspec -target x86_64-pc-windows-gnu -g -std=c++20 -o CMakeFiles/Win32_Tomato_Game.dir/src/platform_win32.cpp.o -c /mnt/c/dev/tomato_game/src/platform_win32.cpp",
         "file": "/mnt/c/dev/tomato_game/src/platform_win32.cpp"
     },
     {
-        "directory": "/mnt/c/dev/tomato_game/emacs",
+        "directory": "/mnt/c/dev/tomato_game",
         "command": "clang++ -I/mnt/c/dev/tomato_game/src -fdeclspec -target x86_64-pc-windows-gnu -g -std=c++20 -o CMakeFiles/argb_converter.dir/src/win32_argb_converter.cpp.o -c /mnt/c/dev/tomato_game/src/win32_argb_converter.cpp",
         "file": "/mnt/c/dev/tomato_game/src/win32_argb_converter.cpp"
     }

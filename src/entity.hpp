@@ -146,6 +146,42 @@ make_entity_spatial(sim_entity *ent, v2 pos, v2 vel = { 0.0f, 0.0f })
     ent->vel = vel;
 }
 
+inline bool
+is_flag_set(sim_entity *ent, s32 flag)
+{
+    return is_flag_set(ent->flags, flag);
+}
+
+inline void
+set_flag(sim_entity *ent, s32 flag)
+{
+    set_flag(ent->flags, flag);
+}
+
+inline void
+clear_flag(sim_entity *ent, s32 flag)
+{
+    clear_flag(ent->flags, flag);
+}
+
+inline bool
+is_flag_set(entity *ent, s32 flag)
+{
+    return is_flag_set(ent->sim.flags, flag);
+}
+
+inline void
+set_flag(entity *ent, s32 flag)
+{
+    set_flag(ent->sim.flags, flag);
+}
+
+inline void
+clear_flag(entity *ent, s32 flag)
+{
+    clear_flag(ent->sim.flags, flag);
+}
+
 entity *
 get_entity(game_state *state, u32 ind);
 

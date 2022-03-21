@@ -7,3 +7,6 @@ I don't have any real goals at the moment, but sometime in the future I need to 
 
 BUG???:
 When you generate a new Visual Studio Solution, you need to change the debugging working directly to the solution directory $(SolutionDir) and then back to $(TargetDir)
+
+TODO: game reads input when out of focus
+TODO: fix compile commands generation - no TOM_INTERNAL, -fPIC (idk) root folder??

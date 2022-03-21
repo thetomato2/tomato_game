@@ -16,6 +16,15 @@ struct camera
     world_pos pos;
 };
 
+struct pairwise_collision_rule
+{
+    b32 should_collide;
+    u32 ent_i_a;
+    u32 ent_i_b;
+
+    pairwise_collision_rule *next;
+};
+
 struct game_state
 {
     memory_arena world_arena;
@@ -30,6 +39,10 @@ struct game_state
 
     u32 ent_cnt;
     entity entities[global::max_ent_cnt];
+
+    // NOTE: must be power of two
+    pairwise_collision_rule *collision_rule_hash[256];
+    pairwise_collision_rule *first_free_collision_rule;
 
     // TODO: make a struct for all textures?
     argb_img bg_img;

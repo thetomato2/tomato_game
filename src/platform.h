@@ -146,9 +146,15 @@ extern "C"
             __debugbreak();                                                       \
         }                                                                         \
         assert(x)
+
+    #define DEBUG_BREAK(x)  \
+        if (x) {            \
+            __debugbreak(); \
+        }
 #else
     #define TOM_ASSERT(x)
     #define TOM_ASSERT_MSG(x, msg)
+    #define DEBUG_BREAK(x)
 #endif
 
 #define INVALID_CODE_PATH TOM_ASSERT(!"Invalid code path!")
@@ -298,18 +304,18 @@ extern "C"
 
 #ifdef TOM_INTERNAL
         debug_platform_free_file_memory *platform_free_file_memory;
-        debug_platform_read_entire_file *platfrom_read_entire_file;
+        debug_platform_read_entire_file *platform_read_entire_file;
         debug_platform_write_entire_file *platform_write_entire_file;
 #endif
     } game_memory;
 
 #define GAME_UPDATE_AND_RENDER(name)                                          \
-    void name(thread_context *thread, game_memory &memory, game_input &input, \
+    void name(thread_context *thread, game_memory *memory, game_input &input, \
               game_offscreen_buffer &video_buffer, game_sound_output_buffer &sound_buffer)
     typedef GAME_UPDATE_AND_RENDER(game_update_and_render_stub);
 
 #define GAME_GET_SOUND_SAMPLES(name) \
-    void name(thread_context *thread, game_memory &memory, game_sound_output_buffer &sound_buffer)
+    void name(thread_context *thread, game_memory *memory, game_sound_output_buffer &sound_buffer)
     typedef GAME_GET_SOUND_SAMPLES(game_get_sound_samples_stub);
 
     inline u32

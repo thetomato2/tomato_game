@@ -2,6 +2,7 @@
 #define TOMATO_UTILS_HPP_
 
 #include "platform.h"
+
 namespace tom
 {
 

@@ -277,19 +277,19 @@ is_inside(rect rect, v2 test)
     return result;
 }
 inline rect
-add_radius(rect a, f32 r_width, f32 r_height)
+add_radius(rect a, f32 r_w, f32 r_h)
 {
     rect result;
 
-    result.min = a.min - v2 { r_width, r_width };
-    result.max = a.max + v2 { r_height, r_height };
+    result.min = a.min - v2 { r_w, r_h };
+    result.max = a.max + v2 { r_w, r_h };
 
     return result;
 }
 inline rect
-add_radius(rect a, f32 radius)
+add_radius(rect a, f32 r)
 {
-    return add_radius(a, radius, radius);
+    return add_radius(a, r, r);
 }
 
 }  // namespace rec

@@ -278,6 +278,70 @@ process_controller(const game_controller_input &controller, entity_actions *enti
     }
 }
 
+internal void
+clear_collision_rule(game_state *state, u32 ent_i)
+{
+    // TODO: make  better data structure that allows removal of collision rules without searching
+    // the entire table
+    for (u32 hash_bucket = 0; hash_bucket < ARRAY_COUNT(state->collision_rule_hash);
+         ++hash_bucket) {
+        for (pairwise_collision_rule **rule = &state->collision_rule_hash[hash_bucket]; *rule;) {
+            if ((*rule)->ent_i_a == ent_i || (*rule)->ent_i_b == ent_i) {
+                pairwise_collision_rule *removed_rule = *rule;
+                *rule                                 = (*rule)->next;
+
+                removed_rule->next               = state->first_free_collision_rule;
+                state->first_free_collision_rule = removed_rule;
+            } else {
+                rule = &(*rule)->next;
+            }
+        }
+    }
+}
+
+internal void
+add_collsion_rule(game_state *state, u32 ent_i_a, u32 ent_i_b, bool should_collide)
+{
+    // TODO: collapse this with should_collide()
+    auto ent_a = state->entities + ent_i_a;
+    auto ent_b = state->entities + ent_i_b;
+    if (ent_a->sim.type > ent_b->sim.type) {
+        // TODO: swap func/template/macro?
+        auto temp = ent_i_a;
+        ent_i_a   = ent_i_b;
+        ent_i_b   = temp;
+    }
+
+    pairwise_collision_rule *found = nullptr;
+
+    u32 hash_bucket = ent_i_a & (ARRAY_COUNT(state->collision_rule_hash) - 1);
+    for (pairwise_collision_rule *rule = state->collision_rule_hash[hash_bucket]; rule;
+         rule                          = rule->next) {
+        if (rule->ent_i_a == ent_i_a && rule->ent_i_b == ent_i_b) {
+            found = rule;
+            break;
+        }
+    }
+
+    if (!found) {
+        found = state->first_free_collision_rule;
+        if (found) {
+            state->first_free_collision_rule = found->next;
+        } else {
+            found = PUSH_STRUCT(&state->world_arena, pairwise_collision_rule);
+        }
+        found->next                             = state->collision_rule_hash[hash_bucket];
+        state->collision_rule_hash[hash_bucket] = found;
+    }
+
+    TOM_ASSERT(found);
+    if (found) {
+        found->ent_i_a        = ent_i_a;
+        found->ent_i_b        = ent_i_b;
+        found->should_collide = scast(b32, should_collide);
+    }
+}
+
 // ===============================================================================================
 // #EXPORT
 // ===============================================================================================
@@ -285,25 +349,25 @@ process_controller(const game_controller_input &controller, entity_actions *enti
 extern "C" TOM_DLL_EXPORT
 GAME_GET_SOUND_SAMPLES(game_get_sound_samples)
 {
-    auto *state = (game_state *)memory.permanent_storage;
+    auto *state = (game_state *)memory->permanent_storage;
     game_output_sound(sound_buffer);
 }
 
 extern "C" TOM_DLL_EXPORT
 GAME_UPDATE_AND_RENDER(game_update_and_render)
 {
-    TOM_ASSERT(sizeof(game_state) <= memory.permanent_storage_size);
+    TOM_ASSERT(sizeof(game_state) <= memory->permanent_storage_size);
 
-    auto state   = (game_state *)memory.permanent_storage;
+    auto state   = (game_state *)memory->permanent_storage;
     world *world = nullptr;
 
     // ===============================================================================================
     // #Initialization
     // ===============================================================================================
-    if (!memory.is_initialized) {
+    if (!memory->is_initialized) {
         // init memory
-        init_arena(&state->world_arena, memory.permanent_storage_size - sizeof(*state),
-                   (u8 *)memory.permanent_storage + sizeof(*state));
+        init_arena(&state->world_arena, memory->permanent_storage_size - sizeof(*state),
+                   (u8 *)memory->permanent_storage + sizeof(*state));
 
         state->world = PUSH_STRUCT(&state->world_arena, tom::world);
 
@@ -318,39 +382,39 @@ GAME_UPDATE_AND_RENDER(game_update_and_render)
 
         // load textures
         state->player_sprites[entity_direction::north] =
-            load_argb(thread, memory.platfrom_read_entire_file, "player_n");
+            load_argb(thread, memory->platform_read_entire_file, "player_n");
         state->player_sprites[entity_direction::east] =
-            load_argb(thread, memory.platfrom_read_entire_file, "player_e");
+            load_argb(thread, memory->platform_read_entire_file, "player_e");
         state->player_sprites[entity_direction::south] =
-            load_argb(thread, memory.platfrom_read_entire_file, "player_s");
+            load_argb(thread, memory->platform_read_entire_file, "player_s");
         state->player_sprites[entity_direction::west] =
-            load_argb(thread, memory.platfrom_read_entire_file, "player_w");
+            load_argb(thread, memory->platform_read_entire_file, "player_w");
 
         state->monster_sprites[entity_direction::north] =
-            load_argb(thread, memory.platfrom_read_entire_file, "monster_n");
+            load_argb(thread, memory->platform_read_entire_file, "monster_n");
         state->monster_sprites[entity_direction::east] =
-            load_argb(thread, memory.platfrom_read_entire_file, "monster_e");
+            load_argb(thread, memory->platform_read_entire_file, "monster_e");
         state->monster_sprites[entity_direction::south] =
-            load_argb(thread, memory.platfrom_read_entire_file, "monster_s");
+            load_argb(thread, memory->platform_read_entire_file, "monster_s");
         state->monster_sprites[entity_direction::west] =
-            load_argb(thread, memory.platfrom_read_entire_file, "monster_w");
+            load_argb(thread, memory->platform_read_entire_file, "monster_w");
 
         state->sword_sprites[entity_direction::north] =
-            load_argb(thread, memory.platfrom_read_entire_file, "sword_n");
+            load_argb(thread, memory->platform_read_entire_file, "sword_n");
         state->sword_sprites[entity_direction::east] =
-            load_argb(thread, memory.platfrom_read_entire_file, "sword_e");
+            load_argb(thread, memory->platform_read_entire_file, "sword_e");
         state->sword_sprites[entity_direction::south] =
-            load_argb(thread, memory.platfrom_read_entire_file, "sword_s");
+            load_argb(thread, memory->platform_read_entire_file, "sword_s");
         state->sword_sprites[entity_direction::west] =
-            load_argb(thread, memory.platfrom_read_entire_file, "sword_w");
+            load_argb(thread, memory->platform_read_entire_file, "sword_w");
 
-        state->cat_sprites[0] = load_argb(thread, memory.platfrom_read_entire_file, "cat_e");
-        state->cat_sprites[1] = load_argb(thread, memory.platfrom_read_entire_file, "cat_w");
+        state->cat_sprites[0] = load_argb(thread, memory->platform_read_entire_file, "cat_e");
+        state->cat_sprites[1] = load_argb(thread, memory->platform_read_entire_file, "cat_w");
 
-        state->bg_img        = load_argb(thread, memory.platfrom_read_entire_file, bg);
-        state->crosshair_img = load_argb(thread, memory.platfrom_read_entire_file, "crosshair");
-        state->tree_sprite   = load_argb(thread, memory.platfrom_read_entire_file, "shitty_tree");
-        state->stair_sprite  = load_argb(thread, memory.platfrom_read_entire_file, "stairs");
+        state->bg_img        = load_argb(thread, memory->platform_read_entire_file, bg);
+        state->crosshair_img = load_argb(thread, memory->platform_read_entire_file, "crosshair");
+        state->tree_sprite   = load_argb(thread, memory->platform_read_entire_file, "shitty_tree");
+        state->stair_sprite  = load_argb(thread, memory->platform_read_entire_file, "stairs");
 
         s32 screen_base_x {}, screen_base_y {}, screen_base_z {}, virtual_z {}, rng_ind {};
         s32 screen_x { screen_base_x }, screen_y { screen_base_y }, screen_z { screen_base_z };
@@ -372,7 +436,7 @@ GAME_UPDATE_AND_RENDER(game_update_and_render)
         for (u32 player_i = 1; player_i <= state->player_cnt; ++player_i) {
             add_player(state, player_i, 0.f, 0.f, 0.f);
         }
-        add_sword(state, 1);
+
         state->entities[2].world_pos = state->entities[1].world_pos;
 
 #if 1
@@ -395,11 +459,18 @@ GAME_UPDATE_AND_RENDER(game_update_and_render)
         // add_tree(state, 1.0f, 1.0f, 0.0f);
         // add_tree(state, 0.0f, 1.0f, 0.0f);
         // add_tree(state, -1.0f, 1.0f, 0.0f);
-        add_monster(state, 5.f, 0.f, 0.f);
-        add_cat(state, -1.f, 1.f, 0.f);
+        auto monster_ent = add_monster(state, 5.f, 0.f, 0.f);
+        auto cat_ent     = add_cat(state, -1.f, 1.f, 0.f);
+        {
+            auto p1        = get_entity(state, 1);
+            auto sword_ent = get_entity(state, p1->sim.weapon_i);
+            add_collsion_rule(state, sword_ent->sim.ent_i, monster_ent->sim.ent_i, true);
+            add_collsion_rule(state, p1->sim.ent_i, monster_ent->sim.ent_i, true);
+            add_collsion_rule(state, p1->sim.ent_i, cat_ent->sim.ent_i, true);
+        }
 
         // TODO: this might be more appropriate in the platform layer
-        memory.is_initialized = true;
+        memory->is_initialized = true;
     }
 
     // ===============================================================================================
@@ -463,7 +534,7 @@ GAME_UPDATE_AND_RENDER(game_update_and_render)
     rect sim_bounds        = rec::center_dim({ 0.f, 0.f }, sim_screen_size);
 
     memory_arena sim_arena;
-    init_arena(&sim_arena, memory.transient_storage_size, memory.transient_storage);
+    init_arena(&sim_arena, memory->transient_storage_size, memory->transient_storage);
 
     sim_region *region = begin_sim(&sim_arena, state, cam->pos, sim_bounds);
 
@@ -483,8 +554,7 @@ GAME_UPDATE_AND_RENDER(game_update_and_render)
          sim_ent != region->sim_entities + region->sim_entity_cnt; ++sim_ent) {
         if (sim_ent->type == entity_type::null) continue;
 
-        // TODO: abstract active check into func?
-        // TODO: active and nonspatial redundant?
+        // TODO: active and nonspatial redundant? -NO spatial ents get updated
         if (!is_flag_set(sim_ent->flags, sim_entity_flags::active))
             continue;  // don't update inactive entities
 

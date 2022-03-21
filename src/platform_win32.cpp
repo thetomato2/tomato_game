@@ -896,7 +896,7 @@ win32_main(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLine, s32 n
     game_memory memory = { .permanent_storage_size     = MEGABYTES(256),
                            .transient_storage_size     = GIGABYTES(1),
                            .platform_free_file_memory  = _debug_platform_free_file_memory,
-                           .platfrom_read_entire_file  = _debug_platform_read_entire_file,
+                           .platform_read_entire_file  = _debug_platform_read_entire_file,
                            .platform_write_entire_file = _debug_platform_write_entire_file };
 
     state.total_size = memory.permanent_storage_size + memory.transient_storage_size;
@@ -1008,8 +1008,8 @@ win32_main(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLine, s32 n
         thread_context thread {};
 
         if (is_game_code_loaded) {
-            code.update_and_render(&thread, memory, *input, buffer, sound_buffer);
-            code.get_sound_samples(&thread, memory, sound_buffer);
+            code.update_and_render(&thread, &memory, *input, buffer, sound_buffer);
+            code.get_sound_samples(&thread, &memory, sound_buffer);
         }
 
         fill_sound_buffer(sound_output, samples_to_write, sound_buffer);
