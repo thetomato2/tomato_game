@@ -10,20 +10,13 @@ namespace tom
 
 struct entity;
 
-// TODO: change to v3
-struct world_dif
-{
-    v2 dif_xy;
-    f32 dif_z;
-};
-
 struct world_pos
 {
     // NOTE: these are fixed point positioins. the high bits are the tile
     // chunk index, and the lower bits are the tile index in the chunk
     s32 chunk_x, chunk_y, chunk_z;
     // NOTE: from the chunk center
-    v2 offset;
+    v3 offset;
 };
 
 struct world_entity_block
@@ -84,11 +77,14 @@ operator!=(world_pos &lhs, world_pos &rhs)
 void
 init_world(world *world, f32 tile_sizes_in_meters);
 
-world_dif
+v3
 get_world_diff(world_pos pos_a, world_pos pos_b);
 
 world_pos
-map_into_chunk_space(world_pos pos, v2 offset = { 0.0f, 0.0f });
+map_into_chunk_space(world_pos pos, v3 offset = { 0.f, 0.f, 0.f });
+
+world_pos
+map_into_chunk_space(world_pos pos, v2 offset = { 0.f, 0.f });
 
 world_chunk *
 get_world_chunk(world *world, s32 chunk_x, s32 chunk_y, s32 chunk_z, memory_arena *arena = nullptr);

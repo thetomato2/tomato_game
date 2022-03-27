@@ -155,7 +155,7 @@ draw_argb(game_offscreen_buffer &buffer, const argb_img &img, const v2 pos)
 
 internal void
 push_piece(entity_visble_piece_group *group, argb_img *img, const v2 mid_p, const f32 z_offset,
-           const f32 alpha = 1.0f)
+           const f32 alpha = 1.f)
 {
     TOM_ASSERT(group->piece_cnt < ARRAY_COUNT(group->pieces));
     entity_visible_piece *piece = group->pieces + group->piece_cnt++;
@@ -167,7 +167,7 @@ push_piece(entity_visble_piece_group *group, argb_img *img, const v2 mid_p, cons
 
 internal void
 push_piece(entity_visble_piece_group *group, const f32 width, const f32 height,
-           const color_argb color, const v2 mid_p, const f32 z_offset, const f32 alpha = 1.0f)
+           const color_argb color, const v2 mid_p, const f32 z_offset, const f32 alpha = 1.f)
 {
     TOM_ASSERT(group->piece_cnt < ARRAY_COUNT(group->pieces));
     entity_visible_piece *piece = group->pieces + group->piece_cnt++;
@@ -442,16 +442,16 @@ GAME_UPDATE_AND_RENDER(game_update_and_render)
 #if 1
         f32 x_len = 55.f;
         for (f32 x = -20.f; x < x_len; ++x) {
-            add_tree(state, x, 15, 0.0f);
-            add_tree(state, x, -5, 0.0f);
+            add_tree(state, x, 15, 0.f);
+            add_tree(state, x, -5, 0.f);
             if (scast(s32, x) % 17 == 0) continue;
-            add_tree(state, x, 5, 0.0f);
+            add_tree(state, x, 5, 0.f);
         }
 
         for (f32 x = -20.f; x <= x_len; x += 15.f) {
             for (f32 y = -5; y < 15; ++y) {
                 if ((y == 0.f || y == 10.f) && (x != -20.f && x != 55.f)) continue;
-                add_tree(state, x, y, 0.0);
+                add_tree(state, x, y, 0.);
             }
         }
 #endif
@@ -499,8 +499,8 @@ GAME_UPDATE_AND_RENDER(game_update_and_render)
         entity *sword_ent = state->entities + p1->sim.weapon_i;
         clear_flag(sword_ent->sim.flags, sim_entity_flags::nonspatial);
         sword_ent->world_pos      = p1->world_pos;
-        constexpr f32 sword_vel   = 5.0f;
-        sword_ent->sim.dist_limit = 5.0f;
+        constexpr f32 sword_vel   = 5.f;
+        sword_ent->sim.dist_limit = 5.f;
         switch (p1->sim.dir) {
             case entity_direction::north: {
                 sword_ent->sim.vel.y      = sword_vel;
@@ -521,8 +521,8 @@ GAME_UPDATE_AND_RENDER(game_update_and_render)
         }
     }
 
-    entity *cam_ent      = get_entity(state, state->entity_camera_follow_ind);
-    world_dif entity_dif = get_world_diff(cam_ent->world_pos, cam->pos);
+    entity *cam_ent = get_entity(state, state->entity_camera_follow_ind);
+    v3 entity_dif   = get_world_diff(cam_ent->world_pos, cam->pos);
 
     // NOTE: cam is following the player
     cam->pos         = p1->world_pos;
@@ -569,8 +569,8 @@ GAME_UPDATE_AND_RENDER(game_update_and_render)
                 case entity_type::none: {
                 } break;
                 case entity_type::player: {
-                    f32 ent_speed = state->player_acts[1].sprint ? move_spec.speed = 25.0f
-                                                                 : move_spec.speed = 10.0f;
+                    f32 ent_speed = state->player_acts[1].sprint ? move_spec.speed = 25.f
+                                                                 : move_spec.speed = 10.f;
                     ent_act       = state->player_acts[1];
 
                 } break;
@@ -598,7 +598,7 @@ GAME_UPDATE_AND_RENDER(game_update_and_render)
                     if (closest_player) {
                         f32 one_over_len = 1.f / math::sqrt_f32(closest_player_dist_sq);
                         f32 min_dist     = 2.f;
-                        v2 dif           = closest_player->pos - sim_ent->pos;
+                        v3 dif           = closest_player->pos - sim_ent->pos;
                         if (math::abs_f32(dif.x) > min_dist || math::abs_f32(dif.y) > min_dist)
                             ent_act.dir = one_over_len * (dif);
                     }
@@ -607,9 +607,9 @@ GAME_UPDATE_AND_RENDER(game_update_and_render)
                     // TODO: update monster
                 } break;
                 case entity_type::sword: {
-                    move_spec.drag = 0.0f;
+                    move_spec.drag = 0.f;
                     if (!is_flag_set(sim_ent->flags, sim_entity_flags::nonspatial) &&
-                        sim_ent->dist_limit == 0.0f) {
+                        sim_ent->dist_limit == 0.f) {
                         set_flag(sim_ent->flags, sim_entity_flags::nonspatial);
                     }
                 } break;
@@ -619,7 +619,7 @@ GAME_UPDATE_AND_RENDER(game_update_and_render)
             }
         }
 
-        v2 ent_accel = ent_act.dir;
+        v3 ent_accel = ent_act.dir;
 
         // NOTE: normalize vector to unit length
         f32 ent_accel_len = vec::length(ent_accel);
@@ -629,30 +629,30 @@ GAME_UPDATE_AND_RENDER(game_update_and_render)
         ent_accel *= move_spec.speed;
         ent_accel -= sim_ent->vel * move_spec.drag;
 
-        v2 ent_delta = (.5f * ent_accel * math::square(dt) + sim_ent->vel * dt);
+        v3 ent_delta = (.5f * ent_accel * math::square(dt) + sim_ent->vel * dt);
 
         sim_ent->vel += ent_accel * dt;
 
-        if (math::abs_f32(sim_ent->vel.x) > 0.0f + global::epsilon ||
-            math::abs_f32(sim_ent->vel.y) > 0.0f + global::epsilon)
+        if (math::abs_f32(sim_ent->vel.x) > 0.f + global::epsilon ||
+            math::abs_f32(sim_ent->vel.y) > 0.f + global::epsilon)
             move_entity(state, region, sim_ent, ent_delta, dt);
 
         // NOTE: changes the players direction for the sprite
-        v2 pv = sim_ent->vel;
+        v3 pv = sim_ent->vel;
 
         constexpr f32 dir_eps = 0.1f;
 
         if (math::abs_f32(pv.x) > math::abs_f32(pv.y)) {
-            if (pv.x > 0.0f + dir_eps) {
+            if (pv.x > 0.f + dir_eps) {
                 sim_ent->dir = entity_direction::east;
-            } else if (pv.x < 0.0f - dir_eps) {
+            } else if (pv.x < 0.f - dir_eps) {
                 sim_ent->dir = entity_direction::west;
             }
 
         } else if (math::abs_f32(pv.y) > math::abs_f32(pv.x)) {
-            if (pv.y > 0.0f + dir_eps) {
+            if (pv.y > 0.f + dir_eps) {
                 sim_ent->dir = entity_direction::north;
-            } else if (pv.y < 0.0f - dir_eps) {
+            } else if (pv.y < 0.f - dir_eps) {
                 sim_ent->dir = entity_direction::south;
             }
         }
@@ -665,7 +665,7 @@ GAME_UPDATE_AND_RENDER(game_update_and_render)
         piece_group.piece_cnt = 0;
         sprite                = nullptr;
         // the regions origin should be the center of the camera so this should line up
-        v2 sim_space_pos  = get_sim_space_pos(*state, *region, sim_ent->ent_i);
+        v3 sim_space_pos  = get_sim_space_pos(*state, *region, sim_ent->ent_i);
         v2 ent_screen_pos = { (screen_center.x + (sim_space_pos.x * global::meters_to_pixels)),
                               (screen_center.y - (sim_space_pos.y * global::meters_to_pixels)) };
 

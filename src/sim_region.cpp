@@ -8,7 +8,7 @@ namespace tom
 
 internal sim_entity *
 add_sim_entity_to_region(game_state *state, sim_region *region, u32 ent_i, entity *source_ent,
-                         v2 *sim_pos);
+                         v3 *sim_pos);
 
 internal void
 add_hit_points(sim_entity *ent, s32 hp)
@@ -111,7 +111,7 @@ handle_collision(sim_entity *ent_a, sim_entity *ent_b)
 }
 
 void
-move_entity(game_state *state, sim_region *region, sim_entity *ent, v2 ent_delta, const f32 dt)
+move_entity(game_state *state, sim_region *region, sim_entity *ent, v3 ent_delta, const f32 dt)
 {
     TOM_ASSERT(state && region && ent);
 
@@ -150,7 +150,7 @@ move_entity(game_state *state, sim_region *region, sim_entity *ent, v2 ent_delta
 
                 v2 min_corner = { -.5f * v2 { r_w, r_h } };
                 v2 max_corner = { .5f * v2 { r_w, r_h } };
-                v2 rel        = ent->pos - test_ent->pos;
+                v3 rel        = ent->pos - test_ent->pos;
 
                 // TODO: maybe pull this out into a free function (but why?)
                 auto test_wall = [&t_min](f32 wall_x, f32 rel_x, f32 rel_y, f32 player_delta_x,
@@ -198,8 +198,9 @@ move_entity(game_state *state, sim_region *region, sim_entity *ent, v2 ent_delta
         if (hit_ent) {
             bool stop_on_collision = handle_collision(ent, hit_ent);
             if (stop_on_collision) {
-                ent->vel -= 1.f * vec::inner(ent->vel, wall_nrm) * wall_nrm;
-                ent_delta -= 1.f * vec::inner(ent_delta, wall_nrm) * wall_nrm;
+                v3 wall_nrm_v3 = vec::v2_to_v3(wall_nrm);
+                ent->vel -= 1.f * vec::inner(ent->vel, wall_nrm_v3) * wall_nrm_v3;
+                ent_delta -= 1.f * vec::inner(ent_delta, wall_nrm_v3) * wall_nrm_v3;
             } else {
                 t_min = 1.f;
             }
@@ -271,37 +272,35 @@ load_entity_ref(game_state *state, sim_region *region, entity_ref *ref)
     }
 }
 
-internal v2
+// TODO: do I need this? its not called anywhere but it might be useful idk
+internal v3
 get_cam_space_pos(const game_state &state, entity *ent)
 {
-    world_dif diff = get_world_diff(ent->world_pos, state.camera.pos);
-    v2 result      = { diff.dif_xy };
+    v3 result = get_world_diff(ent->world_pos, state.camera.pos);
 
     return result;
 }
 
-internal v2
+internal v3
 get_sim_space_pos(const sim_region &region, const entity &ent)
 {
     // TODO: what is the null/invalid value here?
-    v2 result = { 100'000'000.0f, 100'000'000.0f };
+    v3 result = { 100'000'000.0f, 100'000'000.0f, 100'000'000.0f };
     if (!is_flag_set(ent.sim.flags, sim_entity_flags::nonspatial)) {
-        world_dif dif = get_world_diff(ent.world_pos, region.origin);
-        result        = dif.dif_xy;
+        result = get_world_diff(ent.world_pos, region.origin);
     }
 
     return result;
 }
 
-v2
+v3
 get_sim_space_pos(const game_state &state, const sim_region &region, u32 ent_i)
 {
     // TODO: what is the null/invalid value here?
-    v2 result         = { 100'000'000.0f, 100'000'000.0f };
+    v3 result         = { 100'000'000.0f, 100'000'000.0f, 100'000'000.0f };
     const entity &ent = state.entities[ent_i];
     if (!is_flag_set(ent.sim.flags, sim_entity_flags::nonspatial)) {
-        world_dif dif = get_world_diff(ent.world_pos, region.origin);
-        result        = dif.dif_xy;
+        result = get_world_diff(ent.world_pos, region.origin);
     }
 
     return result;
@@ -335,7 +334,7 @@ add_sim_entity_to_region_raw(game_state *state, sim_region *region, u32 ent_i, e
 
 internal sim_entity *
 add_sim_entity_to_region(game_state *state, sim_region *region, u32 ent_i, entity *source_ent,
-                         v2 *sim_pos)
+                         v3 *sim_pos)
 
 {
     TOM_ASSERT(state && region && ent_i);
@@ -343,8 +342,9 @@ add_sim_entity_to_region(game_state *state, sim_region *region, u32 ent_i, entit
     sim_entity *dest_ent = add_sim_entity_to_region_raw(state, region, ent_i, source_ent);
     if (dest_ent) {
         if (sim_pos) {
-            dest_ent->pos        = *sim_pos;
-            dest_ent->updateable = rec::is_inside(region->update_bounds, dest_ent->pos);
+            dest_ent->pos = *sim_pos;
+            dest_ent->updateable =
+                rec::is_inside(region->update_bounds, { dest_ent->pos.x, dest_ent->pos.y });
         } else {
             dest_ent->pos = get_sim_space_pos(*region, *source_ent);
         }
@@ -387,8 +387,9 @@ begin_sim(memory_arena *arena, game_state *state, world_pos origin, rect bounds)
                         u32 block_ent_i = block->ent_inds[ent_i];
                         entity *ent     = state->entities + block_ent_i;
                         if (!is_flag_set(ent->sim.flags, sim_entity_flags::nonspatial)) {
-                            v2 sim_space_pos = get_sim_space_pos(*region, *ent);
-                            if (rec::is_inside(region->bounds, sim_space_pos)) {
+                            v3 sim_space_pos = get_sim_space_pos(*region, *ent);
+                            if (rec::is_inside(region->bounds,
+                                               { sim_space_pos.x, sim_space_pos.y })) {
                                 add_sim_entity_to_region(state, region, block_ent_i, ent,
                                                          &sim_space_pos);
                             }

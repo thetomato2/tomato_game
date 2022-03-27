@@ -31,9 +31,9 @@ struct sim_region
 };
 
 void
-move_entity(game_state *state, sim_region *region, sim_entity *ent, v2 ent_delta, f32 dt);
+move_entity(game_state *state, sim_region *region, sim_entity *ent, v3 ent_delta, f32 dt);
 
-v2
+v3
 get_sim_space_pos(const game_state &state, const sim_region &region, u32 ent_i);
 
 sim_region *

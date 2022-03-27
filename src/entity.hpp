@@ -18,7 +18,7 @@ struct entity_actions
     bool jump;
     bool attack;
 
-    v2 dir;
+    v3 dir;
 
     bool sprint;
 };
@@ -94,8 +94,8 @@ struct sim_entity
     b32 updateable;
 
     s32 flags;
-    v2 pos;
-    v2 vel;
+    v3 pos;
+    v3 vel;
     u32 chunk_z;
     f32 z;
     f32 vel_z;
@@ -139,7 +139,7 @@ make_entity_nonspatial(sim_entity *ent)
 }
 
 inline void
-make_entity_spatial(sim_entity *ent, v2 pos, v2 vel = { 0.0f, 0.0f })
+make_entity_spatial(sim_entity *ent, v3 pos, v3 vel = { 0.f, 0.f, 0.f })
 {
     set_flag(ent->flags, sim_entity_flags::nonspatial);
     ent->pos = pos;

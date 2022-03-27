@@ -12,9 +12,9 @@ is_canonical(f32 rel_coord)
 }
 
 internal bool
-is_canonical(v2 rel_coord)
+is_canonical(v3 rel_coord)
 {
-    return is_canonical(rel_coord.x) && is_canonical(rel_coord.y);
+    return is_canonical(rel_coord.x) && is_canonical(rel_coord.y) && is_canonical(rel_coord.z);
 }
 
 internal void
@@ -60,24 +60,20 @@ init_world(world *world, f32 tile_sizes_in_meters)
     }
 }
 
-world_dif
+v3
 get_world_diff(world_pos pos_a, world_pos pos_b)
 {
-    world_dif result;
+    v3 dif = { .x = scast(f32, pos_a.chunk_x) - scast(f32, pos_b.chunk_x),
+               .y = dif.y = scast(f32, pos_a.chunk_y) - scast(f32, pos_b.chunk_y),
+               .z = dif.z = scast(f32, pos_a.chunk_z) - scast(f32, pos_b.chunk_z) };
 
-    v2 diff_xy;
-    diff_xy.x = scast(f32, pos_a.chunk_x) - scast(f32, pos_b.chunk_x);
-    diff_xy.y = scast(f32, pos_a.chunk_y) - scast(f32, pos_b.chunk_y);
-    f32 dif_z = scast(f32, pos_a.chunk_z) - scast(f32, pos_b.chunk_z);
-
-    result.dif_xy = global::chunk_size_meters * diff_xy + (pos_a.offset - pos_b.offset);
-    result.dif_z  = 0.f;
+    v3 result = vec::hadamard(global::chunk_dim_meters, dif) + (pos_a.offset - pos_b.offset);
 
     return result;
 }
 
 world_pos
-map_into_chunk_space(world_pos pos, const v2 offset)
+map_into_chunk_space(world_pos pos, const v3 offset)
 {
     auto result = pos;
 
@@ -85,6 +81,16 @@ map_into_chunk_space(world_pos pos, const v2 offset)
     result.offset += offset;
     recanonicalize_coord(result.chunk_x, result.offset.x);
     recanonicalize_coord(result.chunk_y, result.offset.y);
+    recanonicalize_coord(result.chunk_z, result.offset.z);
+
+    return result;
+}
+
+world_pos
+map_into_chunk_space(world_pos pos, const v2 offset)
+{
+    v3 offset_v3 = vec::v2_to_v3(offset);
+    auto result  = map_into_chunk_space(pos, offset_v3);
 
     return result;
 }
@@ -140,15 +146,17 @@ abs_pos_to_world_pos(f32 abs_x, f32 abs_y, f32 abs_z)
 {
     world_pos result;
 
-    result.chunk_x = scast(s32, abs_x / global::chunk_size_meters);
-    result.chunk_y = scast(s32, abs_y / global::chunk_size_meters);
-    result.chunk_z = scast(s32, abs_z / global::chunk_size_meters);
+    result.chunk_x = scast(s32, abs_x / global::chunk_dim_meters.x);
+    result.chunk_y = scast(s32, abs_y / global::chunk_dim_meters.y);
+    result.chunk_z = scast(s32, abs_z / global::chunk_dim_meters.z);
 
-    result.offset.x = abs_x - (result.chunk_x * global::chunk_size_meters);
-    result.offset.y = abs_y - (result.chunk_y * global::chunk_size_meters);
+    result.offset.x = abs_x - (result.chunk_x * global::chunk_dim_meters.x);
+    result.offset.y = abs_y - (result.chunk_y * global::chunk_dim_meters.y);
+    result.offset.z = abs_z - (result.chunk_z * global::chunk_dim_meters.z);
 
     recanonicalize_coord(result.chunk_x, result.offset.x);
     recanonicalize_coord(result.chunk_y, result.offset.y);
+    recanonicalize_coord(result.chunk_z, result.offset.z);
 
     // result = map_into_chunk_space(result, result.offset);
 
