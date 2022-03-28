@@ -198,7 +198,7 @@ move_entity(game_state *state, sim_region *region, sim_entity *ent, v3 ent_delta
         if (hit_ent) {
             bool stop_on_collision = handle_collision(ent, hit_ent);
             if (stop_on_collision) {
-                v3 wall_nrm_v3 = vec::v2_to_v3(wall_nrm);
+                v3 wall_nrm_v3 = v3_init(wall_nrm);
                 ent->vel -= 1.f * vec::inner(ent->vel, wall_nrm_v3) * wall_nrm_v3;
                 ent_delta -= 1.f * vec::inner(ent_delta, wall_nrm_v3) * wall_nrm_v3;
             } else {
@@ -354,7 +354,7 @@ add_sim_entity_to_region(game_state *state, sim_region *region, u32 ent_i, entit
 }
 
 sim_region *
-begin_sim(memory_arena *arena, game_state *state, world_pos origin, rect bounds)
+begin_sim(memory_arena *arena, game_state *state, world_pos origin, rect3 bounds)
 {
     TOM_ASSERT(arena && state);
 
@@ -363,7 +363,7 @@ begin_sim(memory_arena *arena, game_state *state, world_pos origin, rect bounds)
     ZERO_STRUCT(region->hash);
 
     // TODO: IMPORTANT-> calc this from the max value of all entities radius + speed
-    f32 update_safety_margin = 1.0f;
+    f32 update_safety_margin = global::chunk_size_meters;
 
     region->origin        = origin;
     region->update_bounds = bounds;
@@ -373,8 +373,8 @@ begin_sim(memory_arena *arena, game_state *state, world_pos origin, rect bounds)
     region->sim_entity_cnt     = 0;
     region->sim_entities       = PUSH_ARRAY(arena, region->max_sim_entity_cnt, sim_entity);
 
-    world_pos min_chunk_pos = map_into_chunk_space(origin, rec::min_corner(bounds));
-    world_pos max_chunk_pos = map_into_chunk_space(origin, rec::max_corner(bounds));
+    world_pos min_chunk_pos = map_into_chunk_space(origin, rec::min_corner(region->bounds));
+    world_pos max_chunk_pos = map_into_chunk_space(origin, rec::max_corner(region->bounds));
 
     // make all entities outside camera space stored
     for (s32 chunk_y = min_chunk_pos.chunk_y; chunk_y < max_chunk_pos.chunk_y; ++chunk_y) {

@@ -46,7 +46,7 @@ draw_rect(game_offscreen_buffer &buffer, const f32 min_x_f32, const f32 min_y_f3
 }
 
 internal void
-draw_rect(game_offscreen_buffer &buffer, const rect rect, const color_argb color = colors::pink)
+draw_rect(game_offscreen_buffer &buffer, const rect2 rect, const color_argb color = colors::pink)
 {
     s32 min_x = math::round_f32_to_s32(rect.min.x);
     s32 min_y = math::round_f32_to_s32(rect.min.y);
@@ -528,27 +528,22 @@ GAME_UPDATE_AND_RENDER(game_update_and_render)
     cam->pos         = p1->world_pos;
     cam->pos.chunk_z = cam_ent->world_pos.chunk_z;
 
-    f32 sim_test_size_mult = 2.f;
-    v2 sim_screen_size     = { (global::screen_size_x * sim_test_size_mult),
-                           global::screen_size_y * sim_test_size_mult };
-    rect sim_bounds        = rec::center_dim({ 0.f, 0.f }, sim_screen_size);
+    rect3 sim_bounds = rec::center_dim(
+        { 0.f, 0.f, 0.f }, { global::chunk_size_meters * 2.f, global::chunk_size_meters * 2.f });
 
     memory_arena sim_arena;
     init_arena(&sim_arena, memory->transient_storage_size, memory->transient_storage);
 
     sim_region *region = begin_sim(&sim_arena, state, cam->pos, sim_bounds);
 
-    v2 screen_center = { .5f * (f32)video_buffer.width, .5f * (f32)video_buffer.height };
+    v2 screen_center                      = { .5f * scast(f32, video_buffer.width),
+                         .5f * scast(f32, video_buffer.height) };
     entity_visble_piece_group piece_group = {};
     argb_img *sprite                      = nullptr;
 
     // NOTE: *not* using PatBlt in the win32 layer
     color_argb clear_color { 0xff'4e'4e'4e };
     clear_buffer(video_buffer, clear_color);
-
-    rect cam_bounds =
-        rec::center_dim({ 0.f, 0.f }, { global::screen_size_x * global::meters_to_pixels,
-                                        global::screen_size_y * global::meters_to_pixels });
 
     for (sim_entity *sim_ent = region->sim_entities;
          sim_ent != region->sim_entities + region->sim_entity_cnt; ++sim_ent) {
@@ -680,8 +675,14 @@ GAME_UPDATE_AND_RENDER(game_update_and_render)
             }
         };
 
+        rect3 cam_bounds              = { { 0.f, 0.f, 0.f },
+                             { scast(f32, video_buffer.width), scast(f32, video_buffer.height),
+                               0.f } };
+        constexpr f32 cam_bound_delta = 50.f;
+        cam_bounds                    = rec::add_radius(cam_bounds, cam_bound_delta);
+
         // draw only inside window
-        if (rec::is_inside(cam_bounds, ent_screen_pos)) {
+        if (rec::is_inside(cam_bounds, v3_init(ent_screen_pos, 0.f))) {
             switch (sim_ent->type) {
                 case entity_type::none: {
                     draw_rect(video_buffer,
@@ -760,14 +761,6 @@ GAME_UPDATE_AND_RENDER(game_update_and_render)
                               1, { 0xffff0000 });
         }
     }
-
-#if 0
-    // HACK: hacky way to draw a debug postion
-    auto test_dif = get_world_diff(state->test_pos, cam->pos);
-    v2 test_mid   = { (screen_center.x + (test_dif.dif_xy.x * global::g_meters_to_pixels)),
-                    (screen_center.y - (test_dif.dif_xy.y * global::g_meters_to_pixels)) };
-    draw_ARGB(video_buffer, state->crosshair_img, test_mid);
-#endif
 
     end_sim(state, region);
 }

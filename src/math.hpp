@@ -175,8 +175,20 @@ union v3
     {
         f32 x, y, z;
     };
+    struct
+    {
+        v2 xy;
+        f32 _ignored0;
+    };
     f32 e[3];
 };
+
+inline v3
+v3_init(v2 a, f32 z = 0.f)
+{
+    v3 res = { .x = a.x, .y = a.y, .z = z };
+    return res;
+}
 
 inline v3
 operator+(v3 lhs, v3 rhs)
@@ -512,6 +524,7 @@ operator!=(v4 &lhs, v4 &rhs)
 // ===============================================================================================
 namespace vec
 {
+
 // NOTE: inner product or dot product
 inline f32
 inner(const v2 a, const v2 b)
@@ -596,53 +609,79 @@ length(const v4 a)
     f32 res = math::sqrt_f32(length_sq(a));
     return res;
 }
-inline v2
-get_xy(v3 a)
-{
-    v2 res = { .x = a.x, .y = a.y };
-    return res;
-}
-
-inline v3
-v2_to_v3(v2 a, f32 z = 0.f)
-{
-    v3 res = { .x = a.x, .y = a.y, .z = z };
-    return res;
-}
 
 }  // namespace vec
 
 // ===============================================================================================
-// #RECT_V2
+// #RECTANGLE 2
 // ===============================================================================================
 
-struct rect
+struct rect2
 {
     v2 min;
     v2 max;
 };
 
+// ===============================================================================================
+// #RECTANGLE 3
+// ===============================================================================================
+
+struct rect3
+{
+    v3 min;
+    v3 max;
+};
+
+inline rect3
+rect3_init(rect2 a)
+{
+    rect3 res;
+
+    res.min = v3_init(a.min);
+    res.max = v3_init(a.max);
+
+    return res;
+}
+
+// ===============================================================================================
+// #RECTANGLE FUNCS
+// ===============================================================================================
+
 namespace rec
 {
 
 inline v2
-max_corner(rect rect)
+max_corner(rect2 a)
 {
-    v2 res = rect.max;
+    v2 res = a.max;
+    return res;
+}
+
+inline v3
+max_corner(rect3 a)
+{
+    v3 res = a.max;
     return res;
 }
 
 inline v2
-min_corner(rect rect)
+min_corner(rect2 a)
 {
-    v2 res = rect.min;
+    v2 res = a.min;
     return res;
 }
 
-inline rect
+inline v3
+min_corner(rect3 a)
+{
+    v3 res = a.min;
+    return res;
+}
+
+inline rect2
 min_max(v2 min, v2 max)
 {
-    rect res;
+    rect2 res;
 
     res.min = min;
     res.max = max;
@@ -650,10 +689,21 @@ min_max(v2 min, v2 max)
     return res;
 }
 
-inline rect
+inline rect3
+min_max(v3 min, v3 max)
+{
+    rect3 res;
+
+    res.min = min;
+    res.max = max;
+
+    return res;
+}
+
+inline rect2
 min_dim(v2 min, v2 dim)
 {
-    rect res;
+    rect2 res;
 
     res.min = min;
     res.max = min + dim;
@@ -661,55 +711,120 @@ min_dim(v2 min, v2 dim)
     return res;
 }
 
-inline rect
-center_dim(v2 center, v2 dim)
+inline rect3
+min_dim(v3 min, v3 dim)
 {
-    rect res;
+    rect3 res;
 
-    res.min = center - dim;
-    res.max = center + dim;
+    res.min = min;
+    res.max = min + dim;
 
     return res;
 }
 
-inline rect
+inline rect2
 center_half_dim(v2 center, v2 half_dim)
 {
-    half_dim /= 2.0f;
-    rect res = center_dim(center, half_dim);
+    rect2 res;
+
+    res.min = center - half_dim;
+    res.max = center + half_dim;
+
+    return res;
+}
+
+inline rect3
+center_half_dim(v3 center, v3 half_dim)
+{
+    rect3 res;
+
+    res.min = center - half_dim;
+    res.max = center + half_dim;
+
+    return res;
+}
+
+inline rect2
+center_dim(v2 center, v2 dim)
+{
+    rect2 res = center_half_dim(center, dim * 0.5f);
+
+    return res;
+}
+
+inline rect3
+center_dim(v3 center, v3 dim)
+{
+    rect3 res = center_half_dim(center, dim * 0.5f);
 
     return res;
 }
 
 inline v2
-center(rect rect)
+center(rect2 a)
 {
-    v2 res = 0.5f * (rect.min + rect.max);
+    v2 res = 0.5f * (a.min + a.max);
+
+    return res;
+}
+
+inline v3
+center(rect3 a)
+{
+    v3 res = 0.5f * (a.min + a.max);
 
     return res;
 }
 
 inline bool
-is_inside(rect rect, v2 test)
+is_inside(rect2 a, v2 test)
 {
-    bool res = ((test.x >= rect.min.x) && (test.y >= rect.min.y) && (test.x <= rect.max.x) &&
-                (test.y <= rect.max.y));
+    bool res = test.x >= a.min.x && test.y >= a.min.y && test.x <= a.max.x && test.y <= a.max.y;
     return res;
 }
-inline rect
-add_radius(rect a, f32 r_w, f32 r_h)
-{
-    rect res;
 
-    res.min = a.min - v2 { r_w, r_h };
-    res.max = a.max + v2 { r_w, r_h };
+inline bool
+is_inside(rect3 a, v3 test)
+{
+    bool res = test.x >= a.min.x && test.y >= a.min.y && test.x <= a.max.x && test.y <= a.max.y &&
+               test.z >= a.min.z && test.z <= a.max.z;
+    return res;
+}
+
+inline rect2
+add_radius(rect2 a, v2 r)
+{
+    rect2 res;
+
+    res.min = a.min - r;
+    res.max = a.max + r;
 
     return res;
 }
-inline rect
-add_radius(rect a, f32 r)
+
+inline rect3
+add_radius(rect3 a, v3 r)
 {
-    return add_radius(a, r, r);
+    rect3 res;
+
+    res.min = a.min - r;
+    res.max = a.max + r;
+
+    return res;
+}
+
+inline rect2
+add_radius(rect2 a, f32 r)
+{
+    v2 r_ = { r, r };
+    return add_radius(a, r_);
+}
+
+inline rect3
+add_radius(rect3 a, f32 r)
+{
+    v3 r_ = { r, r, r };
+    return add_radius(a, r_);
 }
 
 }  // namespace rec

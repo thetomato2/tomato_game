@@ -69,7 +69,7 @@ struct entity_visible_piece
     v2 mid_p;
     f32 z;
     f32 alpha;
-    rect rect;
+    rect2 rect;
     color_argb color;
 };
 

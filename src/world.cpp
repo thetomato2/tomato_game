@@ -89,7 +89,7 @@ map_into_chunk_space(world_pos pos, const v3 offset)
 world_pos
 map_into_chunk_space(world_pos pos, const v2 offset)
 {
-    v3 offset_v3 = vec::v2_to_v3(offset);
+    v3 offset_v3 = v3_init(offset);
     auto result  = map_into_chunk_space(pos, offset_v3);
 
     return result;
@@ -154,11 +154,10 @@ abs_pos_to_world_pos(f32 abs_x, f32 abs_y, f32 abs_z)
     result.offset.y = abs_y - (result.chunk_y * global::chunk_dim_meters.y);
     result.offset.z = abs_z - (result.chunk_z * global::chunk_dim_meters.z);
 
+    // TODO: use map_into_chunk_space?
     recanonicalize_coord(result.chunk_x, result.offset.x);
     recanonicalize_coord(result.chunk_y, result.offset.y);
     recanonicalize_coord(result.chunk_z, result.offset.z);
-
-    // result = map_into_chunk_space(result, result.offset);
 
     return result;
 }

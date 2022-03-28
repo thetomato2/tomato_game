@@ -18,8 +18,8 @@ struct sim_entity_hash
 struct sim_region
 {
     world_pos origin;
-    rect bounds;
-    rect update_bounds;
+    rect3 bounds;
+    rect3 update_bounds;
 
     u32 max_sim_entity_cnt;
     u32 sim_entity_cnt;
@@ -37,7 +37,7 @@ v3
 get_sim_space_pos(const game_state &state, const sim_region &region, u32 ent_i);
 
 sim_region *
-begin_sim(memory_arena *arena, game_state *state, world_pos origin, rect bounds);
+begin_sim(memory_arena *arena, game_state *state, world_pos origin, rect3 bounds);
 
 void
 end_sim(game_state *state, sim_region *region);
