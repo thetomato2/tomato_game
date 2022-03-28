@@ -74,20 +74,20 @@ endif()
 
 
 add_library(Tomato_Game_Lib SHARED
+    ${Source_Dir}/platform.h
     ${Source_Dir}/common.hpp
     ${Source_Dir}/entity.hpp
-    ${Source_Dir}/entity.cpp
     ${Source_Dir}/image.hpp
     ${Source_Dir}/intrinsic.hpp
-    ${Source_Dir}/game.cpp
     ${Source_Dir}/game.hpp
     ${Source_Dir}/math.hpp
-    ${Source_Dir}/platform.h
-    ${Source_Dir}/sim_region.cpp
     ${Source_Dir}/sim_region.hpp
-    ${Source_Dir}/world.cpp
-    ${Source_Dir}/world.hpp
     ${Source_Dir}/utils.hpp
+    ${Source_Dir}/world.hpp
+    ${Source_Dir}/entity.cpp
+    ${Source_Dir}/game.cpp
+    ${Source_Dir}/sim_region.cpp
+    ${Source_Dir}/world.cpp
     )
 
 # because I have a real unity build going on,
