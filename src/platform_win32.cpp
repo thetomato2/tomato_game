@@ -785,6 +785,39 @@ win32_main(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLine, s32 n
     DWORD exe_path_len = GetModuleFileNameA(NULL, state.exe_path, sizeof(state.exe_path));
     printf("exe path %s\n", state.exe_path);
 
+    TCHAR cwd_buf[MAX_PATH];
+    GetCurrentDirectory(MAX_PATH, cwd_buf);
+    _tprintf(TEXT("cwd %s\n"), cwd_buf);
+
+    char *p_ = &state.exe_path[exe_path_len];
+    s32 i_   = scast(s32, exe_path_len);
+    while (i_ > -1 && state.exe_path[i_] != '\\') {
+        --i_;
+    }
+
+    TCHAR set_cwd_buf[MAX_PATH];
+    for (int i = 0; i < i_; ++i) {
+        set_cwd_buf[i] = state.exe_path[i];
+    }
+    set_cwd_buf[i_] = '\0';
+
+    bool cwd_is_exe = true;
+    int it_buf      = 0;
+    while (cwd_buf[it_buf]) {
+        if (cwd_buf[it_buf] != set_cwd_buf[it_buf]) cwd_is_exe = false;
+        ++it_buf;
+    }
+
+    if (!cwd_is_exe) {
+        printf("cwd is not exe dir!\n");
+        if (!SetCurrentDirectory(set_cwd_buf)) {
+            printf("Failed to set cwd!", GetLastError());
+        } else {
+            GetCurrentDirectory(MAX_PATH, cwd_buf);
+            _tprintf(TEXT("set cwd to %s\n"), cwd_buf);
+        }
+    }
+
 #if _CPPUWIND
     printf("Exceptions are enabled!\n");
 #endif
