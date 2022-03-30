@@ -51,10 +51,12 @@ enum class entity_type
     none,
     player,
     wall,
+    tree,
     stairs,
     familiar,
     monster,
-    sword
+    sword,
+    stair
 };
 
 struct entity_low_chunk_ref
@@ -96,6 +98,7 @@ struct sim_entity
     s32 flags;
     v3 pos;
     v3 vel;
+    v3 dim;
     u32 chunk_z;
     f32 z;
     f32 vel_z;
@@ -105,7 +108,6 @@ struct sim_entity
     s32 hp;
     u32 max_hp;
     s32 virtual_z;
-    f32 width, height;
     f32 argb_offset;
     u32 weapon_i;
     u32 parent_i;
@@ -189,7 +191,13 @@ entity *
 add_new_entity(game_state *state, f32 abs_x = 0.f, f32 abs_y = 0.f, f32 abs_z = 0.f);
 
 entity *
+add_wall(game_state *state, f32 abs_x, f32 abs_y, f32 abs_z);
+
+entity *
 add_tree(game_state *state, f32 abs_x, f32 abs_y, f32 abs_z);
+
+entity *
+add_stair(game_state *state, f32 abs_x, f32 abs_y, f32 abs_z);
 
 entity *
 add_monster(game_state *state, f32 abs_x, f32 abs_y, f32 abs_z);

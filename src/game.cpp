@@ -281,7 +281,7 @@ process_controller(const game_controller_input &controller, entity_actions *enti
 internal void
 clear_collision_rule(game_state *state, u32 ent_i)
 {
-    // TODO: make  better data structure that allows removal of collision rules without searching
+    // TODO: make better data structure that allows removal of collision rules without searching
     // the entire table
     for (u32 hash_bucket = 0; hash_bucket < ARRAY_COUNT(state->collision_rule_hash);
          ++hash_bucket) {
@@ -306,7 +306,7 @@ add_collsion_rule(game_state *state, u32 ent_i_a, u32 ent_i_b, bool should_colli
     auto ent_a = state->entities + ent_i_a;
     auto ent_b = state->entities + ent_i_b;
     if (ent_a->sim.type > ent_b->sim.type) {
-        // TODO: swap func/template/macro?
+        // TODO: swap func/template/macro
         auto temp = ent_i_a;
         ent_i_a   = ent_i_b;
         ent_i_b   = temp;
@@ -415,6 +415,7 @@ GAME_UPDATE_AND_RENDER(game_update_and_render)
         state->crosshair_img = load_argb(thread, memory->platform_read_entire_file, "crosshair");
         state->tree_sprite   = load_argb(thread, memory->platform_read_entire_file, "shitty_tree");
         state->stair_sprite  = load_argb(thread, memory->platform_read_entire_file, "stairs");
+        state->wall_sprite   = load_argb(thread, memory->platform_read_entire_file, "wall");
 
         s32 screen_base_x {}, screen_base_y {}, screen_base_z {}, virtual_z {}, rng_ind {};
         s32 screen_x { screen_base_x }, screen_y { screen_base_y }, screen_z { screen_base_z };
@@ -442,31 +443,34 @@ GAME_UPDATE_AND_RENDER(game_update_and_render)
 #if 1
         f32 x_len = 55.f;
         for (f32 x = -20.f; x < x_len; ++x) {
-            add_tree(state, x, 15, 0.f);
-            add_tree(state, x, -5, 0.f);
+            add_wall(state, x, 15, 0.f);
+            add_wall(state, x, -5, 0.f);
             if (scast(s32, x) % 17 == 0) continue;
-            add_tree(state, x, 5, 0.f);
+            add_wall(state, x, 5, 0.f);
         }
 
         for (f32 x = -20.f; x <= x_len; x += 15.f) {
             for (f32 y = -5; y < 15; ++y) {
                 if ((y == 0.f || y == 10.f) && (x != -20.f && x != 55.f)) continue;
-                add_tree(state, x, y, 0.);
+                add_wall(state, x, y, 0.);
             }
         }
 #endif
 
-        // add_tree(state, 1.0f, 1.0f, 0.0f);
-        // add_tree(state, 0.0f, 1.0f, 0.0f);
-        // add_tree(state, -1.0f, 1.0f, 0.0f);
-        auto monster_ent = add_monster(state, 5.f, 0.f, 0.f);
-        auto cat_ent     = add_cat(state, -1.f, 1.f, 0.f);
+        for (f32 x = 0.f; x < 5.f; x += 0.5f) {
+            add_tree(state, x, -2.f, 0.f);
+        }
+
         {
-            auto p1        = get_entity(state, 1);
-            auto sword_ent = get_entity(state, p1->sim.weapon_i);
+            auto p1          = get_entity(state, 1);
+            auto monster_ent = add_monster(state, 5.f, 0.f, 0.f);
+            auto cat_ent     = add_cat(state, -1.f, 1.f, 0.f);
+            auto sword_ent   = get_entity(state, p1->sim.weapon_i);
+            auto stair_ent   = add_stair(state, 2.5f, 3.f, 0.f);
             add_collsion_rule(state, sword_ent->sim.ent_i, monster_ent->sim.ent_i, true);
             add_collsion_rule(state, p1->sim.ent_i, monster_ent->sim.ent_i, true);
             add_collsion_rule(state, p1->sim.ent_i, cat_ent->sim.ent_i, true);
+            add_collsion_rule(state, p1->sim.ent_i, stair_ent->sim.ent_i, true);
         }
 
         // TODO: this might be more appropriate in the platform layer
@@ -534,7 +538,7 @@ GAME_UPDATE_AND_RENDER(game_update_and_render)
     memory_arena sim_arena;
     init_arena(&sim_arena, memory->transient_storage_size, memory->transient_storage);
 
-    sim_region *region = begin_sim(&sim_arena, state, cam->pos, sim_bounds);
+    sim_region *region = begin_sim(&sim_arena, state, cam->pos, sim_bounds, dt);
 
     v2 screen_center                      = { .5f * scast(f32, video_buffer.width),
                          .5f * scast(f32, video_buffer.height) };
@@ -570,6 +574,9 @@ GAME_UPDATE_AND_RENDER(game_update_and_render)
 
                 } break;
                 case entity_type::wall: {
+                    // do nothing
+                } break;
+                case entity_type::tree: {
                     // do nothing
                 } break;
                 case entity_type::stairs: {
@@ -608,25 +615,16 @@ GAME_UPDATE_AND_RENDER(game_update_and_render)
                         set_flag(sim_ent->flags, sim_entity_flags::nonspatial);
                     }
                 } break;
+                case entity_type::stair: {
+                    // TODO: stair logic?
+                } break;
                 default: {
                     INVALID_CODE_PATH;
                 } break;
             }
         }
 
-        v3 ent_accel = ent_act.dir;
-
-        // NOTE: normalize vector to unit length
-        f32 ent_accel_len = vec::length(ent_accel);
-        // TODO: make speed specific to ent type
-
-        if (ent_accel_len > 1.f) ent_accel *= (1.f / math::sqrt_f32(ent_accel_len));
-        ent_accel *= move_spec.speed;
-        ent_accel -= sim_ent->vel * move_spec.drag;
-
-        v3 ent_delta = (.5f * ent_accel * math::square(dt) + sim_ent->vel * dt);
-
-        sim_ent->vel += ent_accel * dt;
+        v3 ent_delta = calc_entity_delta(sim_ent, ent_act, move_spec, dt);
 
         if (math::abs_f32(sim_ent->vel.x) > 0.f + global::epsilon ||
             math::abs_f32(sim_ent->vel.y) > 0.f + global::epsilon)
@@ -668,9 +666,9 @@ GAME_UPDATE_AND_RENDER(game_update_and_render)
         auto push_hp = [](entity_visble_piece_group *piece_group, sim_entity *ent, v2 argb_mid) {
             for (u32 i = 0; i < ent->hp; ++i) {
                 push_piece(piece_group, 3.f, 6.f, { colors::red },
-                           v2 { argb_mid.x - (ent->width / 2.f) * global::meters_to_pixels - 10.f +
+                           v2 { argb_mid.x - (ent->dim.x / 2.f) * global::meters_to_pixels - 10.f +
                                     scast(f32, i) * 4.f,
-                                argb_mid.y - ent->height * global::meters_to_pixels - 10.f },
+                                argb_mid.y - ent->dim.y * global::meters_to_pixels - 10.f },
                            ent->z);
             }
         };
@@ -686,10 +684,10 @@ GAME_UPDATE_AND_RENDER(game_update_and_render)
             switch (sim_ent->type) {
                 case entity_type::none: {
                     draw_rect(video_buffer,
-                              ent_screen_pos.x - (sim_ent->width * global::meters_to_pixels) / 2.f,
-                              ent_screen_pos.y - (sim_ent->height * global::meters_to_pixels) / 2.f,
-                              ent_screen_pos.x + (sim_ent->width * global::meters_to_pixels) / 2.f,
-                              ent_screen_pos.y + (sim_ent->height * global::meters_to_pixels) / 2.f,
+                              ent_screen_pos.x - (sim_ent->dim.x * global::meters_to_pixels) / 2.f,
+                              ent_screen_pos.y - (sim_ent->dim.y * global::meters_to_pixels) / 2.f,
+                              ent_screen_pos.x + (sim_ent->dim.x * global::meters_to_pixels) / 2.f,
+                              ent_screen_pos.y + (sim_ent->dim.x * global::meters_to_pixels) / 2.f,
                               colors::pink);
                 } break;
                 case entity_type::player: {
@@ -702,6 +700,11 @@ GAME_UPDATE_AND_RENDER(game_update_and_render)
                     push_hp(&piece_group, sim_ent, argb_mid);
                 } break;
                 case entity_type::wall: {
+                    v2 argb_mid = { ent_screen_pos.x, ent_screen_pos.y - sim_ent->argb_offset };
+                    sprite      = &state->wall_sprite;
+                    push_piece(&piece_group, sprite, argb_mid, sim_ent->z);
+                } break;
+                case entity_type::tree: {
                     v2 argb_mid = { ent_screen_pos.x, ent_screen_pos.y - sim_ent->argb_offset };
                     sprite      = &state->tree_sprite;
                     push_piece(&piece_group, sprite, argb_mid, sim_ent->z);
@@ -732,6 +735,11 @@ GAME_UPDATE_AND_RENDER(game_update_and_render)
                     v2 argb_mid = { ent_screen_pos.x, ent_screen_pos.y - sim_ent->argb_offset };
                     push_piece(&piece_group, sprite, argb_mid, sim_ent->z);
                 } break;
+                case entity_type::stair: {
+                    sprite      = &state->stair_sprite;
+                    v2 argb_mid = { ent_screen_pos.x, ent_screen_pos.y - sim_ent->argb_offset };
+                    push_piece(&piece_group, sprite, argb_mid, sim_ent->z);
+                } break;
                 default: {
                     INVALID_CODE_PATH;
                 } break;
@@ -754,10 +762,10 @@ GAME_UPDATE_AND_RENDER(game_update_and_render)
         // NOTE:collision box
         if (state->debug_draw_collision) {
             draw_rect_outline(video_buffer,
-                              ent_screen_pos.x - (sim_ent->width * global::meters_to_pixels) / 2.f,
-                              ent_screen_pos.y - (sim_ent->height * global::meters_to_pixels) / 2.f,
-                              ent_screen_pos.x + (sim_ent->width * global::meters_to_pixels) / 2.f,
-                              ent_screen_pos.y + (sim_ent->height * global::meters_to_pixels) / 2.f,
+                              ent_screen_pos.x - (sim_ent->dim.x * global::meters_to_pixels) / 2.f,
+                              ent_screen_pos.y - (sim_ent->dim.y * global::meters_to_pixels) / 2.f,
+                              ent_screen_pos.x + (sim_ent->dim.x * global::meters_to_pixels) / 2.f,
+                              ent_screen_pos.y + (sim_ent->dim.y * global::meters_to_pixels) / 2.f,
                               1, { 0xffff0000 });
         }
     }

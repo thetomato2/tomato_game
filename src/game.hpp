@@ -53,6 +53,7 @@ struct game_state
     argb_img cat_sprites[2];
     argb_img tree_sprite;
     argb_img stair_sprite;
+    argb_img wall_sprite;
 
     world_pos test_pos;
 

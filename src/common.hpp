@@ -27,6 +27,9 @@ global_var constexpr f32 jump_vel               = 2.f;
 global_var constexpr f32 gravity                = -9.8f;
 global_var constexpr f32 epsilon                = 0.0001f;
 global_var constexpr v3 chunk_dim_meters        = { chunk_size_meters, chunk_size_meters, 1.f };
+global_var constexpr f32 max_entity_r           = 5.f;
+global_var constexpr f32 max_entity_vel         = 10.f;
+global_var constexpr f32 update_margin          = 10.f;
 
 }  // namespace global
 

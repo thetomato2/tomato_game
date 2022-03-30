@@ -196,7 +196,6 @@ unload_game_code(game_code &game_code)
 internal void
 load_Xinput()
 {
-    // TODO: test this on other windows version
     HMODULE XInputLibrary = LoadLibraryA("xinput1_4.dll");
     if (!XInputLibrary) {
         HMODULE XInputLibrary = LoadLibraryA("xinput1_3.dll");
@@ -916,7 +915,6 @@ win32_main(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLine, s32 n
     init_WASAPI(sound_output.samples_per_sec, sound_output.secondary_buf_size);
     g_audio_client->Start();
 
-    // TODO: Pool with bitmap VirtualAlloc
     s16 *samples = scast(s16 *, VirtualAlloc(0, sound_output.secondary_buf_size,
                                              MEM_RESERVE | MEM_COMMIT, PAGE_READWRITE));
 

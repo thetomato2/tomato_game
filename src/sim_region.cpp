@@ -23,7 +23,8 @@ subtract_hit_points(sim_entity *ent, s32 hp)
     ent->hp -= hp;
     if (ent->hp < 0) {
         ent->hp = 0;
-        clear_flag(ent->flags, sim_entity_flags::active);
+        clear_flag(ent, sim_entity_flags::active);
+        set_flag(ent, sim_entity_flags::nonspatial);
     }
 }
 
@@ -87,7 +88,7 @@ handle_collision(sim_entity *ent_a, sim_entity *ent_b)
 
     if (ent_a->type == entity_type::player && ent_b->type == entity_type::monster) {
         if (ent_a->hit_cd > hit_cd) {
-            ent_a->hit_cd = 0.0f;
+            ent_a->hit_cd = 0.f;
             subtract_hit_points(ent_a, 1);
         }
         stop = true;
@@ -95,19 +96,42 @@ handle_collision(sim_entity *ent_a, sim_entity *ent_b)
 
     if (ent_a->type == entity_type::player && ent_b->type == entity_type::familiar) {
         if (ent_a->hit_cd > hit_cd) {
-            ent_a->hit_cd = 0.0f;
+            ent_a->hit_cd = 0.f;
             add_hit_points(ent_a, 1);
         }
         stop = true;
     }
+
+    if (ent_a->type == entity_type::player && ent_b->type == entity_type::stair) {
+        ent_a->pos.x += 3.f;
+    }
     if (ent_a->type == entity_type::monster && ent_b->type == entity_type::sword) {
         if (ent_a->hit_cd > hit_cd) {
-            ent_a->hit_cd = 0.0f;
+            ent_a->hit_cd = 0.f;
             subtract_hit_points(ent_a, 1);
         }
     }
 
     return stop;
+}
+
+v3
+calc_entity_delta(sim_entity *ent, entity_actions ent_act, entity_move_spec move_spec, const f32 dt)
+{
+    v3 ent_accel = ent_act.dir;
+
+    // NOTE: normalize vector to unit length
+    f32 ent_accel_len = vec::length(ent_accel);
+    // TODO: make speed specific to ent type
+
+    if (ent_accel_len > 1.f) ent_accel *= (1.f / math::sqrt_f32(ent_accel_len));
+    ent_accel *= move_spec.speed;
+    ent_accel -= ent->vel * move_spec.drag;
+    ent->vel += ent_accel * dt;
+
+    v3 ent_delta = (.5f * ent_accel * math::square(dt) + ent->vel * dt);
+
+    return ent_delta;
 }
 
 void
@@ -145,14 +169,13 @@ move_entity(game_state *state, sim_region *region, sim_entity *ent, v3 ent_delta
                     continue;  // skip parent and weapon
 
                 // NOTE: Minkowski sum
-                f32 r_w = ent->width + test_ent->width;
-                f32 r_h = ent->height + test_ent->height;
+                f32 r_w = ent->dim.x + test_ent->dim.x;
+                f32 r_h = ent->dim.y + test_ent->dim.y;
 
                 v2 min_corner = { -.5f * v2 { r_w, r_h } };
                 v2 max_corner = { .5f * v2 { r_w, r_h } };
                 v3 rel        = ent->pos - test_ent->pos;
 
-                // TODO: maybe pull this out into a free function (but why?)
                 auto test_wall = [&t_min](f32 wall_x, f32 rel_x, f32 rel_y, f32 player_delta_x,
                                           f32 player_delta_y, f32 min_y, f32 max_y) -> bool {
                     bool hit = false;
@@ -205,7 +228,7 @@ move_entity(game_state *state, sim_region *region, sim_entity *ent, v3 ent_delta
                 t_min = 1.f;
             }
         }
-        // TODO: t_min is causing collision to always happen
+        // REVIEW: t_min is causing collision to always happen
         ent->pos += t_min * ent_delta;
         dist_remain -= t_min * ent_delta_len;
     }
@@ -332,19 +355,26 @@ add_sim_entity_to_region_raw(game_state *state, sim_region *region, u32 ent_i, e
     return entity;
 }
 
+internal bool
+entity_overlap_rect(const rect3 rect, sim_entity *ent)
+{
+    rect3 grown = rec::add_dim(rect, ent->dim);
+    bool result = rec::is_inside(rect, ent->pos);
+
+    return result;
+}
+
 internal sim_entity *
 add_sim_entity_to_region(game_state *state, sim_region *region, u32 ent_i, entity *source_ent,
                          v3 *sim_pos)
-
 {
     TOM_ASSERT(state && region && ent_i);
 
     sim_entity *dest_ent = add_sim_entity_to_region_raw(state, region, ent_i, source_ent);
     if (dest_ent) {
         if (sim_pos) {
-            dest_ent->pos = *sim_pos;
-            dest_ent->updateable =
-                rec::is_inside(region->update_bounds, { dest_ent->pos.x, dest_ent->pos.y });
+            dest_ent->pos        = *sim_pos;
+            dest_ent->updateable = entity_overlap_rect(region->update_bounds, dest_ent);
         } else {
             dest_ent->pos = get_sim_space_pos(*region, *source_ent);
         }
@@ -354,7 +384,7 @@ add_sim_entity_to_region(game_state *state, sim_region *region, u32 ent_i, entit
 }
 
 sim_region *
-begin_sim(memory_arena *arena, game_state *state, world_pos origin, rect3 bounds)
+begin_sim(memory_arena *arena, game_state *state, world_pos origin, rect3 bounds, const f32 dt)
 {
     TOM_ASSERT(arena && state);
 
@@ -363,7 +393,8 @@ begin_sim(memory_arena *arena, game_state *state, world_pos origin, rect3 bounds
     ZERO_STRUCT(region->hash);
 
     // TODO: IMPORTANT-> calc this from the max value of all entities radius + speed
-    f32 update_safety_margin = global::chunk_size_meters;
+    f32 update_safety_margin =
+        global::max_entity_r + global::max_entity_vel * dt + global::update_margin;
 
     region->origin        = origin;
     region->update_bounds = bounds;
@@ -388,8 +419,7 @@ begin_sim(memory_arena *arena, game_state *state, world_pos origin, rect3 bounds
                         entity *ent     = state->entities + block_ent_i;
                         if (!is_flag_set(ent->sim.flags, sim_entity_flags::nonspatial)) {
                             v3 sim_space_pos = get_sim_space_pos(*region, *ent);
-                            if (rec::is_inside(region->bounds,
-                                               { sim_space_pos.x, sim_space_pos.y })) {
+                            if (entity_overlap_rect(region->bounds, &ent->sim)) {
                                 add_sim_entity_to_region(state, region, block_ent_i, ent,
                                                          &sim_space_pos);
                             }

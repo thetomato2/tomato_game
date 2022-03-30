@@ -5,8 +5,7 @@
 This project is based on Handmade Hero by Casey Muratori to learn more about low level programming.
 I don't have any real goals at the moment, but sometime in the future I need to figure out what I actually want to make. A Minecraft clone? A Zelda clone with a procedural world?
 
-BUG???:
-When you generate a new Visual Studio Solution, you need to change the debugging working directly to the solution directory $(SolutionDir) and then back to $(TargetDir)
+BUG:When you generate a new Visual Studio Solution, you need to change the debugging working directly to the solution directory $(SolutionDir) and then back to $(TargetDir)
 
 TODO: game reads input when out of focus
 TODO: fix compile commands generation - no TOM_INTERNAL, -fPIC (idk) root folder??

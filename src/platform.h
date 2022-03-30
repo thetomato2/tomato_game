@@ -15,7 +15,6 @@
     #include <cwchar>
 
     // NOTE: for grep purposes
-    // TODO: improve this?
     #define scast(t, v) static_cast<t>(v)
     #define rcast(t, v) reinterpret_cast<t>(v)
     #define ccast(t, v) const_cast<t>(v)
@@ -126,12 +125,16 @@ extern "C"
 #define global_var    static
 
 // NOTE: only win32 is supported currently
-#define TOM_WIN32
+#ifdef _WIN32
+    #define TOM_WIN32
+#endif
+
 #ifdef TOM_WIN32
     #define TOM_DLL_EXPORT __declspec(dllexport)
 #else
     #define TOM_DLL_EXPORT
 #endif
+
 #ifdef TOM_INTERNAL
     #define TOM_ASSERT(x)                                               \
         if (!(x)) {                                                     \
@@ -321,8 +324,7 @@ extern "C"
     inline u32
     safe_truncate_u32_to_u64(u64 value)
     {
-        // TODO: defines for max values
-        TOM_ASSERT(value <= 0xFFFFFFFF);
+        TOM_ASSERT(value <= U32_MAX);
         u32 result = (u32)value;
         return result;
     }

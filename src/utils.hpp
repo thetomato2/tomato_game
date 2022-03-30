@@ -131,7 +131,6 @@ get_wstr_sz(const char *str)
     return -1;
 }
 
-// FIXME: idk if this is working
 inline void
 wstr_to_str(const wchar *wstr, char *buf)
 {

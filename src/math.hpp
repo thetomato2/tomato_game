@@ -358,6 +358,20 @@ union v4
 };
 
 inline v4
+v4_init(v2 a, f32 z = 0.f, f32 w = 0.f)
+{
+    v4 res = { .x = a.x, .y = a.y, .z = z, .w = w };
+    return res;
+}
+
+inline v4
+v4_init(v3 a, f32 w = 0.f)
+{
+    v4 res = { .x = a.x, .y = a.y, .z = a.z, .w = w };
+    return res;
+}
+
+inline v4
 operator+(v4 lhs, v4 rhs)
 {
     v4 res;
@@ -792,23 +806,23 @@ is_inside(rect3 a, v3 test)
 }
 
 inline rect2
-add_radius(rect2 a, v2 r)
+add_dim(rect2 a, v2 dim)
 {
     rect2 res;
 
-    res.min = a.min - r;
-    res.max = a.max + r;
+    res.min = a.min - dim;
+    res.max = a.max + dim;
 
     return res;
 }
 
 inline rect3
-add_radius(rect3 a, v3 r)
+add_dim(rect3 a, v3 dim)
 {
     rect3 res;
 
-    res.min = a.min - r;
-    res.max = a.max + r;
+    res.min = a.min - dim;
+    res.max = a.max + dim;
 
     return res;
 }
@@ -817,14 +831,30 @@ inline rect2
 add_radius(rect2 a, f32 r)
 {
     v2 r_ = { r, r };
-    return add_radius(a, r_);
+    return add_dim(a, r_);
 }
 
 inline rect3
 add_radius(rect3 a, f32 r)
 {
     v3 r_ = { r, r, r };
-    return add_radius(a, r_);
+    return add_dim(a, r_);
+}
+inline bool
+intersect(rect2 a, rect2 b)
+{
+    bool res = !(b.max.x < a.min.x || b.min.x > a.max.x || b.max.y < a.min.y || b.min.y > a.max.y);
+
+    return res;
+}
+
+inline bool
+intersect(rect3 a, rect3 b)
+{
+    bool res = !(b.max.x < a.min.x || b.min.x > a.max.x || b.max.y < a.min.y || b.min.y > a.max.y ||
+                 b.max.z < a.min.z || b.min.z > a.max.z);
+
+    return res;
 }
 
 }  // namespace rec

@@ -25,7 +25,7 @@ init_hit_points(sim_entity *ent, u32 hp)
 }
 
 entity *
-add_new_entity(game_state *state, f32 abs_x, f32 abs_y, f32 abs_z)
+add_new_entity(game_state *state, const f32 abs_x, const f32 abs_y, const f32 abs_z)
 {
     entity *ent = nullptr;
 
@@ -50,28 +50,61 @@ add_new_entity(game_state *state, f32 abs_x, f32 abs_y, f32 abs_z)
 }
 
 entity *
-add_tree(game_state *state, f32 abs_x, f32 abs_y, f32 abs_z)
+add_wall(game_state *state, const f32 abs_x, const f32 abs_y, const f32 abs_z)
 {
     entity *ent = add_new_entity(state, abs_x, abs_y, abs_z);
     TOM_ASSERT(ent);
 
-    ent->sim.type   = entity_type::wall;
-    ent->sim.height = 1.f;
-    ent->sim.width  = 1.f;
+    ent->sim.type  = entity_type::wall;
+    ent->sim.dim.y = 1.f;
+    ent->sim.dim.x = 1.f;
+    ent->sim.dim.z = 1.f;
     set_flag(ent, sim_entity_flags::barrier);
 
     return ent;
 }
 
 entity *
-add_monster(game_state *state, f32 abs_x, f32 abs_y, f32 abs_z)
+add_tree(game_state *state, const f32 abs_x, const f32 abs_y, const f32 abs_z)
+{
+    entity *ent = add_new_entity(state, abs_x, abs_y, abs_z);
+    TOM_ASSERT(ent);
+
+    ent->sim.type  = entity_type::tree;
+    ent->sim.dim.y = 1.f;
+    ent->sim.dim.x = 0.5f;
+    ent->sim.dim.z = 1.f;
+    set_flag(ent, sim_entity_flags::barrier);
+
+    return ent;
+}
+
+entity *
+add_stair(game_state *state, const f32 abs_x, const f32 abs_y, const f32 abs_z)
+{
+    entity *ent = add_new_entity(state, abs_x, abs_y, abs_z);
+    TOM_ASSERT(ent);
+
+    ent->sim.type        = entity_type::stair;
+    ent->sim.dim.y       = 0.5f;
+    ent->sim.dim.x       = 0.8f;
+    ent->sim.dim.z       = 1.f;
+    ent->sim.argb_offset = 12.f;
+    set_flag(ent, sim_entity_flags::collides);
+
+    return ent;
+}
+
+entity *
+add_monster(game_state *state, const f32 abs_x, const f32 abs_y, const f32 abs_z)
 {
     entity *ent = add_new_entity(state, abs_x, abs_y, abs_z);
     TOM_ASSERT(ent);
 
     ent->sim.type        = entity_type::monster;
-    ent->sim.height      = .6f;
-    ent->sim.width       = .6f * .6f;
+    ent->sim.dim.y       = .6f;
+    ent->sim.dim.x       = .6f * .6f;
+    ent->sim.dim.z       = .6f * .6f;
     ent->sim.argb_offset = 16.f;
     set_flag(ent, sim_entity_flags::collides);
 
@@ -81,15 +114,16 @@ add_monster(game_state *state, f32 abs_x, f32 abs_y, f32 abs_z)
 }
 
 entity *
-add_cat(game_state *state, f32 abs_x, f32 abs_y, f32 abs_z)
+add_cat(game_state *state, const f32 abs_x, const f32 abs_y, const f32 abs_z)
 {
     entity *ent = add_new_entity(state, abs_x, abs_y, abs_z);
     TOM_ASSERT(ent);
     ent->world_pos = abs_pos_to_world_pos(abs_x, abs_y, abs_z);
 
     ent->sim.type        = entity_type::familiar;
-    ent->sim.height      = 0.6f;
-    ent->sim.width       = 0.8f;
+    ent->sim.dim.y       = 0.6f;
+    ent->sim.dim.x       = 0.8f;
+    ent->sim.dim.z       = 0.2f;
     ent->sim.argb_offset = 5.0f;
     set_flag(ent, sim_entity_flags::collides);
 
@@ -104,8 +138,9 @@ add_sword(game_state *state, u32 parent_i)
 
     ent->sim.type        = entity_type::sword;
     ent->sim.pos         = {};
-    ent->sim.height      = 0.2f;
-    ent->sim.width       = 0.2f;
+    ent->sim.dim.y       = 0.2f;
+    ent->sim.dim.x       = 0.2f;
+    ent->sim.dim.z       = 0.2f;
     ent->sim.argb_offset = 5.0f;
     ent->sim.parent_i    = parent_i;
     set_flag(ent, sim_entity_flags::hurtbox | sim_entity_flags::nonspatial);
@@ -118,15 +153,16 @@ add_sword(game_state *state, u32 parent_i)
 }
 
 void
-add_player(game_state *state, u32 player_i, f32 abs_x, f32 abs_y, f32 abs_z)
+add_player(game_state *state, u32 player_i, const f32 abs_x, const f32 abs_y, const f32 abs_z)
 {
     // NOTE: the first 5 entities are reserved for players
     if (player_i <= state->player_cnt) {
         entity *player = add_new_entity(state);
         if (player_i == player->sim.ent_i) {
             player->sim.type        = entity_type::player;
-            player->sim.height      = 0.6f;
-            player->sim.width       = 0.6f * player->sim.height;
+            player->sim.dim.y       = 0.6f;
+            player->sim.dim.x       = 0.6f * player->sim.dim.y;
+            player->sim.dim.z       = 0.6f * player->sim.dim.y;
             player->sim.argb_offset = 16.0f;
             set_flag(player, sim_entity_flags::collides);
 

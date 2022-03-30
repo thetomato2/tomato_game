@@ -30,6 +30,9 @@ struct sim_region
     sim_entity_hash hash[4096];
 };
 
+v3
+calc_entity_delta(sim_entity *ent, entity_actions ent_act, entity_move_spec move_spec, f32 dt);
+
 void
 move_entity(game_state *state, sim_region *region, sim_entity *ent, v3 ent_delta, f32 dt);
 
@@ -37,7 +40,7 @@ v3
 get_sim_space_pos(const game_state &state, const sim_region &region, u32 ent_i);
 
 sim_region *
-begin_sim(memory_arena *arena, game_state *state, world_pos origin, rect3 bounds);
+begin_sim(memory_arena *arena, game_state *state, world_pos origin, rect3 bounds, f32 dt);
 
 void
 end_sim(game_state *state, sim_region *region);
