@@ -228,9 +228,48 @@ load_argb(thread_context *thread, debug_platform_read_entire_file *read_entire_f
     img_path_buf[img_buf_len++] = '\0';
 
     debug_read_file_result read_result = read_entire_file(thread, img_path_buf);
+    TOM_ASSERT(read_result.content_size != 0);  // file not found?
     argb_img result;
 
-    TOM_ASSERT(read_result.content_size != 0);
+    if (read_result.content_size != 0) {
+        if (name)
+            result.name = name;
+        else
+            result.name = file_name;
+
+        u32 *file_ptr    = scast(u32 *, read_result.contents);
+        result.width     = *file_ptr++;
+        result.height    = *file_ptr++;
+        result.size      = *file_ptr++;
+        result.pixel_ptr = file_ptr;
+    }
+
+    return result;
+}
+
+internal argb_img
+load_argb_or_default(thread_context *thread, game_state *state,
+                     debug_platform_read_entire_file *read_entire_file, const char *file_name,
+                     const char *name = nullptr)
+{
+    const char *argb_dir = "T:/assets/argbs/";
+    char img_path_buf[512];
+    szt img_buf_len;
+    cat_str(argb_dir, file_name, &img_path_buf[0], &img_buf_len);
+    img_path_buf[img_buf_len++] = '.';
+    img_path_buf[img_buf_len++] = 'a';
+    img_path_buf[img_buf_len++] = 'r';
+    img_path_buf[img_buf_len++] = 'g';
+    img_path_buf[img_buf_len++] = 'b';
+    img_path_buf[img_buf_len++] = '\0';
+
+    debug_read_file_result read_result = read_entire_file(thread, img_path_buf);
+    if (read_result.content_size == 0) {
+        return state->default_img;
+    }
+
+    argb_img result;
+
     if (read_result.content_size != 0) {
         if (name)
             result.name = name;
@@ -381,41 +420,49 @@ GAME_UPDATE_AND_RENDER(game_update_and_render)
         const char *bg = "uv_color_squares_960x540";
 
         // load textures
+        state->default_img =
+            load_argb_or_default(thread, state, memory->platform_read_entire_file, "pink");
         state->player_sprites[entity_direction::north] =
-            load_argb(thread, memory->platform_read_entire_file, "player_n");
+            load_argb_or_default(thread, state, memory->platform_read_entire_file, "player_n");
         state->player_sprites[entity_direction::east] =
-            load_argb(thread, memory->platform_read_entire_file, "player_e");
+            load_argb_or_default(thread, state, memory->platform_read_entire_file, "player_e");
         state->player_sprites[entity_direction::south] =
-            load_argb(thread, memory->platform_read_entire_file, "player_s");
+            load_argb_or_default(thread, state, memory->platform_read_entire_file, "player_s");
         state->player_sprites[entity_direction::west] =
-            load_argb(thread, memory->platform_read_entire_file, "player_w");
+            load_argb_or_default(thread, state, memory->platform_read_entire_file, "player_w");
 
         state->monster_sprites[entity_direction::north] =
-            load_argb(thread, memory->platform_read_entire_file, "monster_n");
+            load_argb_or_default(thread, state, memory->platform_read_entire_file, "monster_n");
         state->monster_sprites[entity_direction::east] =
-            load_argb(thread, memory->platform_read_entire_file, "monster_e");
+            load_argb_or_default(thread, state, memory->platform_read_entire_file, "monster_e");
         state->monster_sprites[entity_direction::south] =
-            load_argb(thread, memory->platform_read_entire_file, "monster_s");
+            load_argb_or_default(thread, state, memory->platform_read_entire_file, "monster_s");
         state->monster_sprites[entity_direction::west] =
-            load_argb(thread, memory->platform_read_entire_file, "monster_w");
+            load_argb_or_default(thread, state, memory->platform_read_entire_file, "monster_w");
 
         state->sword_sprites[entity_direction::north] =
-            load_argb(thread, memory->platform_read_entire_file, "sword_n");
+            load_argb_or_default(thread, state, memory->platform_read_entire_file, "sword_n");
         state->sword_sprites[entity_direction::east] =
-            load_argb(thread, memory->platform_read_entire_file, "sword_e");
+            load_argb_or_default(thread, state, memory->platform_read_entire_file, "sword_e");
         state->sword_sprites[entity_direction::south] =
-            load_argb(thread, memory->platform_read_entire_file, "sword_s");
+            load_argb_or_default(thread, state, memory->platform_read_entire_file, "sword_s");
         state->sword_sprites[entity_direction::west] =
-            load_argb(thread, memory->platform_read_entire_file, "sword_w");
+            load_argb_or_default(thread, state, memory->platform_read_entire_file, "sword_w");
 
-        state->cat_sprites[0] = load_argb(thread, memory->platform_read_entire_file, "cat_e");
-        state->cat_sprites[1] = load_argb(thread, memory->platform_read_entire_file, "cat_w");
+        state->cat_sprites[0] =
+            load_argb_or_default(thread, state, memory->platform_read_entire_file, "cat_e");
+        state->cat_sprites[1] =
+            load_argb_or_default(thread, state, memory->platform_read_entire_file, "cat_w");
 
-        state->bg_img        = load_argb(thread, memory->platform_read_entire_file, bg);
-        state->crosshair_img = load_argb(thread, memory->platform_read_entire_file, "crosshair");
-        state->tree_sprite   = load_argb(thread, memory->platform_read_entire_file, "shitty_tree");
-        state->stair_sprite  = load_argb(thread, memory->platform_read_entire_file, "stairs");
-        state->wall_sprite   = load_argb(thread, memory->platform_read_entire_file, "wall");
+        state->bg_img = load_argb_or_default(thread, state, memory->platform_read_entire_file, bg);
+        state->crosshair_img =
+            load_argb_or_default(thread, state, memory->platform_read_entire_file, "crosshair");
+        state->tree_sprite =
+            load_argb_or_default(thread, state, memory->platform_read_entire_file, "shitty_tree");
+        state->stair_sprite =
+            load_argb_or_default(thread, state, memory->platform_read_entire_file, "stairs");
+        state->wall_sprite =
+            load_argb_or_default(thread, state, memory->platform_read_entire_file, "wall");
 
         s32 screen_base_x {}, screen_base_y {}, screen_base_z {}, virtual_z {}, rng_ind {};
         s32 screen_x { screen_base_x }, screen_y { screen_base_y }, screen_z { screen_base_z };

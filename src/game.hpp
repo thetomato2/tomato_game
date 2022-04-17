@@ -45,6 +45,7 @@ struct game_state
     pairwise_collision_rule *first_free_collision_rule;
 
     // TODO: make a struct for all textures?
+    argb_img default_img;
     argb_img bg_img;
     argb_img crosshair_img;
     argb_img player_sprites[4];
