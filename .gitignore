@@ -1,0 +1,14 @@
+.DS_Store
+.idea
+*.log
+.vs/
+.vscode
+.code/
+.cache/
+CMakeSettings.json
+get_cache_vars.cmake
+tmp/
+out/
+build/
+cl_build/
+assets/
