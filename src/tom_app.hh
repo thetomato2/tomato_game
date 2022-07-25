@@ -1,3 +1,5 @@
+#define USE_DS5 1
+
 #include "tom_core.hh"
 #include "tom_intrinsic.hh"
 #include "tom_math.hh"
@@ -6,7 +8,9 @@
 #include "tom_string.hh"
 #include "tom_time.hh"
 #include "tom_file_io.hh"
-#include "tom_DS5.hh"
+#if USE_DS5
+    #include "tom_DS5.hh"
+#endif
 #include "tom_input.hh"
 #include "tom_sound.hh"
 #include "tom_win32.hh"
@@ -55,7 +59,7 @@ struct AppState
     szt total_size;
     u32 game_update_hertz;
     u32 dpi;
-    f32 target_frames_per_second;
+    f32 target_secs_per_frame;
     AppVars vars;
     i64 performance_counter_frequency;
     u64 frame_cnt;
@@ -69,6 +73,8 @@ struct AppState
     f32 fov;
     f32 key_repeat_delay;
     f32 key_repeat_speed;
+    
+    f32 device_changed_delay;
 
     m4 World;
     m4 view;

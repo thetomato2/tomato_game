@@ -16,6 +16,7 @@ function void process_keyboard(const Keyboard& kb, EntityActions* entity_action)
     }
 }
 
+#if USE_DS5
 function void process_ds5(const DS5_State& ds5, EntityActions* entity_action)
 {
     if (entity_action) {
@@ -26,8 +27,13 @@ function void process_ds5(const DS5_State& ds5, EntityActions* entity_action)
         if (button_down(ds5.dpad_L)) entity_action->dir.x += -1.f;
         if (button_down(ds5.dpad_R)) entity_action->dir.x += 1.f;
         if (button_down(ds5.cross)) entity_action->sprint = true;
+        if (ds5.stick_L.x > 10 || ds5.stick_L.x < -10)
+            entity_action->dir.x = (f32)ds5.stick_L.x / 128;
+        if (ds5.stick_L.y > 10 || ds5.stick_L.y < -10)
+            entity_action->dir.y = (f32)ds5.stick_L.y / 128;
     }
 }
+#endif
 
 function void clear_collision_rule(GameState* game, u32 ent_i)
 {
@@ -226,7 +232,10 @@ function void game_update_and_render(ThreadContext* thread, AppState* state)
     Assert(player->sim.type == EntityType::player);
     EntityActions player_action = {};
     process_keyboard(kb, &player_action);
-    process_ds5(state->input.ds5_state[0], &player_action);
+#if USE_DS5
+    if (state->input.ds5_context[0].connected)
+        process_ds5(state->input.ds5_state[0], &player_action);
+#endif
     game->player_acts[1] = player_action;
 
     if (key_pressed(kb.d1)) game->debug_draw_collision = !game->debug_draw_collision;

@@ -459,7 +459,7 @@ function argb_img load_argb_or_default(ThreadContext* thread, argb_img* default_
 
     auto file = read_file(img_path.get());
     if (file.size == 0) {
-        printf("%s - not found!\n", img_path.get());
+        PrintMessage(str_fmt("%s - not found!", img_path.get()));
         Assert(default_img);
         return *default_img;
     }

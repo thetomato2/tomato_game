@@ -303,10 +303,13 @@ struct Input
     global constexpr szt controller_cnt = 4;
     Mouse mouse;
     Keyboard keyboard;
+#if USE_DS5
     u32 ds5_cnt;
     // TOOD: bundle these together?
     DS5_Context ds5_context[DS5_MAX_CNT];
     DS5_State ds5_state[DS5_MAX_CNT];
+#endif
+
     // XInput_Controller controllers[controller_cnt];
 };
 

@@ -1,4 +1,5 @@
 // Interface for the DaulSense controller
+// TODO: use async ReadFile to handle bluetooth buffer being empty when the controller isoff
 
 #include <initguid.h>
 #include <Hidclass.h>
@@ -7,16 +8,6 @@
 
 #define DS5_SUCCESS(expr) ((expr) == _DS5_ReturnValue::OK)
 #define DS5_FAILED(expr)  ((expr) != _DS5_ReturnValue::OK)
-
-#define DS5_OK                        DS5_RV::OK
-#define DS5_E_UNKNOWN                 DS5_RV::E_UNKNOWN
-#define DS5_E_INSUFFICIENT_BUFFER     DS5_RV::E_INSUFFICIENT_BUFFER
-#define DS5_E_EXTERNAL_WINAPI         DS5_RV::E_EXTERNAL_WINAPI
-#define DS5_E_STACK_OVERFLOW          DS5_RV::E_STACK_OVERFLOW
-#define DS5_E_INVALID_ARGS            DS5_RV::E_INVALID_ARGS
-#define DS5_E_CURRENTLY_NOT_SUPPORTED DS5_RV::E_CURRENTLY_NOT_SUPPORTED
-#define DS5_E_DEVICE_REMOVED          DS5_RV::E_DEVICE_REMOVED
-#define DS5_E_BT_COM                  DS5_RV::E_BT_COM
 
 #define DS5_ISTATE_BTX_SQUARE   0x10
 #define DS5_ISTATE_BTX_CROSS    0x20
@@ -46,7 +37,7 @@
 #define DS5_OSTATE_PLAYER_LED_MIDDLE_RIGHT 0x08
 #define DS5_OSTATE_PLAYER_LED_RIGHT        0x10
 
-#define DS5_MAX_CNT 5
+#define DS5_MAX_CNT 4
 
 namespace tom
 {
@@ -87,19 +78,6 @@ constexpr u32 DS5_hashtable[256] = {
 
 // Hash seed
 constexpr u32 DS5_crc_seed = 0xeada2d49;
-
-enum class DS5_RV : u32
-{
-    OK                        = 0,
-    E_UNKNOWN                 = 1,
-    E_INSUFFICIENT_BUFFER     = 2,
-    E_EXTERNAL_WINAPI         = 3,
-    E_STACK_OVERFLOW          = 4,
-    E_INVALID_ARGS            = 5,
-    E_CURRENTLY_NOT_SUPPORTED = 6,
-    E_DEVICE_REMOVED          = 7,
-    E_BT_COM                  = 8,
-};
 
 enum class DS5_Connection : u8
 {
@@ -206,7 +184,7 @@ struct DS5_State
     // NOTE: x: ~0 - 2000, y: ~0 - 2048
     v2u touch_1, touch_2;
     byt touch_1_id, touch_2_id;
-    v2<byt> stick_R, stick_L;
+    v2<i8> stick_R, stick_L;
     byt trigger_L, trigger_R;
     Button dpad_U, dpad_R, dpad_D, dpad_L;
     Button triangle, circle, square, cross;
@@ -403,9 +381,9 @@ function void DS5_process_buttons(DS5_State* state, byt buttons_and_dpad, byt bu
     DS5_process_button(&state->menu, buttons_a & DS5_ISTATE_BTN_A_MENU);
     DS5_process_button(&state->stick_but_L, buttons_a & DS5_ISTATE_BTN_A_LEFT_STICK);
     DS5_process_button(&state->stick_but_R, buttons_a & DS5_ISTATE_BTN_A_RIGHT_STICK);
-    DS5_process_button(&state->ps_logo, buttons_a & DS5_ISTATE_BTN_B_PLAYSTATION_LOGO);
-    DS5_process_button(&state->mic, buttons_a & DS5_ISTATE_BTN_B_MIC_BUTTON);
-    DS5_process_button(&state->touch, buttons_a & DS5_ISTATE_BTN_B_PAD_BUTTON);
+    DS5_process_button(&state->ps_logo, buttons_b & DS5_ISTATE_BTN_B_PLAYSTATION_LOGO);
+    DS5_process_button(&state->mic, buttons_b & DS5_ISTATE_BTN_B_MIC_BUTTON);
+    DS5_process_button(&state->touch, buttons_b & DS5_ISTATE_BTN_B_PAD_BUTTON);
 }
 
 function void DS5_parse_hid_buffer(byt* hid_buf, DS5_State* state)
@@ -597,14 +575,21 @@ function void ds5_get_input(DS5_Context* context, DS5_State* state)
         context->hid_buf[0] = 0x01;
     }
 
-    if (SUCCEEDED(ReadFile(context->hnd, context->hid_buf, report_len, NULL, NULL))) {
-        if (context->connection == DS5_Connection::BT) {
+    if (context->connection == DS5_Connection::BT) {
+        // NOTE: Readfile will block thread because turning off the controller will not disconeect
+        // the device for windows
+#if 0
+        if (SUCCEEDED(ReadFile(context->hnd, context->hid_buf, report_len, NULL, NULL)))
             DS5_parse_hid_buffer(&context->hid_buf[2], state);
-        } else {
-            DS5_parse_hid_buffer(&context->hid_buf[1], state);
-        }
+        else
+            PrintError(str_fmt("Failed to read Hid buffer for DS5 controller %u!", context->port));
+#endif
     } else {
-        PrintError(str_fmt("Failed to read Hid buffer for DS5 controller %u!", context->port));
+        if (SUCCEEDED(ReadFile(context->hnd, context->hid_buf, report_len, NULL, NULL))) {
+            DS5_parse_hid_buffer(&context->hid_buf[1], state);
+        } else {
+            PrintError(str_fmt("Failed to read Hid buffer for DS5 controller %u!", context->port));
+        }
     }
 }
 

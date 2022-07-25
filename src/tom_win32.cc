@@ -2,11 +2,12 @@ namespace tom
 {
 
 // TODO: get rid of these??
-global bool g_running = true;
-global bool g_pause   = false;
-global bool g_resize  = false;
-r2i g_win_dim         = {};
-i32 g_ms_scroll       = {};
+global bool g_running       = true;
+global bool g_pause         = false;
+global bool g_resize        = false;
+global bool g_device_change = false;
+r2i g_win_dim               = {};
+i32 g_ms_scroll             = {};
 
 function void toggle_fullscreen(Win32State* state)
 {
@@ -174,13 +175,16 @@ function void create_console()
 
 function void process_pending_messages(Win32State* state)
 {
-    state->running   = g_running;
-    state->pause     = g_pause;
-    state->resize    = g_resize;
-    g_resize         = false;
-    state->win_dims  = g_win_dim;
-    state->ms_scroll = g_ms_scroll;
-    g_ms_scroll      = 0;
+    state->running       = g_running;
+    state->pause         = g_pause;
+    state->resize        = g_resize;
+    state->device_change = g_device_change;
+    state->win_dims      = g_win_dim;
+    state->ms_scroll     = g_ms_scroll;
+
+    g_resize        = false;
+    g_device_change = false;
+    g_ms_scroll     = 0;
 
     MSG msg;
     while (PeekMessage(&msg, 0, 0, 0, PM_REMOVE)) {
@@ -261,6 +265,9 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
         case WM_MOUSEWHEEL: {
             g_ms_scroll = GET_WHEEL_DELTA_WPARAM(wparam);
         } break;
+        case WM_DEVICECHANGE: {
+            g_device_change = true;
+        } break;
         default:
             //            OutPutDebugStringA("default\n");
             result = DefWindowProc(hwnd, msg, wparam, lparam);
@@ -333,6 +340,17 @@ function void create_window(Win32State* state)
         Assert(state->hwnd);
         return;
     }
+
+    DEV_BROADCAST_DEVICEINTERFACE dev_broadcast = { .dbcc_size =
+                                                        sizeof(DEV_BROADCAST_DEVICEINTERFACE),
+                                                    .dbcc_devicetype = DBT_DEVTYP_DEVICEINTERFACE,
+                                                    .dbcc_classguid =
+                                                        GUID_DEVINTERFACE_USB_DEVICE };
+
+    state->notify = RegisterDeviceNotification(
+        state->hwnd, &dev_broadcast,
+        DEVICE_NOTIFY_WINDOW_HANDLE | DEVICE_NOTIFY_ALL_INTERFACE_CLASSES);
+    Assert(state->notify);
 
     ShowWindow(state->hwnd, SW_SHOWNORMAL);
     UpdateWindow(state->hwnd);

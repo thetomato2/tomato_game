@@ -18,11 +18,24 @@ global ID3D11Texture2D* g_tex;
 global ID3D11Texture2D* g_staging_tex;
 global ID3D11ShaderResourceView* g_sha_rsc_view;
 
+function void on_device_change(AppState* state)
+{
+    if (state->device_changed_delay > 0.5f) {
+        state->device_changed_delay = 0.0f;
+#if USE_DS5
+        ZeroArray(state->input.ds5_context);
+        state->input.ds5_cnt = DS5_init(state->input.ds5_context);
+#endif
+    }
+}
+
 function void on_resize(AppState* state)
 {
+    auto gfx = &state->gfx;
+
     f32 aspect = (f32)state->win32.win_dims.x1 / (f32)state->win32.win_dims.y1;
     // state->proj = mat_proj_persp(aspect, state->fov, 1.0f, 1000.0f);
-    d3d_on_resize(&state->gfx, state->win32.win_dims);
+    d3d_on_resize(gfx, state->win32.win_dims);
     state->proj = mat_proj_ortho(aspect);
 
     plat_free(state->back_buffer.buf);
@@ -31,8 +44,33 @@ function void on_resize(AppState* state)
     state->back_buffer.pitch  = state->back_buffer.width * state->back_buffer.byt_per_pix;
     state->back_buffer.buf = plat_malloc(state->back_buffer.byt_per_pix * state->back_buffer.width *
                                          state->back_buffer.height);
+
+    g_tex->Release();
+    g_staging_tex->Release();
+    g_sha_rsc_view->Release();
+
+    D3D11_TEXTURE2D_DESC tex_desc = { .Width      = (u32)state->back_buffer.width,
+                                      .Height     = (u32)state->back_buffer.height,
+                                      .ArraySize  = 1,
+                                      .Format     = DXGI_FORMAT_R8G8B8A8_UNORM,
+                                      .SampleDesc = { .Count = 1, .Quality = 0 },
+                                      .Usage      = D3D11_USAGE_DEFAULT,
+                                      .BindFlags  = D3D11_BIND_SHADER_RESOURCE };
+
+    d3d_Check(gfx->device->CreateTexture2D(&tex_desc, NULL, &g_tex));
+
+    tex_desc.Usage          = D3D11_USAGE_STAGING;
+    tex_desc.BindFlags      = 0;
+    tex_desc.CPUAccessFlags = D3D11_CPU_ACCESS_READ | D3D11_CPU_ACCESS_WRITE;
+
+    d3d_Check(gfx->device->CreateTexture2D(&tex_desc, NULL, &g_staging_tex));
+
+    d3d_Check(gfx->device->CreateShaderResourceView(g_tex, nullptr, &g_sha_rsc_view));
 }
 
+// ===============================================================================================
+// #INIT
+// ===============================================================================================
 function void app_init(AppState* state)
 {
     auto gfx    = &state->gfx;
@@ -72,17 +110,20 @@ function void app_init(AppState* state)
     tex_desc.CPUAccessFlags = D3D11_CPU_ACCESS_READ | D3D11_CPU_ACCESS_WRITE;
 
     d3d_Check(gfx->device->CreateTexture2D(&tex_desc, NULL, &g_staging_tex));
-
     d3d_Check(gfx->device->CreateShaderResourceView(g_tex, nullptr, &g_sha_rsc_view));
 
     game_init(nullptr, state);
 }
 
+// ===============================================================================================
+// #UPDATE
+// ===============================================================================================
 function void app_update(AppState* state)
 {
     auto gfx = &state->gfx;
     auto kb  = &state->input.keyboard;
 
+#if USE_DS5
     if (key_pressed(kb->j))
         state->input.ds5_state[0].trigger_effect_R.type = DS5_TriggerEffectType::calibrate;
     if (key_pressed(kb->k))
@@ -92,13 +133,22 @@ function void app_update(AppState* state)
         state->input.ds5_state[0].trigger_effect_L.type = DS5_TriggerEffectType::calibrate;
     if (key_pressed(kb->m))
         state->input.ds5_state[0].trigger_effect_L.type = DS5_TriggerEffectType::none;
+#endif
 
     local u32 stride     = sizeof(Vertex);
     local u32 offset     = 0;
     local bool once_only = false;
 
+    if (button_pressed(state->input.ds5_state[0].ps_logo)) {
+        state->win32.running = false;
+        return;
+    }
+
     game_update_and_render(nullptr, state);
 
+    // if (state->frame_cnt % 5 == 0) printf("%d\n", state->input.ds5_state[0].battery.charge);
+
+    // TODO: change the texture size on window resize
     D3D11_MAPPED_SUBRESOURCE map;
     d3d_Check(gfx->context->Map(g_staging_tex, 0, D3D11_MAP_READ_WRITE, 0, &map));
     memcpy(map.pData, state->back_buffer.buf, state->back_buffer.pitch * state->back_buffer.height);
@@ -144,6 +194,9 @@ function void app_update(AppState* state)
 
 }  // namespace tom
 
+// ===============================================================================================
+// #START
+// ===============================================================================================
 function i32 app_start(HINSTANCE hinst)
 {
     const TCHAR* icon_path = _T("..\\..\\data\\tomato.ico");
@@ -158,13 +211,16 @@ function i32 app_start(HINSTANCE hinst)
 
     printf("Starting...\n");
 
+    // set sleep to 1 ms intervals
+    Assert(timeBeginPeriod(1) == TIMERR_NOERROR);
+
 #if _CPPUWIND
     PrintWarning("Exceptions are enabled!\n");
 #endif
 
     AppState state                      = {};
     state.game_update_hertz             = 60;
-    state.target_frames_per_second      = 1.0f / (f32)state.game_update_hertz;
+    state.target_secs_per_frame         = 1.0f / (f32)state.game_update_hertz;
     state.target_fps                    = 60;
     state.sound.frames_of_audio_latency = (1.1f / 30.f) * (f32)state.game_update_hertz;
     state.win32.icon                    = icon;
@@ -261,13 +317,21 @@ function i32 app_start(HINSTANCE hinst)
     while (true) {
         ++state.frame_cnt;
         // printf("%llu\n",state.frame_cnt);
+        //
         if (!state.win32.running) break;
+
         if (state.win32.resize) {
             on_resize(&state);
             state.win32.resize = false;
         }
 
-        state.target_frames_per_second = 1.0f / (f32)state.target_fps;
+        state.device_changed_delay += state.dt;
+        if (state.win32.device_change) {
+            on_device_change(&state);
+            state.win32.device_change = false;
+        }
+
+        state.target_secs_per_frame = 1.0f / (f32)state.target_fps;
 
         state.win32.ms_scroll = 0;
         process_pending_messages(&state.win32);
@@ -295,26 +359,27 @@ function i32 app_start(HINSTANCE hinst)
         }
         work_secs_avg /= (f32)CountOf(state.work_secs);
 
-        // clock stuffs
         auto work_counter = get_time();
         f32 work_seconds_elapsed =
             get_seconds_elapsed(last_counter, work_counter, state.performance_counter_frequency);
         state.work_secs[state.work_ind++] = work_seconds_elapsed;
         if (state.work_ind == CountOf(state.work_secs)) state.work_ind = 0;
 
-        bool is_sleep_granular        = false;
+        // NOTE: win32 Sleep() ony guarantees the MINIMUN amound of time the thread will
+        // sleep. its not the best solution for steady FPS in a game, but as a temporary soultion to
+        // get around this I will just ask for a slightly early wakeup and spin the CPU until the
+        // next frame
         f32 seconds_elapsed_for_frame = work_seconds_elapsed;
-        if (seconds_elapsed_for_frame < state.target_frames_per_second) {
-            if (is_sleep_granular) {
-                auto sleepMs =
-                    (DWORD)(1000.f * (state.target_frames_per_second - seconds_elapsed_for_frame));
-                if (sleepMs > 0) {
-                    ::Sleep(sleepMs);
-                }
+        if (seconds_elapsed_for_frame < state.target_secs_per_frame) {
+            // minus a ms
+            f32 sleep_ms = 1000.0f * (state.target_secs_per_frame - seconds_elapsed_for_frame) - 1;
+            if (sleep_ms > 0) {
+                Sleep((DWORD)sleep_ms);
             }
+            // spin the cpu for the remainder
             f32 test_seconds_elapsed_for_frame =
                 get_seconds_elapsed(last_counter, get_time(), state.performance_counter_frequency);
-            while (seconds_elapsed_for_frame < state.target_frames_per_second) {
+            while (seconds_elapsed_for_frame < state.target_secs_per_frame) {
                 seconds_elapsed_for_frame = get_seconds_elapsed(
                     last_counter, get_time(), state.performance_counter_frequency);
             }

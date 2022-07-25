@@ -59,11 +59,13 @@ function void zero_array(T* ptr, szt count)
     zero_size(ptr, sizeof(T) * count);
 }
 
-template<typename T>
-function void zero_array(T* ptr)
-{
-    zero_size(ptr, CountOf(ptr));
-}
+// template<typename T>
+// function void zero_array(T* ptr)
+// {
+//     zero_size(ptr, CountOf(ptr));
+// }
+
+#define ZeroArray(arr) zero_array(arr, CountOf(arr))
 
 // #define PUSH_STRUCT(arena, type)       (type*)push_size(arena, sizeof(type))
 // #define PUSH_ARRAY(arena, count, type) (type*)push_size(arena, (count * sizeof(type)))

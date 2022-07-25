@@ -297,10 +297,12 @@ function void do_input(Input* input, HWND hwnd, i32 ms_scroll)
                                  ::GetKeyState(input->keyboard.keys[i].name) & (1 << 15));
     }
 
+#if USE_DS5
     for (u32 i = 0; i < input->ds5_cnt; ++i) {
         ds5_get_input(&input->ds5_context[i], &input->ds5_state[i]);
         ds5_push_output(&input->ds5_context[i], &input->ds5_state[i]);
     }
+#endif
 
 #if 0
     // controller

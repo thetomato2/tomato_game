@@ -12,8 +12,11 @@
 #ifndef NOMINMAX
     #define NOMINMAX
 #endif
-#define WIN32_LEAN_AND_MEAN 0
+// #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
+#include <dbt.h>
+#include <initguid.h>
+#include <Usbiodef.h>
 #include <tchar.h>
 
 #include <d3d11_1.h>
@@ -21,7 +24,7 @@
 
 #if 1
     #include <dxgidebug.h>
-typedef HRESULT(WINAPI* LPDXGIGETDEBUGINTERFACE)(REFIID, void**);
+    typedef HRESULT(WINAPI* LPDXGIGETDEBUGINTERFACE)(REFIID, void**);
 #endif
 
 #include <xinput.h>
