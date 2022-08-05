@@ -24,7 +24,7 @@
 
 #if 1
     #include <dxgidebug.h>
-    typedef HRESULT(WINAPI* LPDXGIGETDEBUGINTERFACE)(REFIID, void**);
+typedef HRESULT(WINAPI* LPDXGIGETDEBUGINTERFACE)(REFIID, void**);
 #endif
 
 #include <xinput.h>
@@ -55,8 +55,10 @@
 
 #include "tom_types.hh"
 
+// this is a unity build so all functions are static by default to speed up linking time
+#define fn static
+#define extern_fn
 #define internal static
-#define function static
 #define global   static
 #define local    static
 

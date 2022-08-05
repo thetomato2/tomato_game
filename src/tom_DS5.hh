@@ -1,5 +1,5 @@
 // Interface for the DaulSense controller
-// TODO: use async ReadFile to handle bluetooth buffer being empty when the controller isoff
+// TODO: use async ReadFile to handle bluetooth buffer being empty when the controller is off
 
 #include <initguid.h>
 #include <Hidclass.h>
@@ -202,7 +202,7 @@ struct DS5_State
     v3<i16> gyroscope;
 };
 
-function u32 DS5_crc32_compute(byt* buffer, szt len)
+fn u32 DS5_crc32_compute(byt* buffer, szt len)
 {
     u32 result = DS5_crc_seed;
 
@@ -214,7 +214,7 @@ function u32 DS5_crc32_compute(byt* buffer, szt len)
     return result;
 }
 
-function void DS5_enum_devices(void* ptr_buf, u32 arr_len, u32* ds5_cnt)
+fn void DS5_enum_devices(void* ptr_buf, u32 arr_len, u32* ds5_cnt)
 {
     // Get all hid devices from devs
     HANDLE hiddi_hnd = SetupDiGetClassDevs(&GUID_DEVINTERFACE_HID, NULL, NULL,
@@ -320,7 +320,7 @@ function void DS5_enum_devices(void* ptr_buf, u32 arr_len, u32* ds5_cnt)
     *ds5_cnt = input_arr_i;
 }
 
-function u32 DS5_init(DS5_Context* out)
+fn u32 DS5_init(DS5_Context* out)
 {
     DS5_Info info[DS5_MAX_CNT];
     u32 controller_cnt = 0;
@@ -349,7 +349,7 @@ function u32 DS5_init(DS5_Context* out)
     return controller_cnt;
 }
 
-function void DS5_process_button(Button* but, byt is_down)
+fn void DS5_process_button(Button* but, byt is_down)
 {
     if (but->ended_down && is_down) {
         ++but->half_transition_cnt;
@@ -362,7 +362,7 @@ function void DS5_process_button(Button* but, byt is_down)
     }
 }
 
-function void DS5_process_buttons(DS5_State* state, byt buttons_and_dpad, byt buttons_a,
+fn void DS5_process_buttons(DS5_State* state, byt buttons_and_dpad, byt buttons_a,
                                   byt buttons_b)
 {
     DS5_process_button(&state->dpad_U, buttons_and_dpad & DS5_ISTATE_DPAD_UP);
@@ -386,7 +386,7 @@ function void DS5_process_buttons(DS5_State* state, byt buttons_and_dpad, byt bu
     DS5_process_button(&state->touch, buttons_b & DS5_ISTATE_BTN_B_PAD_BUTTON);
 }
 
-function void DS5_parse_hid_buffer(byt* hid_buf, DS5_State* state)
+fn void DS5_parse_hid_buffer(byt* hid_buf, DS5_State* state)
 {
     state->stick_L.x = (byt)(((i16)(hid_buf[0x00] - 128)));
     state->stick_L.y = (byt)(((i16)(hid_buf[0x01] - 127)) * -1);
@@ -462,7 +462,7 @@ function void DS5_parse_hid_buffer(byt* hid_buf, DS5_State* state)
     state->battery.charge        = hid_buf[0x36] & 0x0F;
 }
 
-function void DS5_process_trigger(DS5_TriggerEffect* effect, byt* buffer)
+fn void DS5_process_trigger(DS5_TriggerEffect* effect, byt* buffer)
 {
     // Switch on effect
     switch (effect->type) {
@@ -523,7 +523,7 @@ function void DS5_process_trigger(DS5_TriggerEffect* effect, byt* buffer)
     }
 }
 
-function void DS5_create_hid_output_buffer(byt* hid_buf, DS5_State* state)
+fn void DS5_create_hid_output_buffer(byt* hid_buf, DS5_State* state)
 {
     hid_buf[0x00] = 0xFF;
     hid_buf[0x01] = 0xF7;
@@ -558,7 +558,7 @@ function void DS5_create_hid_output_buffer(byt* hid_buf, DS5_State* state)
     DS5_process_trigger(&state->trigger_effect_R, &hid_buf[0x0A]);
 }
 
-function void ds5_get_input(DS5_Context* context, DS5_State* state)
+fn void ds5_get_input(DS5_Context* context, DS5_State* state)
 {
     if (!context->connected) {
         PrintInfo(str_fmt("DS5 controller %u was disconnected.", context->port));
@@ -593,7 +593,7 @@ function void ds5_get_input(DS5_Context* context, DS5_State* state)
     }
 }
 
-function void ds5_push_output(DS5_Context* context, DS5_State* state)
+fn void ds5_push_output(DS5_Context* context, DS5_State* state)
 {
     if (!context->connected) {
         PrintInfo(str_fmt("DS5 controller %u was disconnected.", context->port));
@@ -607,7 +607,7 @@ function void ds5_push_output(DS5_Context* context, DS5_State* state)
 
     state->rumble_L  = (lrmbl & 0xff00) >> 8UL;
     state->rumble_R  = (rrmbl & 0xff00) >> 8UL;
-    state->led_color = { 255, 0, 255 };
+    state->led_color = { 0, 255, 0 };
 
     state->player_leds.bitmask = 0;
     state->mic_led             = DS5_MicLed::off;
@@ -628,10 +628,10 @@ function void ds5_push_output(DS5_Context* context, DS5_State* state)
         // check the hash, why?idk that is what the docs say
         u32 crc = DS5_crc32_compute(context->hid_buf, 74);
 
-        context->hid_buf[0x4A] = (unsigned char)((crc & 0x000000FF) >> 0UL);
-        context->hid_buf[0x4B] = (unsigned char)((crc & 0x0000FF00) >> 8UL);
-        context->hid_buf[0x4C] = (unsigned char)((crc & 0x00FF0000) >> 16UL);
-        context->hid_buf[0x4D] = (unsigned char)((crc & 0xFF000000) >> 24UL);
+        context->hid_buf[0x4A] = (byt)((crc & 0x000000FF) >> 0UL);
+        context->hid_buf[0x4B] = (byt)((crc & 0x0000FF00) >> 8UL);
+        context->hid_buf[0x4C] = (byt)((crc & 0x00FF0000) >> 16UL);
+        context->hid_buf[0x4D] = (byt)((crc & 0xFF000000) >> 24UL);
     } else {
         context->hid_buf[0x00] = 0x02;
         DS5_create_hid_output_buffer(&context->hid_buf[1], state);

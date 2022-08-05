@@ -1,3 +1,5 @@
+// Makes a "fullscreen triangle" and renders a defualt-uv texture
+
 SamplerState samp : register(s0);
 Texture2D<float4> Texture : register(t0);
 

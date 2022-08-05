@@ -1,7 +1,7 @@
 namespace tom
 {
 
-function void init_WASAPI(i32 samples_per_second, i32 buffer_size_in_samples)
+fn void init_WASAPI(i32 samples_per_second, i32 buffer_size_in_samples)
 {
 #if 0
     if (FAILED(CoInitializeEx(0, COINIT_SPEED_OVER_MEMORY))) {
@@ -66,7 +66,7 @@ function void init_WASAPI(i32 samples_per_second, i32 buffer_size_in_samples)
 #endif
 }
 
-function void fill_sound_buffer(SoundOutput& sound_output, i32 samples_to_write,
+fn void fill_sound_buffer(SoundOutput& sound_output, i32 samples_to_write,
                                 SoundOutputBuffer& source_buffer)
 {
 #if 0

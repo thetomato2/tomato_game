@@ -8,14 +8,18 @@ struct Arena
     szt used;
 };
 
-function void init_arena(Arena* arena, const szt size, void* base)
+inline Arena init_arena (void* base, szt size)
 {
-    arena->size = size;
-    arena->base = (byt*)base;
-    arena->used = 0;
+    Arena result;
+
+    result.size = size;
+    result.base = (byt*)base;
+    result.used = 0;
+    
+    return result;
 }
 
-function void* push_size(Arena* arena, szt size)
+inline void* push_size(Arena* arena, szt size)
 {
     Assert((arena->used + size) <= arena->size);
     void* result = arena->base + arena->used;
@@ -24,37 +28,37 @@ function void* push_size(Arena* arena, szt size)
     return result;
 }
 
-function void zero_size(void* ptr, szt size)
+inline void zero_size(void* ptr, szt size)
 {
     memset(ptr, 0, size);
 }
 
 template<typename T>
-function T* push_struct(Arena* arena)
+inline T* push_struct(Arena* arena)
 {
     return (T*)push_size(arena, sizeof(T));
 }
 
 template<typename T>
-function T* push_array(Arena* arena, szt count)
+inline T* push_array(Arena* arena, szt count)
 {
     return (T*)push_size(arena, sizeof(T) * count);
 }
 
 template<typename T>
-function void zero_struct(T* ptr)
+inline void zero_struct(T* ptr)
 {
     zero_size(ptr, sizeof(T));
 }
 
 template<typename T>
-function void zero_struct(T ptr)
+inline void zero_struct(T ptr)
 {
     zero_size(&ptr, sizeof(T));
 }
 
 template<typename T>
-function void zero_array(T* ptr, szt count)
+inline void zero_array(T* ptr, szt count)
 {
     zero_size(ptr, sizeof(T) * count);
 }
@@ -71,18 +75,18 @@ function void zero_array(T* ptr, szt count)
 // #define PUSH_ARRAY(arena, count, type) (type*)push_size(arena, (count * sizeof(type)))
 // #define ZERO_STRUCT(inst)              zero_size(&(inst), sizeof(inst))
 
-function void* plat_malloc(szt size)
+inline void* plat_malloc(szt size)
 {
     return HeapAlloc(GetProcessHeap(), 0, size);
 }
 
 template<typename T>
-function T* plat_malloc(szt count)
+inline T* plat_malloc(szt count)
 {
     return (T*)HeapAlloc(GetProcessHeap(), 0, count * sizeof(T));
 }
 
-function void plat_free(void* ptr)
+inline void plat_free(void* ptr)
 {
     HeapFree(GetProcessHeap(), 0, ptr);
 }

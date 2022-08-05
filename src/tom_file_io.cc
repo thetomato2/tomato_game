@@ -1,7 +1,7 @@
 namespace tom
 {
 
-function bool write_file(const char* file_path, szt buf_sz, void* buf)
+fn bool write_file(const char* file_path, szt buf_sz, void* buf)
 {
     b32 success = false;
 
@@ -21,7 +21,7 @@ function bool write_file(const char* file_path, szt buf_sz, void* buf)
     return success;
 }
 
-function ReadFileResult read_file(const char* file_path)
+fn ReadFileResult read_file(const char* file_path)
 {
     ReadFileResult file = {};
 

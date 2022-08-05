@@ -6,10 +6,11 @@ global bool g_running       = true;
 global bool g_pause         = false;
 global bool g_resize        = false;
 global bool g_device_change = false;
-r2i g_win_dim               = {};
+global bool g_focus         = false;
+v2i g_win_dim               = {};
 i32 g_ms_scroll             = {};
 
-function void toggle_fullscreen(Win32State* state)
+fn void toggle_fullscreen(Win32State* state)
 {
     DWORD dwStyle = (DWORD)GetWindowLong(state->hwnd, GWL_STYLE);
     if (dwStyle & WS_OVERLAPPEDWINDOW) {
@@ -31,22 +32,25 @@ function void toggle_fullscreen(Win32State* state)
     }
 }
 
-function r2i get_window_dimensions(HWND hwnd)
+fn v2i get_window_dimensions(HWND hwnd)
 {
-    r2i result;
+    v2i result = {};
+
     RECT client_rect;
     GetClientRect(hwnd, &client_rect);
-    result.x1 = client_rect.right - client_rect.left;
-    result.y1 = client_rect.bottom - client_rect.top;
+    // GetWindowRect(hwnd, &client_rect);
+    result.w = client_rect.right - client_rect.left;
+    result.h = client_rect.bottom - client_rect.top;
+    
     return result;
 }
 
-function void get_cwd(char* buf)
+fn void get_cwd(char* buf)
 {
     GetCurrentDirectoryA(MAX_PATH, buf);
 }
 
-function bool dir_exists(const wchar* dir)
+fn bool dir_exists(const wchar* dir)
 {
     DWORD ftyp = GetFileAttributesW(dir);
     if (ftyp == INVALID_FILE_ATTRIBUTES) return false;
@@ -56,7 +60,7 @@ function bool dir_exists(const wchar* dir)
     return false;
 }
 
-function bool dir_exists(const char* dir)
+fn bool dir_exists(const char* dir)
 {
     DWORD ftyp = GetFileAttributesA(dir);
     if (ftyp == INVALID_FILE_ATTRIBUTES) return false;
@@ -66,7 +70,7 @@ function bool dir_exists(const char* dir)
     return false;
 }
 
-function void create_dir(const char* dir_name)
+fn void create_dir(const char* dir_name)
 {
     if (!dir_exists(dir_name)) {
         CreateDirectoryA(dir_name, NULL);
@@ -74,7 +78,7 @@ function void create_dir(const char* dir_name)
 }
 
 #if 0
-function void create_dir(wstring dir_name)
+fn void create_dir(wstring dir_name)
 {
     if (!dir_exists(dir_name.c_str())) {
         CreateDirectoryW(dir_name.c_str(), NULL);
@@ -85,7 +89,7 @@ function void create_dir(wstring dir_name)
 // recursively deletes the specified directory and all its contents
 // absolute path of the directory that will be deleted
 // NOTE: the path must not be terminated with a path separator.
-function  void rm_rf_dir(const wstring& path)
+fn  void rm_rf_dir(const wstring& path)
 {
     if (path.back() == L'\\') {
         INVALID_CODE_PATH;
@@ -150,7 +154,7 @@ function  void rm_rf_dir(const wstring& path)
 
 #endif
 
-function void create_console()
+fn void create_console()
 {
     bool is_initialized = AllocConsole();
     Assert(is_initialized);
@@ -173,12 +177,13 @@ function void create_console()
     }
 }
 
-function void process_pending_messages(Win32State* state)
+fn void process_pending_messages(Win32State* state)
 {
     state->running       = g_running;
     state->pause         = g_pause;
     state->resize        = g_resize;
     state->device_change = g_device_change;
+    state->focus         = g_focus;
     state->win_dims      = g_win_dim;
     state->ms_scroll     = g_ms_scroll;
 
@@ -268,6 +273,12 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
         case WM_DEVICECHANGE: {
             g_device_change = true;
         } break;
+        case WM_KILLFOCUS: {
+            g_focus = false;
+        } break;
+        case WM_SETFOCUS: {
+            g_focus = true;
+        } break;
         default:
             //            OutPutDebugStringA("default\n");
             result = DefWindowProc(hwnd, msg, wparam, lparam);
@@ -278,7 +289,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 
 typedef BOOL WINAPI SetProcessDpiAware(void);
 typedef BOOL WINAPI SetProcessDpiAwarenessContext(DPI_AWARENESS_CONTEXT);
-function void prevent_windows_DPI_scaling()
+fn void prevent_windows_DPI_scaling()
 {
     HMODULE WinUser = LoadLibraryW(L"user32.dll");
     SetProcessDpiAwarenessContext* dpi_context =
@@ -294,9 +305,9 @@ function void prevent_windows_DPI_scaling()
     }
 }
 
-function void create_window(Win32State* state)
+fn void create_window(Win32State* state)
 {
-    state->cls_name = _T("TomatoWinCls");
+    state->cls_name = "TomatoWinCls";
 
     WNDCLASS cls { .style         = CS_HREDRAW | CS_VREDRAW | CS_OWNDC,
                    .lpfnWndProc   = WndProc,
@@ -323,15 +334,20 @@ function void create_window(Win32State* state)
 
     RECT wr = { .left   = 0,
                 .top    = 0,
-                .right  = state->win_dims.x1 + wr.left,
-                .bottom = state->win_dims.y1 + wr.top };
+                .right  = state->win_dims.w + wr.left,
+                .bottom = state->win_dims.h + wr.top };
 
-    if (AdjustWindowRect(&wr, dw_style, false) == 0) {
+    // if (AdjustWindowRect(&wr, dw_style, false) == 0) {
+    //     printf("ERROR--> Failed to adjust window rect");
+    //     InvalidCodePath;
+    // }
+
+    if (AdjustWindowRectEx(&wr, dw_style, false, ex_style) == 0) {
         printf("ERROR--> Failed to adjust window rect");
-        Assert(false);
+        InvalidCodePath;
     }
 
-    state->hwnd = CreateWindowEx(ex_style, cls.lpszClassName, _T("Tomato Editor"), dw_style,
+    state->hwnd = CreateWindowEx(ex_style, cls.lpszClassName, _T("Tomato Game"), dw_style,
                                  CW_USEDEFAULT, CW_USEDEFAULT, wr.right - wr.left,
                                  wr.bottom - wr.top, NULL, NULL, state->hinst, NULL);
 

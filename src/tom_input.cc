@@ -21,7 +21,7 @@ xinput_set_state* XInputSetState_ { _xinput_set_state };
 #define XInputGetState XInputGetState_
 #define XInputSetState XInputSetState_
 
-function void load_Xinput()
+fn void load_Xinput()
 {
     HMODULE XInputLibrary = LoadLibraryA("xinput1_4.dll");
     if (!XInputLibrary) {
@@ -35,7 +35,7 @@ function void load_Xinput()
     }
 }
 
-function void process_keyboard_message(Button& new_state, const b32 is_down)
+fn void process_keyboard_message(Button& new_state, const b32 is_down)
 {
     if (new_state.ended_down != (is_down != 0)) {
         new_state.ended_down = is_down;
@@ -43,7 +43,7 @@ function void process_keyboard_message(Button& new_state, const b32 is_down)
     }
 }
 
-function void process_Xinput_digital_button(DWORD Xinput_button_state_, Button& old_state_,
+fn void process_Xinput_digital_button(DWORD Xinput_button_state_, Button& old_state_,
                                             DWORD button_bit_, Button& new_state)
 {
     new_state.ended_down = ((Xinput_button_state_ & button_bit_) == button_bit_);
@@ -52,7 +52,7 @@ function void process_Xinput_digital_button(DWORD Xinput_button_state_, Button& 
 }
 
 // NOTE: mod = Shift
-function char win32key_to_char_mod(Win32Key key)
+fn char win32key_to_char_mod(Win32Key key)
 {
     switch (key) {
         case space: return ' ';
@@ -109,7 +109,7 @@ function char win32key_to_char_mod(Win32Key key)
     return '\0';
 }
 
-function char win32key_to_char(Win32Key key)
+fn char win32key_to_char(Win32Key key)
 {
     switch (key) {
         case space: return ' ';
@@ -168,7 +168,7 @@ function char win32key_to_char(Win32Key key)
 
 #define ASSIGN_WIN32_KEY(key) result.keyboard.##key.name = Win32Key::##key;
 
-function Input init_input()
+fn Input init_input()
 {
     Input result = {};
 
@@ -262,7 +262,7 @@ function Input init_input()
     return result;
 }
 
-function void do_input(Input* input, HWND hwnd, i32 ms_scroll)
+fn void do_input(Input* input, HWND hwnd, i32 ms_scroll)
 {
     // mouse cursor
     POINT mouse_point;

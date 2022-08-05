@@ -5,22 +5,8 @@ struct Color
 {
     union
     {
-        struct
-        {
-            u8 r;
-            u8 g;
-            u8 b;
-            u8 a;
-        };
         u32 rgba;
-    };
-};
-
-struct Color_argb
-{
-    union
-    {
-        u32 argb;
+#if 1
         struct
         {
             u8 r;
@@ -28,9 +14,17 @@ struct Color_argb
             u8 b;
             u8 a;
         };
+#else
+        struct
+        {
+            u8 b;
+            u8 g;
+            u8 r;
+            u8 a;
+        };
+#endif
     };
 };
-
 
 enum TomColors
 {
@@ -96,63 +90,38 @@ inline v3f color_u32_to_v3f(u32 col)
 
 #endif
 
-inline Color_argb v3_to_color_argb(v3f col, f32 a = 1.0f)
-{
-    Color_argb res;
-
-    res.r = (u8)(col.r * 255.0f);
-    res.g = (u8)(col.g * 255.0f);
-    res.b = (u8)(col.b * 255.0f);
-    res.a = (u8)(a * 255.0f);
-
-    return res;
-}
-
-inline Color_argb f32_to_argb(f32 col, f32 a = 1.0f)
-{
-    Color_argb res;
-
-    res.r = (u8)(col * 255.0f);
-    res.g = (u8)(col * 255.0f);
-    res.b = (u8)(col * 255.0f);
-    res.a = (u8)(a * 255.0f);
-
-    return res;
-}
-
-
-function constexpr Color color(TomColors col)
+fn constexpr Color color(TomColors col)
 {
     Color res;
 
-    switch (col){
-        case TomColors::black:{
+    switch (col) {
+        case TomColors::black: {
             res.rgba = 0xff000000;
-        }break;
-        case TomColors::white:{
+        } break;
+        case TomColors::white: {
             res.rgba = 0xffffffff;
-        }break;
-        case TomColors::red:{
+        } break;
+        case TomColors::red: {
             res.rgba = 0xff0000ff;
-        }break;
-        case TomColors::green:{
+        } break;
+        case TomColors::green: {
             res.rgba = 0xff00ff00;
-        }break;
-        case TomColors::blue:{
+        } break;
+        case TomColors::blue: {
             res.rgba = 0xffff0000;
-        }break;
-        case TomColors::pink:{
+        } break;
+        case TomColors::pink: {
             res.rgba = 0xffff00ff;
-        }break;
-        case TomColors::teal:{
+        } break;
+        case TomColors::teal: {
             res.rgba = 0xffffff00;
-        }break;
-        case TomColors::yellow:{
+        } break;
+        case TomColors::yellow: {
             res.rgba = 0xff00ffff;
-        }break;
-        default:{
+        } break;
+        default: {
             res.rgba = 0xffffffff;
-        }break;
+        } break;
     }
 
     return res;
@@ -167,50 +136,5 @@ global constexpr v3f red_v3   = { 1.0f, 0.0f, 0.0f };
 global constexpr v3f green_v3 = { 0.0f, 1.0f, 0.0f };
 global constexpr v3f blue_v3  = { 0.0f, 0.0f, 1.0f };
 global constexpr v3f pink_v3  = { 1.0f, 0.0f, 1.0f };
-
-struct bitmap_header
-{
-    u16 file_type;
-    u32 file_size;
-    u16 reserved_1;
-    u16 reserved_2;
-    u32 bitmap_offset;
-    u32 size;
-    i32 width;
-    i32 height;
-    u16 planes;
-    u16 bits_per_pixel;
-};
-
-struct argb_header
-{
-    u32 width;
-    u32 height;
-    u32 size;
-};
-
-struct bitmap_img
-{
-    i32 width;
-    i32 height;
-    u32 *pixel_ptr;
-};
-
-struct argb_img
-{
-    const char *name;
-    u32 width;
-    u32 height;
-    u32 size;
-    u32 *pixel_ptr;
-};
-
-// note: argb
-// global constexpr color red   =  0xff'00'00'ff ;
-// global constexpr color green =  0x00'ff'00'ff ;
-// global constexpr color blue  =  0x00'00'ff'ff ;
-// global constexpr color pink  =  0xff'00'ff'ff ;
-// global constexpr color white =  0xff'ff'ff'ff ;
-// global constexpr color black =  0x00'00'00'ff ;
 
 }  // namespace tom

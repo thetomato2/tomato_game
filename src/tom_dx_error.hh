@@ -6,7 +6,7 @@
 namespace tom
 {
 
-function char* d3d_error_code(HRESULT hr)
+fn char* d3d_error_code(HRESULT hr)
 {
     // clang-format off
     switch (hr)

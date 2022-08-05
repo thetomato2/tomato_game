@@ -1,6 +1,5 @@
 namespace tom
 {
-
 #if 0
 struct cycle_counter
 {
@@ -13,10 +12,8 @@ struct cycle_counter
     };
 
     type t_;
-    string name;
     u64 cycle_cnt;
 };
-
 
 inline constexpr const char* get_cycle_counter_name(cycle_counter::type type)
 {
@@ -34,26 +31,6 @@ inline constexpr const char* get_cycle_counter_name(cycle_counter::type type)
     return nullptr;
 }
 
-inline vector<cycle_counter> init_cycle_counters()
-{
-    vector<cycle_counter> result;
-
-    for (u32 i = 0; i < cycle_counter::type::count; ++i) {
-        cycle_counter counter {};
-        counter.t_   = (cycle_counter::type)i;
-        counter.name = get_cycle_counter_name(counter.t_);
-        result.push_back(counter);
-    }
-
-    return result;
-}
-
-inline void reset_cycle_counters(vector<cycle_counter>* counters)
-{
-    for (auto& counter : *counters) {
-        counter.cycle_cnt = 0;
-    }
-}
 
 inline cycle_counter* get_cycle_counter(vector<cycle_counter>* counters, cycle_counter::type type)
 {

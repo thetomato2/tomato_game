@@ -7,7 +7,7 @@
 namespace tom
 {
 
-function char itos(i32 d)
+fn char itos(i32 d)
 {
     Assert(d < 10);
 
@@ -28,7 +28,7 @@ function char itos(i32 d)
 }
 
 // TODO: this is pretty barebones
-function i32 stoi(const char* str)
+fn i32 stoi(const char* str)
 {
     i32 i = 0;
     while (*str >= '0' && *str <= '9') {
@@ -38,7 +38,7 @@ function i32 stoi(const char* str)
     return i;
 }
 
-function i32 stoi(const char c)
+fn i32 stoi(const char c)
 {
     switch (c) {
         case '0': return 0;
@@ -59,14 +59,14 @@ function i32 stoi(const char c)
 }
 
 template<typename CharT>
-function void str_copy(const CharT* str, CharT* buf)
+fn void str_copy(const CharT* str, CharT* buf)
 {
     for (; *str; ++str) *buf++ = *str;
     *buf = (CharT)'\0';
 }
 
 template<typename CharT>
-function bool str_equal(const CharT* a, const CharT* b)
+fn bool str_equal(const CharT* a, const CharT* b)
 {
     while (*a && *a == *b) {
         ++a;
@@ -76,8 +76,9 @@ function bool str_equal(const CharT* a, const CharT* b)
     return true;
 }
 
+
 template<typename CharT>
-function CharT* rev_str(const CharT* str)
+fn CharT* rev_str(const CharT* str)
 {
     szt len       = str_len(str);
     CharT* result = (CharT*)plat_malloc(sizeof(CharT) * (len + 1));
@@ -90,7 +91,7 @@ function CharT* rev_str(const CharT* str)
 }
 
 template<typename CharT>
-function szt str_len(const CharT* str)
+fn szt str_len(const CharT* str)
 {
     const CharT* s;
     for (s = str; *s; ++s)
@@ -101,7 +102,7 @@ function szt str_len(const CharT* str)
 }
 
 template<typename... Args>
-function szt str_len(Args... args)
+fn szt str_len(Args... args)
 {
     szt result = 0;
     for (auto s : { args... }) {
@@ -112,7 +113,7 @@ function szt str_len(Args... args)
 }
 
 template<typename CharT, typename... Args>
-function CharT* str_cat(const CharT* first, Args... args)
+fn CharT* str_cat(const CharT* first, Args... args)
 {
     szt buf_len = str_len(first) + str_len(std::forward<Args>(args)...);
     // CharT* result  = (CharT*)plat_malloc(sizeof(CharT) * (buf_len + 1));
@@ -134,7 +135,7 @@ function CharT* str_cat(const CharT* first, Args... args)
 }
 
 template<typename CharT>
-function CharT* str_cat(const CharT* str)
+fn CharT* str_cat(const CharT* str)
 {
     CharT* result  = (CharT*)plat_malloc(sizeof(CharT) * (str_len(str) + 1));
     CharT* buf_ptr = result;
@@ -147,7 +148,7 @@ function CharT* str_cat(const CharT* str)
 }
 
 template<typename... Args>
-function char* str_fmt(const char* format, Args... args)
+fn char* str_fmt(const char* format, Args... args)
 {
     szt buf_sz = snprintf(nullptr, 0, format, args...) + 1;
     char* result = plat_malloc<char>(buf_sz);
@@ -156,7 +157,7 @@ function char* str_fmt(const char* format, Args... args)
     return result;
 }
 
-function char* convert_wstring_to_string(const wchar* wstr)
+fn char* convert_wstring_to_string(const wchar* wstr)
 {
     i32 cnt     = WideCharToMultiByte(CP_ACP, 0, wstr, -1, NULL, 0, NULL, NULL);
     auto result = plat_malloc<char>(cnt);
@@ -165,7 +166,7 @@ function char* convert_wstring_to_string(const wchar* wstr)
     return result;
 }
 
-function wchar* convert_string_to_wstring(const char* str)
+fn wchar* convert_string_to_wstring(const char* str)
 {
     i32 cnt     = MultiByteToWideChar(CP_ACP, 0, str, -1, NULL, 0);
     auto result = plat_malloc<wchar>(cnt);
@@ -174,7 +175,7 @@ function wchar* convert_string_to_wstring(const char* str)
     return result;
 }
 
-function char* convert_wstring_to_string_utf8(const wchar* wstr)
+fn char* convert_wstring_to_string_utf8(const wchar* wstr)
 {
     i32 cnt     = WideCharToMultiByte(CP_UTF8, 0, wstr, -1, NULL, 0, NULL, NULL);
     auto result = plat_malloc<char>(cnt);
@@ -183,7 +184,7 @@ function char* convert_wstring_to_string_utf8(const wchar* wstr)
     return result;
 }
 
-function wchar* convert_string_to_wstring_utf8(const char* str)
+fn wchar* convert_string_to_wstring_utf8(const char* str)
 {
     i32 cnt     = MultiByteToWideChar(CP_UTF8, 0, str, -1, NULL, 0);
     auto result = plat_malloc<wchar>(cnt);

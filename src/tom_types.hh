@@ -61,6 +61,10 @@ union v2
     {
         T u, v;
     };
+    struct
+    {
+        T w, h;
+    };
     T e[2];
 };
 
@@ -131,7 +135,7 @@ union r2
 {
     struct
     {
-        T x0, x1, y0, y1;
+        T x0, y0, x1, y1;
     };
     struct
     {
@@ -148,7 +152,7 @@ union r3
 {
     struct
     {
-        T x0, x1, y0, y1, z0, z1;
+        T x0, y0, z0, x1, y1, z1;
     };
     struct
     {
@@ -164,4 +168,10 @@ struct Button
 {
     i32 half_transition_cnt;
     b32 ended_down;
+};
+
+struct Camera
+{
+    v2f dims;
+    v2f pos;
 };

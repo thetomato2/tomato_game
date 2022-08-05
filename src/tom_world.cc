@@ -13,7 +13,7 @@ function bool is_canonical(v3f rel_coord)
     return is_canonical(rel_coord.x) && is_canonical(rel_coord.y) && is_canonical(rel_coord.z);
 }
 
-function void recanonicalize_coord(i32& coord, f32& rel_coord)
+fn void recanonicalize_coord(i32& coord, f32& rel_coord)
 {
     // NOTE: World is assumed to be toroidal (torus shaped World),
     // if you step off one end where you wrap around
@@ -24,7 +24,7 @@ function void recanonicalize_coord(i32& coord, f32& rel_coord)
     Assert(is_canonical(rel_coord));
 }
 
-function bool is_same_chunk(WorldPos a, WorldPos b)
+fn bool is_same_chunk(WorldPos a, WorldPos b)
 {
     Assert(is_canonical(a.offset));
     Assert(is_canonical(b.offset));
@@ -32,7 +32,7 @@ function bool is_same_chunk(WorldPos a, WorldPos b)
     return (a.chunk_x == b.chunk_x && a.chunk_y == b.chunk_y && a.chunk_z == b.chunk_z);
 }
 
-function WorldPos get_centered_point(i32 x, i32 y, i32 z)
+fn WorldPos get_centered_point(i32 x, i32 y, i32 z)
 {
     WorldPos result;
 
@@ -43,7 +43,7 @@ function WorldPos get_centered_point(i32 x, i32 y, i32 z)
     return result;
 }
 
-function void init_world(World* World, f32 tile_sizes_in_meters)
+fn void init_world(World* World, f32 tile_sizes_in_meters)
 {
     World->first_free = nullptr;
     for (i32 chunk_i = 0; chunk_i < CountOf(World->world_chunk_hash); ++chunk_i) {
@@ -52,7 +52,7 @@ function void init_world(World* World, f32 tile_sizes_in_meters)
     }
 }
 
-function v3f get_world_diff(WorldPos pos_a, WorldPos pos_b)
+fn v3f get_world_diff(WorldPos pos_a, WorldPos pos_b)
 {
     v3f dif;
     dif.x = (f32)pos_a.chunk_x - (f32)pos_b.chunk_x;
@@ -64,7 +64,7 @@ function v3f get_world_diff(WorldPos pos_a, WorldPos pos_b)
     return result;
 }
 
-function WorldPos map_into_chunk_space(WorldPos pos, v3f offset)
+fn WorldPos map_into_chunk_space(WorldPos pos, v3f offset)
 {
     auto result = pos;
 
@@ -77,7 +77,7 @@ function WorldPos map_into_chunk_space(WorldPos pos, v3f offset)
     return result;
 }
 
-function WorldPos map_into_chunk_space(WorldPos pos, v2f offset)
+fn WorldPos map_into_chunk_space(WorldPos pos, v2f offset)
 {
     v3f offset_v3 = v3_init(offset);
     auto result   = map_into_chunk_space(pos, offset_v3);
@@ -85,7 +85,7 @@ function WorldPos map_into_chunk_space(WorldPos pos, v2f offset)
     return result;
 }
 
-function WorldChunk* get_world_chunk(World* World, i32 chunk_x, i32 chunk_y, i32 chunk_z,
+fn WorldChunk* get_world_chunk(World* World, i32 chunk_x, i32 chunk_y, i32 chunk_z,
                                      Arena* arena = nullptr)
 {
     Assert(chunk_x > -chunk_safe_margin);
@@ -130,7 +130,7 @@ function WorldChunk* get_world_chunk(World* World, i32 chunk_x, i32 chunk_y, i32
     return chunk;
 }
 
-function WorldPos abs_pos_to_world_pos(f32 abs_x, f32 abs_y, f32 abs_z)
+fn WorldPos abs_pos_to_world_pos(f32 abs_x, f32 abs_y, f32 abs_z)
 {
     WorldPos result;
 
@@ -150,7 +150,7 @@ function WorldPos abs_pos_to_world_pos(f32 abs_x, f32 abs_y, f32 abs_z)
     return result;
 }
 
-function void change_entity_location_raw(Arena* arena, World* World, u32 ent_i, WorldPos* old_pos,
+fn void change_entity_location_raw(Arena* arena, World* World, u32 ent_i, WorldPos* old_pos,
                                          WorldPos* new_pos)
 {
     if (is_valid(new_pos)) {
@@ -212,7 +212,7 @@ function void change_entity_location_raw(Arena* arena, World* World, u32 ent_i, 
     }
 }
 
-function void change_entity_location(Arena* arena, World* World, Entity* ent,
+fn void change_entity_location(Arena* arena, World* World, Entity* ent,
                                      WorldPos new_pos_init)
 {
     WorldPos *old_pos = nullptr, *new_pos = nullptr;

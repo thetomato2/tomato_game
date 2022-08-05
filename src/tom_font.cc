@@ -196,7 +196,7 @@ function i32 get_glyph_index(char c)
     return 79;
 }
 
-function ttf_GlyphResult load_ttf_glyph(const char* file_path, f32 point_sz, char glyph)
+fn ttf_GlyphResult load_ttf_glyph(const char* file_path, f32 point_sz, char glyph)
 {
     ttf_GlyphResult result;
 
@@ -222,7 +222,7 @@ function ttf_GlyphResult load_ttf_glyph(const char* file_path, f32 point_sz, cha
 
 // NOTE: hard-coded
 // TODO: dynanic font-sheet creation
-function FontSheet create_font_sheet(const char* name, const char* file_path, f32 point_sz)
+fn FontSheet create_font_sheet(const char* name, const char* file_path, f32 point_sz)
 {
     FontSheet result {};
     result.name = name;
@@ -322,7 +322,7 @@ function FontSheet create_font_sheet(const char* name, const char* file_path, f3
     return result;
 }
 
-function char* write_fontsheet_png(FontSheet* fs)
+fn char* write_fontsheet_png(FontSheet* fs)
 {
     if (!dir_exists("./out")) create_dir("./out");
     char* path_buf = str_copy("./out/", fs->name, "_glyph_table.png");
@@ -330,7 +330,7 @@ function char* write_fontsheet_png(FontSheet* fs)
     return path_buf;
 }
 
-function v2f get_uv_offset(FontSheet* fs, i32 glyph_ind)
+fn v2f get_uv_offset(FontSheet* fs, i32 glyph_ind)
 {
     v2f result;
 
@@ -345,7 +345,7 @@ function v2f get_uv_offset(FontSheet* fs, i32 glyph_ind)
     return result;
 }
 
-function void alloc_glyph_cache(GfxState* gfx, r2i dims)
+fn void alloc_glyph_cache(GfxState* gfx, r2i dims)
 {
     // Reset the buffers if they exists
     if (gfx->glyph_tex) {

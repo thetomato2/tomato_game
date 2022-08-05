@@ -1513,16 +1513,27 @@ inline m4 mat_inverse(m4 a)
 // ===============================================================================================
 
 template<typename T>
-inline r2<T> operator+=(r2<T>& lhs, T rhs)
+inline r2<T> operator*(r2<T>& lhs, T rhs)
 {
     r2<T> res;
 
+    res.x0 = lhs.x0 * rhs;
+    res.y0 = lhs.y0 * rhs;
+    res.x1 = lhs.x1 * rhs;
+    res.y1 = lhs.y1 * rhs;
+
+    return res;
+}
+
+template<typename T>
+inline r2<T> operator+=(r2<T>& lhs, T rhs)
+{
     lhs.min.x += rhs;
     lhs.min.y += rhs;
     lhs.max.x += rhs;
     lhs.max.y += rhs;
 
-    return res;
+    return lhs;
 }
 
 template<typename T>
@@ -1570,7 +1581,7 @@ inline r3<T> rect_init_min_dim(v3<T> min, v3<T> dim)
 }
 
 template<typename T>
-inline r2<T> rect_init_center_half_dim(v2<T> center, v2<T> half_dim)
+inline r2<T> rect_init_half_dim(v2<T> center, v2<T> half_dim)
 {
     r2<T> res;
 
@@ -1581,7 +1592,15 @@ inline r2<T> rect_init_center_half_dim(v2<T> center, v2<T> half_dim)
 }
 
 template<typename T>
-inline r3<T> rect_init_center_half_dim(v3<T> center, v3<T> half_dim)
+inline r2<T> rect_init_square(v2<T> center, T radius)
+{
+    v2<T> half_dim = v2_init(radius);
+
+    return rect_init_half_dim(center, half_dim);
+}
+
+template<typename T>
+inline r3<T> rect_init_half_dim(v3<T> center, v3<T> half_dim)
 {
     r3<T> res;
 
@@ -1592,17 +1611,25 @@ inline r3<T> rect_init_center_half_dim(v3<T> center, v3<T> half_dim)
 }
 
 template<typename T>
-inline r2<T> rect_init_center_dim(v2<T> center, v2<T> dim)
+inline r3<T> rect_init_square(v3<T> center, T radius)
 {
-    r2<T> res = rect_init_center_half_dim(center, dim / (T)2);
+    v3<T> half_dim = v3_init(radius);
+
+    return rect_init_half_dim(center, half_dim);
+}
+
+template<typename T>
+inline r2<T> rect_init_dims(v2<T> center, v2<T> dim)
+{
+    r2<T> res = rect_init_half_dim(center, dim / (T)2);
 
     return res;
 }
 
 template<typename T>
-inline r3<T> rect_init_center_dim(v3<T> center, v3<T> dim)
+inline r3<T> rect_init_dims(v3<T> center, v3<T> dim)
 {
-    r3<T> res = rect_init_center_half_dim(center, dim / (T)2);
+    r3<T> res = rect_init_half_dim(center, dim / (T)2);
 
     return res;
 }
@@ -1738,46 +1765,6 @@ inline r3i rect_f32_to_i32(r3f a)
     res.z1 = round_f32_to_i32(a.z1);
 
     return res;
-}
-
-inline void print(v2f a)
-{
-    printf("(%f, %f)", a.x, a.y);
-}
-
-inline void print(v3f a)
-{
-    printf("(%f, %f, %f)", a.x, a.y, a.z);
-}
-
-inline void print(v4f a)
-{
-    printf("(%f, %f, %f, %f)", a.x, a.y, a.z, a.w);
-}
-
-inline void print(m4 a)
-{
-    for (i32 i = 0; i < 4; ++i) {
-        printf("%f, %f, %f, %f", a.m[i][0], a.m[i][1], a.m[i][2], a.m[i][3]);
-    }
-}
-
-inline void printl(v2f a)
-{
-    printf("(%f, %f)\n", a.x, a.y);
-}
-
-inline void printl(v3f a)
-{
-    printf("(%f, %f, %f)\n", a.x, a.y, a.z);
-}
-
-inline void printl(m4 a)
-{
-    for (i32 i = 0; i < 4; ++i) {
-        printf("%f, %f, %f, %f", a.m[i][0], a.m[i][1], a.m[i][2], a.m[i][3]);
-    }
-    printf("\n");
 }
 
 }  // namespace tom

@@ -8,35 +8,21 @@
 #include "tom_string.hh"
 #include "tom_time.hh"
 #include "tom_file_io.hh"
+#include "tom_texture.hh"
 #if USE_DS5
     #include "tom_DS5.hh"
 #endif
 #include "tom_input.hh"
 #include "tom_sound.hh"
 #include "tom_win32.hh"
-#include "tom_graphics.hh"
+#include "tom_d3d11.hh"
 #include "tom_dx_error.hh"
 // #include "tom_font.hh"
 // #include "tom_camera.hh"
-#include "tom_world.hh"
-#include "tom_entity.hh"
-#include "tom_sim_region.hh"
 #include "tom_game.hh"
 
 namespace tom
 {
-
-struct AppInput
-{
-    Input* current;
-    Input* last;
-};
-
-struct AppVars
-{
-    bool line_mode;
-    f32 unit;
-};
 
 struct AppMemory
 {
@@ -50,17 +36,16 @@ struct AppState
 {
     AppMemory memory;
     void* memory_block;
+    szt total_size;
     Win32State win32;
-    GfxState gfx;
+    D3D11State d3d11;
     SoundState sound;
     Input input;
     GameState* game;
     BackBuffer back_buffer;
-    szt total_size;
     u32 game_update_hertz;
     u32 dpi;
     f32 target_secs_per_frame;
-    AppVars vars;
     i64 performance_counter_frequency;
     u64 frame_cnt;
     u32 work_ind;
@@ -70,22 +55,11 @@ struct AppState
     i32 target_fps;
     char exe_path[MAX_PATH];
     f32 dt;
+    f32 time;
     f32 fov;
-    f32 key_repeat_delay;
-    f32 key_repeat_speed;
-    
+
     f32 device_changed_delay;
 
-    m4 World;
-    m4 view;
-    m4 proj;
-    m4 wvp;
-
-    v4f clear_color;
-    v4f text_color;
-
-    ShaderProg main_shader;
-    // FontSheet font_sheet;
-    char key_buf[256];
+    D3D11ShaderProg main_shader;
 };
 }  // namespace tom
