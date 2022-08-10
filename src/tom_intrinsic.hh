@@ -80,7 +80,7 @@ inline i32 sign_of(i32 val)
     return result;
 }
 
-inline i32 ceil_f32_to_i32(f32 val)
+inline i32 ceilf_to_i32(f32 val)
 {
     i32 result = (i32)ceilf(val);
     return result;

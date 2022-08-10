@@ -102,7 +102,6 @@
             "name": "clang-debug",
             "displayName": "clang-debug",
             "description": "win32 target",
-            "hidden": true,
             "inherits": "conf-windows-common-clang",
             "cacheVariables": {
                 "CMAKE_C_COMPILER": "clang-cl",
@@ -119,7 +118,6 @@
             "name": "clang-RelWithDebInfo",
             "displayName": "clang-RelWithDebInfo",
             "description": "win32 target",
-            "hidden": true,
             "inherits": "conf-windows-common-clang",
             "cacheVariables": {
                 "CMAKE_C_COMPILER": "clang-cl",
@@ -136,7 +134,6 @@
             "name": "clang-Release",
             "displayName": "clang-Release",
             "description": "win32 target",
-            "hidden": true,
             "inherits": "conf-windows-common-clang",
             "cacheVariables": {
                 "CMAKE_C_COMPILER": "clang-cl",
@@ -207,6 +204,14 @@
             "hidden": true,
             "inherits": "test-common",
             "configurePreset": "clang-Release"
+        }
+    ],
+    "buildPresets": [
+        {
+            "name": "clang-debug",
+            "displayName": "Clang 13.0.1 (MSVC CLI) for MSVC 17.2.32630.192 (Visual Studio Community 2022 Release - amd64) - Debug",
+            "configurePreset": "clang",
+            "configuration": "Debug"
         }
     ]
 }

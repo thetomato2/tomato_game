@@ -2,10 +2,17 @@ namespace tom
 {
 #define MAX_PIECE_CNT 4096
 
-struct BackBuffer
+// struct BackBuffer
+// {
+//     void *buf;
+//     i32 width, height, pitch, byt_per_pix;
+// };
+
+struct EnviromentMap
 {
-    void* buf;
-    i32 width, height, pitch, byt_per_pix;
+    // // NOTE: lod[0] is width_pow_2 x height_pow_2;
+    // u32 width_pow_2, height_pow_2;
+    Texture lod[4];
 };
 
 struct RenderBasis
@@ -30,43 +37,38 @@ struct RenderGroupEntryHeader
 
 struct RenderGroupEntryClear
 {
-    RenderGroupEntryHeader header;
-    Color clear_color;
+    Color_u32 clear_color;
 };
 
 struct RenderGroupEntryTexture
 {
-    RenderGroupEntryHeader header;
     RenderBasis basis;
-    Texture* texture;
+    Texture *texture;
     v2f offset;
 };
 
 struct RenderGroupEntryRect
 {
-    RenderGroupEntryHeader header;
     RenderBasis basis;
     v2f dims;
-    Color color;
+    Color_u32 color;
 };
 
 struct RenderGroupEntryRectOutline
 {
-    RenderGroupEntryHeader header;
     RenderBasis basis;
     v2f dims;
     i32 thickness;
-    Color color;
+    Color_u32 color;
 };
 
 struct RenderGroupEntryCoordSystem
 {
     RenderGroupEntryType type;
-    v2f origin;
-    v2f x_axis;
-    v2f y_axis;
-    i32 num_points;
-    Color color;
+    v2f origin, x_axis, y_axis;
+    Color_u32 color;
+    Texture *albedo, *normal;
+    EnviromentMap *top, *middle, *bottom;
 };
 
 struct RenderGroup
@@ -74,7 +76,7 @@ struct RenderGroup
     f32 meters_to_pixels;
     u32 max_pushbuffer_sz;
     u32 pushbuffer_sz;
-    byt* pushbuffer_base;
+    byt *pushbuffer_base;
     Camera cam;
 };
 

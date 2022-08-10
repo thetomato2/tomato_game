@@ -10,24 +10,24 @@ global bool g_focus         = false;
 v2i g_win_dim               = {};
 i32 g_ms_scroll             = {};
 
-fn void toggle_fullscreen(Win32State* state)
+fn void toggle_fullscreen(Win32State* win32)
 {
-    DWORD dwStyle = (DWORD)GetWindowLong(state->hwnd, GWL_STYLE);
+    DWORD dwStyle = (DWORD)GetWindowLong(win32->hwnd, GWL_STYLE);
     if (dwStyle & WS_OVERLAPPEDWINDOW) {
         MONITORINFO mi = { sizeof(mi) };
-        if (GetWindowPlacement(state->hwnd, &state->win_pos) &&
-            GetMonitorInfo(MonitorFromWindow(state->hwnd, MONITOR_DEFAULTTOPRIMARY), &mi)) {
-            SetWindowLong(state->hwnd, GWL_STYLE, dwStyle & ~WS_OVERLAPPEDWINDOW);
-            SetWindowPos(state->hwnd, HWND_TOP, mi.rcMonitor.left, mi.rcMonitor.top,
+        if (GetWindowPlacement(win32->hwnd, &win32->win_pos) &&
+            GetMonitorInfo(MonitorFromWindow(win32->hwnd, MONITOR_DEFAULTTOPRIMARY), &mi)) {
+            SetWindowLong(win32->hwnd, GWL_STYLE, dwStyle & ~WS_OVERLAPPEDWINDOW);
+            SetWindowPos(win32->hwnd, HWND_TOP, mi.rcMonitor.left, mi.rcMonitor.top,
                          mi.rcMonitor.right - mi.rcMonitor.left,
                          mi.rcMonitor.bottom - mi.rcMonitor.top,
                          SWP_NOOWNERZORDER | SWP_FRAMECHANGED);
         }
     } else {
-        SetWindowLong(state->hwnd, GWL_STYLE, dwStyle | WS_OVERLAPPEDWINDOW);
+        SetWindowLong(win32->hwnd, GWL_STYLE, dwStyle | WS_OVERLAPPEDWINDOW);
 
-        SetWindowPlacement(state->hwnd, &state->win_pos);
-        SetWindowPos(state->hwnd, NULL, 0, 0, 0, 0,
+        SetWindowPlacement(win32->hwnd, &win32->win_pos);
+        SetWindowPos(win32->hwnd, NULL, 0, 0, 0, 0,
                      SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER | SWP_NOOWNERZORDER | SWP_FRAMECHANGED);
     }
 }
@@ -177,15 +177,15 @@ fn void create_console()
     }
 }
 
-fn void process_pending_messages(Win32State* state)
+fn void process_pending_messages(Win32State* win32)
 {
-    state->running       = g_running;
-    state->pause         = g_pause;
-    state->resize        = g_resize;
-    state->device_change = g_device_change;
-    state->focus         = g_focus;
-    state->win_dims      = g_win_dim;
-    state->ms_scroll     = g_ms_scroll;
+    win32->running       = g_running;
+    win32->pause         = g_pause;
+    win32->resize        = g_resize;
+    win32->device_change = g_device_change;
+    win32->focus         = g_focus;
+    win32->win_dims      = g_win_dim;
+    win32->ms_scroll     = g_ms_scroll;
 
     g_resize        = false;
     g_device_change = false;
@@ -196,7 +196,7 @@ fn void process_pending_messages(Win32State* state)
         switch (msg.message) {
             case WM_QUIT: {
                 g_running      = false;
-                state->running = false;
+                win32->running = false;
             } break;
             case WM_SYSKEYDOWN:
             case WM_SYSKEYUP:
@@ -210,24 +210,24 @@ fn void process_pending_messages(Win32State* state)
                     switch (VKCode) {
                         case VK_ESCAPE: {
                             g_running      = false;
-                            state->running = false;
+                            win32->running = false;
                         } break;
                         case 'P': {
                             if (is_down) {
                                 g_pause      = !g_pause;
-                                state->pause = g_pause;
+                                win32->pause = g_pause;
                             }
                         } break;
 
                         case (VK_RETURN): {
                             if (alt_key_down) {
-                                toggle_fullscreen(state);
+                                toggle_fullscreen(win32);
                             }
                         } break;
                         case (VK_F4): {
                             if (alt_key_down) {
                                 g_running      = false;
-                                state->running = false;
+                                win32->running = false;
                             }
                         } break;
                         default: break;
@@ -305,16 +305,16 @@ fn void prevent_windows_DPI_scaling()
     }
 }
 
-fn void create_window(Win32State* state)
+fn void create_window(Win32State* win32)
 {
-    state->cls_name = "TomatoWinCls";
+    win32->cls_name = "TomatoWinCls";
 
     WNDCLASS cls { .style         = CS_HREDRAW | CS_VREDRAW | CS_OWNDC,
                    .lpfnWndProc   = WndProc,
-                   .hInstance     = state->hinst,
-                   .hIcon         = state->icon,
+                   .hInstance     = win32->hinst,
+                   .hIcon         = win32->icon,
                    .hCursor       = LoadCursor(NULL, IDC_ARROW),
-                   .lpszClassName = state->cls_name };
+                   .lpszClassName = win32->cls_name };
 
     if (!RegisterClass(&cls)) {
         printf("ERROR--> Failed to register window class!\n");
@@ -334,8 +334,8 @@ fn void create_window(Win32State* state)
 
     RECT wr = { .left   = 0,
                 .top    = 0,
-                .right  = state->win_dims.w + wr.left,
-                .bottom = state->win_dims.h + wr.top };
+                .right  = win32->win_dims.w + wr.left,
+                .bottom = win32->win_dims.h + wr.top };
 
     // if (AdjustWindowRect(&wr, dw_style, false) == 0) {
     //     printf("ERROR--> Failed to adjust window rect");
@@ -347,13 +347,13 @@ fn void create_window(Win32State* state)
         InvalidCodePath;
     }
 
-    state->hwnd = CreateWindowEx(ex_style, cls.lpszClassName, _T("Tomato Game"), dw_style,
+    win32->hwnd = CreateWindowEx(ex_style, cls.lpszClassName, _T("Tomato Game"), dw_style,
                                  CW_USEDEFAULT, CW_USEDEFAULT, wr.right - wr.left,
-                                 wr.bottom - wr.top, NULL, NULL, state->hinst, NULL);
+                                 wr.bottom - wr.top, NULL, NULL, win32->hinst, NULL);
 
-    if (!state->hwnd) {
+    if (!win32->hwnd) {
         printf("Failed to create window!\n");
-        Assert(state->hwnd);
+        Assert(win32->hwnd);
         return;
     }
 
@@ -363,15 +363,15 @@ fn void create_window(Win32State* state)
                                                     .dbcc_classguid =
                                                         GUID_DEVINTERFACE_USB_DEVICE };
 
-    state->notify = RegisterDeviceNotification(
-        state->hwnd, &dev_broadcast,
+    win32->notify = RegisterDeviceNotification(
+        win32->hwnd, &dev_broadcast,
         DEVICE_NOTIFY_WINDOW_HANDLE | DEVICE_NOTIFY_ALL_INTERFACE_CLASSES);
-    Assert(state->notify);
+    Assert(win32->notify);
 
-    ShowWindow(state->hwnd, SW_SHOWNORMAL);
-    UpdateWindow(state->hwnd);
+    ShowWindow(win32->hwnd, SW_SHOWNORMAL);
+    UpdateWindow(win32->hwnd);
 
-    HDC hdc = GetDC(state->hwnd);
+    HDC hdc = GetDC(win32->hwnd);
 
     i32 monitor_refresh_rate = GetDeviceCaps(hdc, VREFRESH);
     printf("Monitor Refresh Rate: %d\n", monitor_refresh_rate);

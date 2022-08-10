@@ -113,7 +113,7 @@ union v4
     };
     struct
     {
-        v3f rgb;
+        v3<T> rgb;
         T _ignored1;
     };
     T e[4];
@@ -146,6 +146,7 @@ union r2
 
 typedef r2<f32> r2f;
 typedef r2<i32> r2i;
+typedef r2<u32> r2u;
 
 template<typename T>
 union r3
@@ -163,6 +164,7 @@ union r3
 
 typedef r3<f32> r3f;
 typedef r3<i32> r3i;
+typedef r3<u32> r3u;
 
 struct Button
 {

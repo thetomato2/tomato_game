@@ -252,7 +252,7 @@ fn void d3d11_init(HWND hwnd, D3D11State* d3d11)
     DXGI_SWAP_CHAIN_DESC1 swap_chain_desc = {
         // .Width  = 0,  // use window width
         // .Height = 0,  // use window height
-        //.Format             = DXGI_FORMAT_B8G8R8A8_UNORM_SRGB;
+        // .Format             = DXGI_FORMAT_B8G8R8A8_UNORM_SRGB,
         .Format      = DXGI_FORMAT_R8G8B8A8_UNORM,
         .SampleDesc  = { .Count = 1, .Quality = 0 },
         .BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT,

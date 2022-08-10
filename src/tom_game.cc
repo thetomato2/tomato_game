@@ -6,7 +6,7 @@
 namespace tom
 {
 
-fn void process_keyboard(const Keyboard& kb, EntityActions* entity_action)
+fn void process_keyboard(const Keyboard &kb, EntityActions *entity_action)
 {
     if (entity_action) {
         if (key_pressed(kb.t)) entity_action->start = true;
@@ -21,7 +21,7 @@ fn void process_keyboard(const Keyboard& kb, EntityActions* entity_action)
 }
 
 #if USE_DS5
-fn void process_ds5(const DS5_State& ds5, EntityActions* entity_action)
+fn void process_ds5(const DS5_State &ds5, EntityActions *entity_action)
 {
     if (entity_action) {
         if (button_pressed(ds5.menu)) entity_action->start = true;
@@ -39,17 +39,17 @@ fn void process_ds5(const DS5_State& ds5, EntityActions* entity_action)
 }
 #endif
 
-fn void game_init(ThreadContext* thread, AppState* state)
+fn void game_init(ThreadContext *thread, AppState *app)
 {
     // ===============================================================================================
     // #Initialization
     // ===============================================================================================
     // init memory
-    GameState* game            = state->game;
+    GameState *game            = app->game;
     game->debug_draw_collision = false;
     game->debug_flag           = false;
 
-    const char* bg = "uv_color_squares_960x540";
+    const char *bg = "uv_color_squares_960x540";
 
     // load textures
     game->player_sprites[EntityDirection::north] =
@@ -90,34 +90,82 @@ fn void game_init(ThreadContext* thread, AppState* state)
     game->camera.dims.w            = 16.0f;
     game->camera.dims.h            = 9.0f;
 
-    for (i32 i = -50; i < 50; ++i) {
-        add_entity(game, EntityType::tree, { (f32)i, 2.0f, 0.0f });
+    // for (i32 i = -50; i < 50; ++i) {
+    //     add_entity(game, EntityType::tree, { (f32)i, 2.0f, 0.0f });
+    // }
+
+    game->env_map_dims = { 512, 256 };
+    for (auto &map : game->env_maps) {
+        v2i dims = game->env_map_dims;
+        for (auto &lod : map.lod) {
+            lod.width  = dims.w;
+            lod.height = dims.h;
+            lod.type   = Texture::Type::R8G8B8A8;
+            lod.buf    = plat_malloc(dims.w * dims.h * texture_get_texel_size(lod.type));
+            // make_sphere_nrm_map(&lod, 1.0f);
+            dims.w >>= 1;
+            dims.h >>= 1;
+        }
     }
+    clear_color(game->env_maps[0].lod, { 0xff0000ff });
+    clear_color(game->env_maps[1].lod, { 0xff00ff00 });
+    clear_color(game->env_maps[2].lod, { 0xffff0000 });
+
+    u32 n_checkers        = 16;
+    Color_u32 checker_col = { 0xf8000000 };
+    u32 checker_x         = (u32)((f32)game->env_maps[0].lod[0].width / (f32)n_checkers);
+    u32 checker_y         = (u32)((f32)game->env_maps[0].lod[0].height / (f32)n_checkers);
+    for (u32 y = 0; y < n_checkers; ++y) {
+        for (u32 x = 0; x < n_checkers; x += 2) {
+            r2u rc;
+            if (y % 2 == 0) {
+                rc = { x * checker_x, y * checker_y, x * checker_x + checker_x,
+                       y * checker_y + checker_y };
+            } else {
+                rc = { x * checker_x + checker_x, y * checker_y, x * checker_x + checker_x * 2,
+                       y * checker_y + checker_y };
+            }
+            draw_rect(game->env_maps[0].lod, rc, checker_col);
+            draw_rect(game->env_maps[1].lod, rc, checker_col);
+            draw_rect(game->env_maps[2].lod, rc, checker_col);
+        }
+    }
+
+    game->test_alb.width  = 128;
+    game->test_alb.height = 128;
+    game->test_alb.type   = Texture::Type::R8G8B8A8;
+    game->test_alb.buf    = plat_malloc(texture_get_size(&game->test_alb));
+    clear_color(&game->test_alb, { 0xfff0f0f0 });
+
+    game->test_nrm.width  = game->test_alb.width;
+    game->test_nrm.height = game->test_alb.height;
+    game->test_nrm.type   = game->test_alb.type;
+    game->test_nrm.buf    = plat_malloc(texture_get_size(&game->test_nrm));
+    make_sphere_nrm_map(&game->test_nrm, 0.0f);
 }
 
-fn void game_update_and_render(ThreadContext* thread, AppState* state)
+fn void game_update_and_render(ThreadContext *thread, AppState *app)
 {
     // ==============================================================================================
     // #START
     // ==============================================================================================
 
-    const f32 dt = state->dt;
+    const f32 dt = app->dt;
 
-    GameState* game         = state->game;
-    Keyboard& kb            = state->input.keyboard;
-    BackBuffer* back_buffer = &state->back_buffer;
-    Camera* cam             = &game->camera;
-    Entity* player          = &game->entities[1];
+    GameState *game      = app->game;
+    Keyboard &kb         = app->input.keyboard;
+    Texture *back_buffer = &app->back_buffer;
+    Camera *cam          = &game->camera;
+    Entity *player       = &game->entities[1];
     // NOTE: overwriting the old arena
     Arena trans_arena =
-        init_arena(state->memory.transient_storage, state->memory.transient_storage_size);
+        init_arena(app->memory.transient_storage, app->memory.transient_storage_size);
 
     // NOTE: only doing one player
     EntityActions player_action = {};
     process_keyboard(kb, &player_action);
 #if USE_DS5
-    if (state->input.ds5_context[0].connected)
-        process_ds5(state->input.ds5_state[0], &player_action);
+    if (app->input.ds5_context[0].connected) process_ds5(app->input.ds5_state[0], &player_action);
 #endif
     game->player_acts[1] = player_action;
 
@@ -127,15 +175,21 @@ fn void game_update_and_render(ThreadContext* thread, AppState* state)
     if (key_down(kb.add)) cam->dims += cam_inc;
     if (key_down(kb.subtract)) cam->dims -= cam_inc;
 
-    RenderGroup* render_group =
+    local constexpr f32 _spd = 100.0f;
+    if (key_down(kb.up)) game->debug_origin.y -= _spd * dt;
+    if (key_down(kb.down)) game->debug_origin.y += _spd * dt;
+    if (key_down(kb.left)) game->debug_origin.x -= _spd * dt;
+    if (key_down(kb.right)) game->debug_origin.x += _spd * dt;
+
+    RenderGroup *render_group =
         alloc_render_group(&trans_arena, Megabytes(4), g_meters_to_pixels, *cam);
 
-    r2f cam_rc        = rect_init_dims(cam->pos, cam->dims);
-    Color clear_color = color(black);
+    r2f cam_rc            = rect_init_dims(cam->pos, cam->dims);
+    Color_u32 clear_color = color_u32(black);
     push_clear(render_group, clear_color);
 
     for (u32 i = 0; i < game->ent_cnt; ++i) {
-        Entity* ent = &game->entities[i];
+        Entity *ent = &game->entities[i];
         if (ent->type == EntityType::null) continue;
 
         if (!is_flag_set(ent->flags, EntityFlags::active))
@@ -184,12 +238,11 @@ fn void game_update_and_render(ThreadContext* thread, AppState* state)
                 } break;
                 case EntityType::sword: {
                 } break;
+
                 case EntityType::stair: {
                     // TODO: stair logic?
                 } break;
-                default: {
-                    InvalidCodePath;
-                } break;
+                default: InvalidCodePath;
             }
 
             v3f ent_delta = calc_entity_delta(ent, ent_act, move_spec, dt);
@@ -239,11 +292,11 @@ fn void game_update_and_render(ThreadContext* thread, AppState* state)
         // #RENDER
         // ===========================================================================================
 
-        auto push_texture_if = [&](Texture* tex) {
+        auto push_texture_if = [&](Texture *tex) {
             if (tex != nullptr)
                 push_texture(render_group, { ent->pos }, tex, ent->sprite_off);
             else
-                push_rect(render_group, { ent->pos }, ent->dims.xy, color(pink));
+                push_rect(render_group, { ent->pos }, ent->dims.xy, color_u32(pink));
         };
 
         switch (ent->type) {
@@ -270,24 +323,44 @@ fn void game_update_and_render(ThreadContext* thread, AppState* state)
             } break;
             case EntityType::stair: {
             } break;
-
-                InvalidDefaultCase;
+            default: InvalidCodePath;
         }
 
         if (game->debug_draw_collision) {
-            push_rect_outline(render_group, { ent->pos }, ent->dims.xy, 2, color(red));
-            push_rect_outline(render_group, { v3_init(cam->pos) }, cam->dims, 2, color(blue));
+            push_rect_outline(render_group, { ent->pos }, ent->dims.xy, 2, color_u32(red));
+            push_rect_outline(render_group, { v3_init(cam->pos) }, cam->dims, 2,
+                              color_u32(light_blue));
         }
     }
 
     v2f screen_mid = { (f32)back_buffer->width / 2.0f, (f32)back_buffer->height / 2.0f };
-    f32 angle      = state->time;
-    v2f origin     = screen_mid;
-    v2f x_axis     = 200.0f * v2f { cos(angle), sin(angle) };
-    v2f y_axis     = { -x_axis.y, x_axis.x };
+    f32 angle      = app->time / 2.0f;
+    v2f origin     = screen_mid + game->debug_origin;
+    // v2f x_axis     = (200.0f + 20.0f * cos(angle)) * v2f { cos(angle), sin(angle) };
+    v2f x_axis = 200.0f * v2f { 1.0f, 0.0f };
+    v2f y_axis = vec_perp(x_axis);
+    // game->debug_origin.x = sin(app->time / 5.0f) * 400.0f;
 
-    push_rect_outline(render_group, { v3_init(cam->pos) }, cam->dims, 2, color(blue));
-    push_coord_system(render_group, origin, x_axis, y_axis, color(yellow), 8);
+    // push_coord_system(render_group, origin - 0.5f * x_axis - 0.5f * y_axis, x_axis, y_axis,
+    //                   &game->bush_sprite, &game->test_nrm, &game->env_maps[2],
+    //                   &game->env_maps[1], &game->env_maps[0]);
+
+    push_coord_system(render_group, origin - 0.5f * x_axis - 0.5f * y_axis, x_axis, y_axis,
+                      &game->test_alb, &game->test_nrm, &game->env_maps[2], &game->env_maps[1],
+                      &game->env_maps[0]);
+
+    u32 y     = 0;
+    f32 scale = 0.9f * (((f32)back_buffer->height / (f32)CountOf(game->env_maps)) /
+                        (f32)game->env_maps[0].lod[0].height);
+    for (auto &map : game->env_maps) {
+        Texture *lod   = map.lod;
+        v2f map_origin = { 0.0f, (f32)y };
+        v2f map_x_axis = scale * v2f { (f32)lod->width, 0.0f };
+        v2f map_y_axis = scale * v2f { 0.0f, (f32)lod->height };
+        push_coord_system(render_group, map_origin, map_x_axis, map_y_axis, lod, nullptr, nullptr,
+                          nullptr, nullptr);
+        y += (u32)((f32)lod->height * scale);
+    }
 
     draw_render_group(render_group, back_buffer);
 }

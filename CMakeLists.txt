@@ -60,6 +60,8 @@ list(APPEND COMPILE_FLAGS
     # -Zo
     )
 
+set(CMAKE_CXX_FLAG -ftime-trace)
+
 list(APPEND COMPILE_DEFS
     TOM_INTERNAL
     TOM_WIN32
@@ -77,8 +79,6 @@ list(APPEND COMMON_LINKER_LIBS
     winmm.lib
     kernel32.lib
     Ole32.lib
-    hid.lib
-    SetupAPI.lib
     d3d11.lib
     d3dcompiler.lib
     dxguid.lib

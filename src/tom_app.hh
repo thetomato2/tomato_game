@@ -42,7 +42,7 @@ struct AppState
     SoundState sound;
     Input input;
     GameState* game;
-    BackBuffer back_buffer;
+    Texture back_buffer;
     u32 game_update_hertz;
     u32 dpi;
     f32 target_secs_per_frame;
@@ -59,6 +59,7 @@ struct AppState
     f32 fov;
 
     f32 device_changed_delay;
+    bool suspend_lost_focus;
 
     D3D11ShaderProg main_shader;
 };

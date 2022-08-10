@@ -1,10 +1,13 @@
 // Interface for the DaulSense controller
-// TODO: use async ReadFile to handle bluetooth buffer being empty when the controller is off
+// TODO: fix the ReadFile bluetooth buffer blocking the thread when the controller is off
 
 #include <initguid.h>
 #include <Hidclass.h>
 #include <SetupAPI.h>
 #include <hidsdi.h>
+
+#pragma comment(lib, "hid.lib")
+#pragma comment(lib, "SetupAPI.lib")
 
 #define DS5_SUCCESS(expr) ((expr) == _DS5_ReturnValue::OK)
 #define DS5_FAILED(expr)  ((expr) != _DS5_ReturnValue::OK)
@@ -322,6 +325,7 @@ fn void DS5_enum_devices(void* ptr_buf, u32 arr_len, u32* ds5_cnt)
 
 fn u32 DS5_init(DS5_Context* out)
 {
+
     DS5_Info info[DS5_MAX_CNT];
     u32 controller_cnt = 0;
     DS5_enum_devices(info, CountOf(info), &controller_cnt);
@@ -362,8 +366,7 @@ fn void DS5_process_button(Button* but, byt is_down)
     }
 }
 
-fn void DS5_process_buttons(DS5_State* state, byt buttons_and_dpad, byt buttons_a,
-                                  byt buttons_b)
+fn void DS5_process_buttons(DS5_State* state, byt buttons_and_dpad, byt buttons_a, byt buttons_b)
 {
     DS5_process_button(&state->dpad_U, buttons_and_dpad & DS5_ISTATE_DPAD_UP);
     DS5_process_button(&state->dpad_R, buttons_and_dpad & DS5_ISTATE_DPAD_RIGHT);
@@ -439,7 +442,6 @@ fn void DS5_parse_hid_buffer(byt* hid_buf, DS5_State* state)
     memcpy(state->accelerometer.e, &hid_buf[0x0f], sizeof(i16) * 3);
     memcpy(state->gyroscope.e, &hid_buf[0x15], sizeof(i16) * 3);
 
-    // Evaluate touch state 1
     u32 touch_1_raw  = *(u32*)(&hid_buf[0x20]);
     state->touch_1.y = (touch_1_raw & 0xFFF00000) >> 20;
     state->touch_1.x = (touch_1_raw & 0x000FFF00) >> 8;
@@ -577,7 +579,7 @@ fn void ds5_get_input(DS5_Context* context, DS5_State* state)
 
     if (context->connection == DS5_Connection::BT) {
         // NOTE: Readfile will block thread because turning off the controller will not disconeect
-        // the device for windows
+        // the device for windows when using bluetooth
 #if 0
         if (SUCCEEDED(ReadFile(context->hnd, context->hid_buf, report_len, NULL, NULL)))
             DS5_parse_hid_buffer(&context->hid_buf[2], state);

@@ -137,12 +137,14 @@ enum CONSOLE_FG_COLORS
     printf("%s\n", str)
 
 #ifdef TOM_INTERNAL
-    #define Assert(x)                                                              \
-        if (!(x)) {                                                                \
-            PrintRed("FAILED ASSERT:") printf(" %s at :%d\n", __FILE__, __LINE__); \
-            __debugbreak();                                                        \
-        }                                                                          \
-        assert(x)
+    #define Assert(x)                                                                  \
+        do {                                                                           \
+            if (!(x)) {                                                                \
+                PrintRed("FAILED ASSERT:") printf(" %s at :%d\n", __FILE__, __LINE__); \
+                __debugbreak();                                                        \
+            }                                                                          \
+            assert(x);                                                                  \
+        } while (0)
     #define DebugBreak(x)   \
         if (x) {            \
             __debugbreak(); \

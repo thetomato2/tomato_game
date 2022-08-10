@@ -23,13 +23,19 @@ inline f32 to_degree(f32 val)
     return (val * 180.0f) / xm_pi;
 }
 
-// Calculate linear interpolation between two floats
-inline f32 lerp(f32 v0, f32 v1, f32 a)
+// inline f32 lerp(f32 v0, f32 v1, f32 a)
+// {
+//     return (1 - a) * v0 + a * v1;
+// }
+
+template<typename T>
+inline T lerp(T v0, T v1, f32 a)
 {
-    return (1 - a) * v0 + a * v1;
+    return (1.0f - a) * v0 + a * v1;
 }
 
-inline f32 bi_lerp(f32 v0, f32 v1, f32 v2, f32 v3, f32 a, f32 b)
+template<typename T>
+inline T bi_lerp(T v0, T v1, T v2, T v3, f32 a, f32 b)
 {
     f32 a1 = 1.0f - a;
     return (1.0f - b) * (v0 * a1 + v1 * a) + b * (v2 * a1 + v3 * a);
@@ -140,6 +146,7 @@ T clamp(T val, T min, T max)
     return res;
 }
 
+
 template<typename T>
 T max(T a, T b)
 {
@@ -161,6 +168,41 @@ inline f32 normalize_coord(T min, T max, T a)
 {
     Assert(a >= min && a <= max);
     return ((f32)a - f32(min)) / ((f32)max - (f32)min);
+}
+
+inline f32 clamp_01(f32 val)
+{
+    return  max(min(val, 1.0f), 0.0f);
+}
+
+inline v2f clamp_01(v2f val)
+{
+    v2f res;
+    res.x = clamp_01(val.x);
+    res.y = clamp_01(val.y);
+
+    return res;
+}
+
+inline v3f clamp_01(v3f val)
+{
+    v3f res;
+    res.x = clamp_01(val.x);
+    res.y = clamp_01(val.y);
+    res.z = clamp_01(val.z);
+
+    return res;
+}
+
+inline v4f clamp_01(v4f val)
+{
+    v4f res;
+    res.x = clamp_01(val.x);
+    res.y = clamp_01(val.y);
+    res.z = clamp_01(val.z);
+    res.w = clamp_01(val.w);
+
+    return res;
 }
 
 // ===============================================================================================
@@ -795,38 +837,25 @@ inline bool operator!=(v4<T> lhs, v4<T>& rhs)
 // #VECTOR FUNCS
 // ===============================================================================================
 
-// NOTE: inner product or dot product
-inline f32 vec_inner(v2f a, v2f b)
+template<typename T>
+inline v2<T> vec_perp(v2<T> a)
 {
-    f32 res = a.x * b.x + a.y * b.y;
-    return res;
-};
-
-inline f32 vec_inner(v3f a, v3f b)
-{
-    f32 res = a.x * b.x + a.y * b.y + a.z * b.z;
-    return res;
-};
-
-inline f32 vec_inner(v4f a, v4f b)
-{
-    f32 res = a.x * b.x + a.y * b.y + a.z * b.z + a.w * b.w;
-    return res;
-};
+    return { -a.y, a.x };
+}
 
 inline f32 vec_dot(v2f a, v2f b)
 {
-    return vec_inner(a, b);
+    return a.x * b.x + a.y * b.y;
 }
 
 inline f32 vec_dot(v3f a, v3f b)
 {
-    return vec_inner(a, b);
+    return a.x * b.x + a.y * b.y + a.z * b.z;
 }
 
 inline f32 vec_dot(v4f a, v4f b)
 {
-    return vec_inner(a, b);
+    return a.x * b.x + a.y * b.y + a.z * b.z + a.w * b.w;
 }
 
 inline v2f vec_lerp(v2f a, v2f b, f32 t)
@@ -890,19 +919,19 @@ inline v4f vec_hadamard(v4f a, v4f b)
 
 inline f32 vec_length_sq(v2f a)
 {
-    f32 res = vec_inner(a, a);
+    f32 res = vec_dot(a, a);
     return res;
 }
 
 inline f32 vec_length_sq(v3f a)
 {
-    f32 res = vec_inner(a, a);
+    f32 res = vec_dot(a, a);
     return res;
 }
 
 inline f32 vec_length_sq(v4f a)
 {
-    f32 res = vec_inner(a, a);
+    f32 res = vec_dot(a, a);
     return res;
 }
 
@@ -926,14 +955,10 @@ inline f32 vec_length(v4f a)
 
 inline v3f vec_normalize(v3f a)
 {
+    // TODO: get rid of assert/ normalize or zero
     f32 len = vec_length(a);
     Assert(len != 0.0f);
-
-    v3f res;
-
-    res.x = a.x / len;
-    res.y = a.y / len;
-    res.z = a.z / len;
+    v3f res = a / len;
 
     return res;
 }
@@ -965,7 +990,7 @@ inline v2f vec_reflect(v2f a, v2f b)
 {
     v2f res;
 
-    f32 dot = vec_inner(a, b);
+    f32 dot = vec_dot(a, b);
 
     res.x = a.x - (2.0f * b.x) * dot;
     res.y = a.y - (2.0f * b.y) * dot;
@@ -977,7 +1002,7 @@ inline v3f vec_reflect(v3f a, v3f b)
 {
     v3f res;
 
-    f32 dot = vec_inner(a, b);
+    f32 dot = vec_dot(a, b);
 
     res.x = a.x - (2.0f * b.x) * dot;
     res.y = a.y - (2.0f * b.y) * dot;
@@ -1034,7 +1059,7 @@ inline quat quat_to_quat(v3f v, f32 a)
 
 inline f32 quat_norm(quat a)
 {
-    f32 i   = vec_inner(a.xyz, a.xyz);
+    f32 i   = vec_dot(a.xyz, a.xyz);
     f32 s   = square(a.w);
     f32 res = sqrt_f32(i + s);
 

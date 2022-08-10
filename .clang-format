@@ -45,7 +45,7 @@ KeepEmptyLinesAtTheStartOfBlocks: 'false'
 Language: Cpp
 MaxEmptyLinesToKeep: '1'
 PackConstructorInitializers: 'Never'
-PointerAlignment: Left
+PointerAlignment: Right
 # SeparateDefinitionBlocks : 'Always'
 SortIncludes: 'true'
 SpaceAfterCStyleCast: 'false'

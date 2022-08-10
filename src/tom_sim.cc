@@ -120,8 +120,8 @@ fn void move_entity(GameState* game, Entity* ent, v3f ent_delta, const f32 dt)
 
         if (hit_ent) {
             v3f wall_nrm_v3 = v3_init(wall_nrm);
-            ent->vel -= 1.0f * vec_inner(ent->vel, wall_nrm_v3) * wall_nrm_v3;
-            ent_delta -= 1.0f * vec_inner(ent_delta, wall_nrm_v3) * wall_nrm_v3;
+            ent->vel -= 1.0f * vec_dot(ent->vel, wall_nrm_v3) * wall_nrm_v3;
+            ent_delta -= 1.0f * vec_dot(ent_delta, wall_nrm_v3) * wall_nrm_v3;
         }
         // REVIEW: t_min is causing collision to always happen
         ent->pos += t_min * ent_delta;
