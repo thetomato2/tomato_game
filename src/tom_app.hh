@@ -27,21 +27,29 @@ namespace tom
 struct AppMemory
 {
     u64 permanent_storage_size;
-    void* permanent_storage;  // NOTE: required to be cleared to 0!
+    void *permanent_storage;  // NOTE: required to be cleared to 0!
     u64 transient_storage_size;
-    void* transient_storage;  // NOTE: required to be cleared to 0!
+    void *transient_storage;  // NOTE: required to be cleared to 0!
+
+#ifdef TOM_INTERNAL
+    debug_CycleCounter counters[256];
+#endif
 };
+
+#ifdef TOM_INTERNAL
+global AppMemory *debug_global_mem;
+#endif
 
 struct AppState
 {
     AppMemory memory;
-    void* memory_block;
+    void *memory_block;
     szt total_size;
     Win32State win32;
     D3D11State d3d11;
     SoundState sound;
     Input input;
-    GameState* game;
+    GameState *game;
     Texture back_buffer;
     u32 game_update_hertz;
     u32 dpi;

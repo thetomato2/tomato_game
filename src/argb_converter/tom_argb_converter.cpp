@@ -36,8 +36,8 @@ struct bitmap_header
     u16 reserved_2;
     u32 bitmap_offset;
     u32 size;
-    s32 width;
-    s32 height;
+    i32 width;
+    i32 height;
     u16 planes;
     u16 bits_per_pixel;
 };
@@ -52,8 +52,8 @@ struct argb_header
 
 struct bitmap_img
 {
-    s32 width;
-    s32 height;
+    i32 width;
+    i32 height;
     u32 *pixel_ptr;
 };
 
@@ -134,8 +134,8 @@ load_bmp(const char *file_name)
     return result;
 }
 
-s32
-main(s32 argc, char *argv[])
+i32
+main(i32 argc, char *argv[])
 {
     if (argc != 2) {
         printf("needs a valid path argument!\n");
@@ -149,7 +149,7 @@ main(s32 argc, char *argv[])
 
     // printf("%s\n", img_path_buf);
 
-    s32 width, height, channels;
+    i32 width, height, channels;
     byt *image = stbi_load(argv[1], &width, &height, &channels, 0);
 
     if (!image) {

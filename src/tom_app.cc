@@ -15,6 +15,22 @@ global ID3D11Texture2D *g_tex;
 global ID3D11Texture2D *g_staging_tex;
 global ID3D11ShaderResourceView *g_sha_rsc_view;
 
+fn void handle_cycle_counters()
+{
+#ifdef TOM_INTERNAL
+    PrintMessage("Debug Cycle Counts:");
+    for (i32 i = 0; i < CountOf(debug_global_mem->counters); ++i) {
+        debug_CycleCounter *counter = &debug_global_mem->counters[i];
+        if (counter->hit_cnt) {
+            printf("cycles: %llu hits: %d avg: %llu\n", counter->cycle_cnt, counter->hit_cnt,
+                   counter->cycle_cnt / (u64)counter->hit_cnt);
+            counter->cycle_cnt = 0;
+            counter->hit_cnt   = 0;
+        }
+    }
+#endif
+}
+
 fn void on_device_change(AppState *app)
 {
     if (app->device_changed_delay > 0.5f) {
@@ -26,31 +42,23 @@ fn void on_device_change(AppState *app)
     }
 }
 
-fn void on_resize(AppState *app)
+fn void create_resources(AppState *app)
 {
     auto d3d11 = &app->d3d11;
 
-    f32 aspect = (f32)app->win32.win_dims.w / (f32)app->win32.win_dims.h;
-    // app->proj = mat_proj_persp(aspect, app->fov, 1.0f, 1000.0f);
-    d3d11_on_resize(d3d11, app->win32.win_dims);
-
-    // NOTE(Derek): for some reason, and I can't figure out why becuase the render target in the
-    // graphical debugger is correct, the backbuffer's width needs to be 32 bit aligned or the pitch
-    // is off and it distorts the final image in the window. And its happening after present is
-    // called so I have no fucking clue.
+    // NOTE(Derek): for some reason, and I can't figure out why because the render target in the
+    // graphical debugger is correct, the back buffer's width needs to be 32 bit aligned or the
+    // pitch is off and it distorts the final image in the window. And its happening after present
+    // is called so I have no fucking clue.
     i32 padding = 32;
     v2i aligned_dims;
     aligned_dims.w = app->win32.win_dims.w - app->win32.win_dims.w % padding;
     aligned_dims.h = app->win32.win_dims.h - app->win32.win_dims.h % padding;
 
-    plat_free(app->back_buffer.buf);
     app->back_buffer.width  = aligned_dims.w;
     app->back_buffer.height = aligned_dims.h;
+    app->back_buffer.type   = Texture::Type::R8G8B8A8;
     app->back_buffer.buf    = plat_malloc(texture_get_size(app->back_buffer));
-
-    g_tex->Release();
-    g_staging_tex->Release();
-    g_sha_rsc_view->Release();
 
     D3D11_TEXTURE2D_DESC tex_desc = { .Width      = (u32)app->back_buffer.width,
                                       .Height     = (u32)app->back_buffer.height,
@@ -71,49 +79,39 @@ fn void on_resize(AppState *app)
     d3d_Check(d3d11->device->CreateShaderResourceView(g_tex, nullptr, &g_sha_rsc_view));
 }
 
-// ===============================================================================================
-// #INIT
-// ===============================================================================================
-fn void app_init(AppState *app)
+fn void on_resize(AppState *app)
 {
     auto d3d11 = &app->d3d11;
-    app->game  = (GameState *)plat_malloc(sizeof(GameState));
-    app->fov   = 1.0f;
 
-    app->input = init_input();
+    f32 aspect = (f32)app->win32.win_dims.w / (f32)app->win32.win_dims.h;
+    // app->proj = mat_proj_persp(aspect, app->fov, 1.0f, 1000.0f);
+    d3d11_on_resize(d3d11, app->win32.win_dims);
 
-    app->main_shader = d3d11_create_shader_prog(d3d11, L"..\\..\\shaders\\fs_blit.hlsl");
-    v2i aligned_dims;
-    // aligned_dims.w =;
+    g_tex->Release();
+    g_staging_tex->Release();
+    g_sha_rsc_view->Release();
+    plat_free(app->back_buffer.buf);
 
-    app->back_buffer.width  = app->win32.win_dims.w;
-    app->back_buffer.height = app->win32.win_dims.h;
-    app->back_buffer.type   = Texture::Type::R8G8B8A8;
-    app->back_buffer.buf    = plat_malloc(texture_get_size(app->back_buffer));
+    create_resources(app);
+}
 
-    D3D11_TEXTURE2D_DESC tex_desc = { .Width      = (u32)app->back_buffer.width,
-                                      .Height     = (u32)app->back_buffer.height,
-                                      .ArraySize  = 1,
-                                      .Format     = DXGI_FORMAT_R8G8B8A8_UNORM,
-                                      .SampleDesc = { .Count = 1, .Quality = 0 },
-                                      .Usage      = D3D11_USAGE_DEFAULT,
-                                      .BindFlags  = D3D11_BIND_SHADER_RESOURCE };
+/////////////////////////////////////////////////////////////////////////////////////////////////
+// #INIT
+fn void app_init(AppState *app)
+{
+    app->game = (GameState *)plat_malloc(sizeof(GameState));
+    app->fov  = 1.0f;
 
-    d3d_Check(d3d11->device->CreateTexture2D(&tex_desc, NULL, &g_tex));
+    app->input       = init_input();
+    app->main_shader = d3d11_create_shader_prog(&app->d3d11, L"..\\..\\shaders\\fs_blit.hlsl");
 
-    tex_desc.Usage          = D3D11_USAGE_STAGING;
-    tex_desc.BindFlags      = 0;
-    tex_desc.CPUAccessFlags = D3D11_CPU_ACCESS_READ | D3D11_CPU_ACCESS_WRITE;
-
-    d3d_Check(d3d11->device->CreateTexture2D(&tex_desc, NULL, &g_staging_tex));
-    d3d_Check(d3d11->device->CreateShaderResourceView(g_tex, nullptr, &g_sha_rsc_view));
+    create_resources(app);
 
     game_init(nullptr, app);
 }
 
-// ===============================================================================================
+/////////////////////////////////////////////////////////////////////////////////////////////////
 // #UPDATE
-// ===============================================================================================
 fn void app_update(AppState *app)
 {
     auto d3d11 = &app->d3d11;
@@ -137,12 +135,15 @@ fn void app_update(AppState *app)
     }
 
     if (app->win32.focus || !app->suspend_lost_focus) {
+        BeginTimedBlock(Render);
         game_update_and_render(nullptr, app);
+        EndTimedBlock(Render);
+
         if (key_pressed(kb->f8)) {
             local i32 x = 0;
             auto bb     = &app->back_buffer;
             if (!dir_exists("./out")) create_dir("./out");
-            char c[2]            = { itos(x++), '\0' };
+            char c[2]            = { itoc(x++), '\0' };
             ScopedPtr<char> path = str_cat("./out/", (const char *)&c[0], "_back_buffer.png");
             stbi_write_png(path.get(), bb->width, bb->height, 4, bb->buf,
                            texture_get_texel_size(bb->type));
@@ -173,7 +174,7 @@ fn void app_update(AppState *app)
     once_only = true;
 
     i32 glyph_ind = 0;
-    m4 model      = mat_identity();
+    m4 model      = m4_identity();
 
 #ifdef TOM_INTERNAL
     if (key_pressed(kb->f3)) d3d11_print_info_queue(d3d11);
@@ -192,11 +193,12 @@ fn void app_update(AppState *app)
 
     d3d_Check(d3d11->swap_chain->Present(1, 0));
 
+    handle_cycle_counters();
+
 }  // namespace tom
 
-// ===============================================================================================
+//////////////////////////////////////////////////////////////////////////////////////////////////
 // #START
-// ===============================================================================================
 fn i32 app_start(HINSTANCE hinst)
 {
     const TCHAR *icon_path = _T("..\\..\\data\\tomato.ico");
@@ -283,6 +285,10 @@ fn i32 app_start(HINSTANCE hinst)
     app.memory.permanent_storage = app.memory_block;
     app.memory.transient_storage =
         (u8 *)app.memory.permanent_storage + app.memory.permanent_storage_size;
+
+#ifdef TOM_INTERNAL
+    debug_global_mem = &app.memory;
+#endif
 
     app.win32.win_dims.w = 1280;
     app.win32.win_dims.h = 720;

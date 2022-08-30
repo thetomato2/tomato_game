@@ -5,28 +5,23 @@ namespace tom
 // #FREE_FUNCS
 // ===============================================================================================
 
-global constexpr f32 eps_f32    = 0.00001f;
-global constexpr f32 xm_pi      = 3.141592654f;
-global constexpr f32 xm_2pi     = 6.283185307f;
-global constexpr f32 xm_1divpi  = 0.318309886f;
-global constexpr f32 xm_1div2pi = 0.159154943f;
-global constexpr f32 xm_pidiv2  = 1.570796327f;
-global constexpr f32 xm_pidiv4  = 0.785398163f;
+global constexpr f32 EPS_F32    = 0.00001f;
+global constexpr f32 XM_PI      = 3.141592654f;
+global constexpr f32 XM_2PI     = 6.283185307f;
+global constexpr f32 XM_1DIVPI  = 0.318309886f;
+global constexpr f32 XM_1DIV2PI = 0.159154943f;
+global constexpr f32 XM_PIDIV2  = 1.570796327f;
+global constexpr f32 XM_PIDIV4  = 0.785398163f;
 
 inline f32 to_radian(f32 val)
 {
-    return (val * xm_pi) / 180.0f;
+    return (val * XM_PI) / 180.0f;
 }
 
 inline f32 to_degree(f32 val)
 {
-    return (val * 180.0f) / xm_pi;
+    return (val * 180.0f) / XM_PI;
 }
-
-// inline f32 lerp(f32 v0, f32 v1, f32 a)
-// {
-//     return (1 - a) * v0 + a * v1;
-// }
 
 template<typename T>
 inline T lerp(T v0, T v1, f32 a)
@@ -37,8 +32,7 @@ inline T lerp(T v0, T v1, f32 a)
 template<typename T>
 inline T bi_lerp(T v0, T v1, T v2, T v3, f32 a, f32 b)
 {
-    f32 a1 = 1.0f - a;
-    return (1.0f - b) * (v0 * a1 + v1 * a) + b * (v2 * a1 + v3 * a);
+    return (1.0f - b) * (v0 * (1.0f - a) + v1 * a) + b * (v2 * (1.0f - a) + v3 * a);
 }
 
 inline i32 fast_floor(f32 fp)
@@ -71,29 +65,27 @@ inline f32 safe_ratio_1(f32 numerator, f32 divisor)
 
 inline bool equals_f32(f32 a, f32 b)
 {
-    bool res = (fabsf(a - b)) <= (eps_f32 * fmaxf(1.0f, fmaxf(fabsf(a), fabsf(b))));
-
-    return res;
+    return (fabsf(a - b)) <= (EPS_F32 * fmaxf(1.0f, fmaxf(fabsf(a), fabsf(b))));
 }
 
-inline void scalar_sin_cos(f32* p_sin, f32* p_cos, f32 val)
+inline void scalar_sin_cos(f32 *p_sin, f32 *p_cos, f32 val)
 {
     Assert(p_sin);
     Assert(p_cos);
-    f32 quo = xm_1div2pi * val;
+    f32 quo = XM_1DIV2PI * val;
 
     if (val >= 0.0f)
         quo = (f32)(i32)(quo + 0.5f);
     else
         quo = (f32)(i32)(quo - 0.5f);
 
-    f32 y = val - xm_2pi * quo;
+    f32 y = val - XM_2PI * quo;
     f32 sign;
-    if (y > xm_pidiv2) {
-        y    = xm_pi - y;
+    if (y > XM_PIDIV2) {
+        y    = XM_PI - y;
         sign = -1.0f;
-    } else if (y < -xm_pidiv2) {
-        y    = -xm_pi - y;
+    } else if (y < -XM_PIDIV2) {
+        y    = -XM_PI - y;
         sign = -1.0f;
     } else {
         sign = 1.0f;
@@ -120,8 +112,7 @@ inline void scalar_sin_cos(f32* p_sin, f32* p_cos, f32 val)
 
 inline bool near_equal_f32(f32 a, f32 b, f32 eps = 0.00001f)
 {
-    f32 delta = a - b;
-    return fabsf(delta) <= eps;
+    return fabsf(a - b) <= eps;
 }
 
 template<typename T>
@@ -145,7 +136,6 @@ T clamp(T val, T min, T max)
 
     return res;
 }
-
 
 template<typename T>
 T max(T a, T b)
@@ -172,7 +162,7 @@ inline f32 normalize_coord(T min, T max, T a)
 
 inline f32 clamp_01(f32 val)
 {
-    return  max(min(val, 1.0f), 0.0f);
+    return max(min(val, 1.0f), 0.0f);
 }
 
 inline v2f clamp_01(v2f val)
@@ -210,28 +200,6 @@ inline v4f clamp_01(v4f val)
 // ===============================================================================================
 
 template<typename T>
-inline v2<T> v2_init(T a)
-{
-    v2<T> res;
-
-    res.x = a;
-    res.y = a;
-
-    return res;
-}
-
-template<typename T>
-inline v2<T> v2_init(T x, T y)
-{
-    v2<T> res;
-
-    res.x = x;
-    res.y = y;
-
-    return res;
-}
-
-template<typename T>
 inline v2<T> operator+(v2<T> lhs, v2<T> rhs)
 {
     v2<T> res;
@@ -254,7 +222,7 @@ inline v2<T> operator+(v2<T> lhs, T rhs)
 }
 
 template<typename T>
-inline v2<T>& operator+=(v2<T>& lhs, v2<T> rhs)
+inline v2<T> &operator+=(v2<T> &lhs, v2<T> rhs)
 {
     lhs = lhs + rhs;
 
@@ -262,7 +230,7 @@ inline v2<T>& operator+=(v2<T>& lhs, v2<T> rhs)
 }
 
 template<typename T>
-inline v2<T>& operator+=(v2<T>& lhs, T rhs)
+inline v2<T> &operator+=(v2<T> &lhs, T rhs)
 {
     lhs.x += rhs;
     lhs.y += rhs;
@@ -304,7 +272,7 @@ inline v2<T> operator-(v2<T> lhs, T rhs)
 }
 
 template<typename T>
-inline v2<T>& operator-=(v2<T>& lhs, v2<T> rhs)
+inline v2<T> &operator-=(v2<T> &lhs, v2<T> rhs)
 {
     lhs = lhs - rhs;
 
@@ -312,7 +280,7 @@ inline v2<T>& operator-=(v2<T>& lhs, v2<T> rhs)
 }
 
 template<typename T>
-inline v2<T>& operator-=(v2<T>& lhs, T rhs)
+inline v2<T> &operator-=(v2<T> &lhs, T rhs)
 {
     lhs = lhs - rhs;
 
@@ -342,7 +310,7 @@ inline v2<T> operator*(v2<T> lhs, T rhs)
 }
 
 template<typename T>
-inline v2<T>& operator*=(v2<T>& lhs, T rhs)
+inline v2<T> &operator*=(v2<T> &lhs, T rhs)
 {
     lhs.x *= rhs;
     lhs.y *= rhs;
@@ -362,7 +330,7 @@ inline v2<T> operator/(v2<T> lhs, T rhs)
 }
 
 template<typename T>
-inline v2<T>& operator/=(v2<T>& lhs, T rhs)
+inline v2<T> &operator/=(v2<T> &lhs, T rhs)
 {
     lhs.x /= rhs;
     lhs.y /= rhs;
@@ -371,13 +339,13 @@ inline v2<T>& operator/=(v2<T>& lhs, T rhs)
 }
 
 template<typename T>
-inline bool operator==(v2<T>& lhs, v2<T>& rhs)
+inline bool operator==(v2<T> &lhs, v2<T> &rhs)
 {
     return lhs.x == rhs.x && lhs.y == rhs.y;
 }
 
 template<typename T>
-inline bool operator!=(v2<T>& lhs, v2<T>& rhs)
+inline bool operator!=(v2<T> &lhs, v2<T> &rhs)
 {
     return !(lhs == rhs);
 }
@@ -453,7 +421,7 @@ inline v3<T> operator+(v3<T> lhs, T rhs)
 }
 
 template<typename T>
-inline v3<T>& operator+=(v3<T>& lhs, v3<T> rhs)
+inline v3<T> &operator+=(v3<T> &lhs, v3<T> rhs)
 {
     lhs = lhs + rhs;
 
@@ -461,7 +429,7 @@ inline v3<T>& operator+=(v3<T>& lhs, v3<T> rhs)
 }
 
 template<typename T>
-inline v3<T>& operator+=(v3<T>& lhs, T rhs)
+inline v3<T> &operator+=(v3<T> &lhs, T rhs)
 {
     lhs = lhs + rhs;
 
@@ -504,7 +472,7 @@ inline v3<T> operator-(v3<T> lhs, T rhs)
 }
 
 template<typename T>
-inline v3<T>& operator-=(v3<T>& lhs, v3<T> rhs)
+inline v3<T> &operator-=(v3<T> &lhs, v3<T> rhs)
 {
     lhs = lhs - rhs;
 
@@ -512,7 +480,7 @@ inline v3<T>& operator-=(v3<T>& lhs, v3<T> rhs)
 }
 
 template<typename T>
-inline v3<T>& operator-=(v3<T>& lhs, T rhs)
+inline v3<T> &operator-=(v3<T> &lhs, T rhs)
 {
     lhs = lhs - rhs;
 
@@ -544,7 +512,7 @@ inline v3<T> operator*(v3<T> lhs, T rhs)
 }
 
 template<typename T>
-inline v3<T>& operator*=(v3<T>& lhs, T rhs)
+inline v3<T> &operator*=(v3<T> &lhs, T rhs)
 {
     lhs = lhs * rhs;
 
@@ -564,7 +532,7 @@ inline v3<T> operator/(v3<T> lhs, T rhs)
 }
 
 template<typename T>
-inline v3<T>& operator/=(v3<T>& lhs, T rhs)
+inline v3<T> &operator/=(v3<T> &lhs, T rhs)
 {
     lhs = lhs / rhs;
 
@@ -572,13 +540,13 @@ inline v3<T>& operator/=(v3<T>& lhs, T rhs)
 }
 
 template<typename T>
-inline bool operator==(v3<T>& lhs, v3<T> rhs)
+inline bool operator==(v3<T> &lhs, v3<T> rhs)
 {
     return lhs.x == rhs.x && lhs.y == rhs.y && lhs.z == rhs.z;
 }
 
 template<typename T>
-inline bool operator!=(v3<T>& lhs, v3<T> rhs)
+inline bool operator!=(v3<T> &lhs, v3<T> rhs)
 {
     return !(lhs == rhs);
 }
@@ -828,7 +796,7 @@ inline bool operator==(v4<T> lhs, v4<T> rhs)
 }
 
 template<typename T>
-inline bool operator!=(v4<T> lhs, v4<T>& rhs)
+inline bool operator!=(v4<T> lhs, v4<T> &rhs)
 {
     return !(lhs == rhs);
 }
@@ -953,6 +921,7 @@ inline f32 vec_length(v4f a)
     return res;
 }
 
+// NOTE: does not handle zero length, check vec_noz
 inline v3f vec_normalize(v3f a)
 {
     // TODO: get rid of assert/ normalize or zero
@@ -961,6 +930,17 @@ inline v3f vec_normalize(v3f a)
     v3f res = a / len;
 
     return res;
+}
+
+// normalize or zero
+inline v3f vec_noz(v3f a)
+{
+    f32 len_sq = vec_length_sq(a);
+    if (len_sq > square(EPS_F32)) {
+        return a * (1.0f / sqrt_f32(len_sq));
+    }
+
+    return {};
 }
 
 inline f32 vec_distance(v2f a, v2f b)
@@ -1000,13 +980,7 @@ inline v2f vec_reflect(v2f a, v2f b)
 
 inline v3f vec_reflect(v3f a, v3f b)
 {
-    v3f res;
-
-    f32 dot = vec_dot(a, b);
-
-    res.x = a.x - (2.0f * b.x) * dot;
-    res.y = a.y - (2.0f * b.y) * dot;
-    res.z = a.z - (2.0f * b.z) * dot;
+    v3f res = a - 2.0f * vec_dot(a, b) * b;
 
     return res;
 }
@@ -1133,13 +1107,199 @@ inline v3f quat_rotate(v3f v, quat q)
     return res;
 }
 
-// ===============================================================================================
+///////////////////////////////////////////////////////////////////////////////////////
+// #Matrix 3x3
+
+inline m3 operator*(m3 a, m3 b)
+{
+    m3 res;
+
+    res.e[0] = a.e[0] * b.e[0] + a.e[1] * b.e[3] + a.e[2] * b.e[6];
+    res.e[1] = a.e[0] * b.e[1] + a.e[1] * b.e[4] + a.e[2] * b.e[7];
+    res.e[2] = a.e[0] * b.e[2] + a.e[1] * b.e[5] + a.e[2] * b.e[8];
+
+    res.e[3] = a.e[3] * b.e[0] + a.e[4] * b.e[3] + a.e[6] * b.e[6];
+    res.e[4] = a.e[3] * b.e[1] + a.e[4] * b.e[4] + a.e[6] * b.e[7];
+    res.e[5] = a.e[3] * b.e[2] + a.e[4] * b.e[5] + a.e[6] * b.e[8];
+
+    res.e[6] = a.e[6] * b.e[0] + a.e[7] * b.e[3] + a.e[8] * b.e[6];
+    res.e[7] = a.e[6] * b.e[1] + a.e[7] * b.e[4] + a.e[8] * b.e[7];
+    res.e[8] = a.e[6] * b.e[2] + a.e[7] * b.e[5] + a.e[8] * b.e[8];
+
+    return res;
+}
+
+inline v2f m3_transform(m3 a, v2f p, f32 Pw = 1.0f)
+{
+    v2f res;
+
+    res.x = p.x * a.m[0][0] + p.y * a.m[0][1] + Pw * a.m[0][2];
+    res.y = p.x * a.m[1][0] + p.y * a.m[1][1] + Pw * a.m[1][2];
+
+    return res;
+}
+
+inline v2f operator*(m3 a, v2f p)
+{
+    return m3_transform(a, p, 1.0f);
+}
+
+inline m3 m3_identity(f32 a = 1.0f)
+{
+    return { a, 0.0f, 0.0f, 0.0f, a, 0.0f, 0.0f, 0.0f, 1.0f };
+}
+
+inline m3 m3_rot(f32 a)
+{
+    f32 c = cos(a);
+    f32 s = sin(a);
+
+    // clang-format off
+    m3 res = {
+         c, s, 0.0f,
+         -s, c, 0.0f,
+         0.0f, 0.0f, 1.0f
+    };
+    // clang-format on
+
+    return res;
+}
+
+inline m3 m3_rot(m3 a, f32 b)
+{
+    return m3_rot(b) * a;
+}
+
+inline m3 m3_trans(v2f t)
+{
+    m3 res = m3_identity();
+
+    res.m[2][0] = t.x;
+    res.m[2][1] = t.y;
+
+    return res;
+}
+
+inline m3 m3_trans(m3 a, v2f t)
+{
+    m3 res = a;
+
+    res.m[2][0] += t.x;
+    res.m[2][1] += t.y;
+
+    return res;
+}
+
+inline m3 m3_trans_x(m3 a, f32 tx)
+{
+    a.m[2][0] += tx;
+
+    return a;
+}
+
+inline m3 m3_trans_y(m3 a, f32 ty)
+{
+    a.m[2][1] += ty;
+
+    return a;
+}
+
+inline m3 m3_set_trans(m3 a, v2f t)
+{
+    a.m[2][0] = t.x;
+    a.m[2][1] = t.y;
+
+    return a;
+}
+
+inline m3 m3_set_trans_x(m3 a, f32 tx)
+{
+    a.m[2][0] = tx;
+
+    return a;
+}
+
+inline m3 m3_set_trans_y(m3 a, f32 ty)
+{
+    a.m[2][1] = ty;
+
+    return a;
+}
+
+inline m3 m3_sca(m3 a, f32 s)
+{
+    m3 b = m3_identity(s);
+    return b * a;
+}
+
+inline m3 m3_sca_x(m3 a, f32 s)
+{
+    m3 b   = m3_identity();
+    b.e[0] = s;
+    return b * a;
+}
+
+inline m3 m3_sca_y(m3 a, f32 s)
+{
+    m3 b   = m3_identity();
+    b.e[4] = s;
+    return b * a;
+}
+
+inline m3 m3_shear_x(m3 a, f32 s)
+{
+    m3 b   = m3_identity();
+    b.e[1] = s;
+    return b * a;
+}
+
+inline m3 m3_shear_y(m3 a, f32 s)
+{
+    m3 b   = m3_identity();
+    b.e[3] = s;
+    return a * b;
+}
+
+inline m3 m3_reflect(m3 a)
+{
+    a.e[0] = -a.e[0];
+    a.e[4] = -a.e[4];
+    return a;
+}
+
+inline m3 m3_reflect_x(m3 a)
+{
+    a.e[4] = -a.e[4];
+    return a;
+}
+
+inline m3 m3_reflect_y(m3 a)
+{
+    a.e[0] = -a.e[0];
+    return a;
+}
+
+// TODO: this is wrong
+inline m3 m3_rot_p(m3 a, v2f p, f32 t)
+{
+    m3 b = m3_identity();
+    b    = m3_trans(b, p);
+    b    = m3_rot(b, t);
+
+    return a * b;
+}
+
+inline v2f m3_get_p(m3 a)
+{
+    return { a.m[2][0], a.m[2][1] };
+}
+
+///////////////////////////////////////////////////////////////////////////////////////
 // #Matrix 4x4
-// ===============================================================================================
 
 inline m4 operator*(m4 a, m4 b)
 {
-    m4 res = {};
+    m4 res;
 
     res.e[0]  = a.e[0] * b.e[0] + a.e[1] * b.e[4] + a.e[2] * b.e[8] + a.e[3] * b.e[12];
     res.e[1]  = a.e[0] * b.e[1] + a.e[1] * b.e[5] + a.e[2] * b.e[9] + a.e[3] * b.e[13];
@@ -1161,7 +1321,7 @@ inline m4 operator*(m4 a, m4 b)
     return res;
 }
 
-inline v3f transform(m4 a, v3f p, f32 Pw = 1.0f)
+inline v3f m4_transform(m4 a, v3f p, f32 Pw = 1.0f)
 {
     v3f res = {};
 
@@ -1174,9 +1334,7 @@ inline v3f transform(m4 a, v3f p, f32 Pw = 1.0f)
 
 inline v3f operator*(m4 a, v3f p)
 {
-    v3f res = transform(a, p, 1.0f);
-
-    return res;
+    return m4_transform(a, p, 1.0f);
 }
 
 inline m4 mat_y_up_to_z_up()
@@ -1187,16 +1345,14 @@ inline m4 mat_y_up_to_z_up()
     return res;
 }
 
-inline m4 mat_identity(f32 a = 1.0f)
+inline m4 m4_identity(f32 a = 1.0f)
 {
-    m4 res = {
+    return {
         a, 0.0f, 0.0f, 0.0f, 0.0f, a, 0.0f, 0.0f, 0.0f, 0.0f, a, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f
     };
-
-    return res;
 }
 
-inline m4 mat_rot_x(f32 a)
+inline m4 m4_rot_x(f32 a)
 {
     f32 c = cos(a);
     f32 s = sin(a);
@@ -1213,12 +1369,12 @@ inline m4 mat_rot_x(f32 a)
     return res;
 }
 
-inline m4 mat_rot_x(m4 a, f32 b)
+inline m4 m4_rot_x(m4 a, f32 b)
 {
-    return a * mat_rot_x(b);
+    return a * m4_rot_x(b);
 }
 
-inline m4 mat_rot_y(f32 a)
+inline m4 m4_rot_y(f32 a)
 {
     f32 c = cos(a);
     f32 s = sin(a);
@@ -1235,12 +1391,12 @@ inline m4 mat_rot_y(f32 a)
     return res;
 }
 
-inline m4 mat_rot_y(m4 a, f32 b)
+inline m4 m4_rot_y(m4 a, f32 b)
 {
-    return a * mat_rot_y(b);
+    return a * m4_rot_y(b);
 }
 
-inline m4 mat_rot_z(f32 a)
+inline m4 m4_rot_z(f32 a)
 {
     f32 c = cos(a);
     f32 s = sin(a);
@@ -1252,13 +1408,13 @@ inline m4 mat_rot_z(f32 a)
     return res;
 }
 
-inline m4 mat_rot_z(m4 a, f32 b)
+inline m4 m4_rot_z(m4 a, f32 b)
 {
-    return a * mat_rot_z(b);
+    return a * m4_rot_z(b);
 }
 
 // u = arbitrary axis, a = angle
-inline m4 mat_rotate(v3f u, f32 a)
+inline m4 m4_rot(v3f u, f32 a)
 {
     a       = to_radian(a);
     f32 c   = cos(a);
@@ -1285,23 +1441,23 @@ inline m4 mat_rotate(v3f u, f32 a)
 }
 
 // u = arbitrary axis, a = angle
-inline m4 mat_rotate(m4 m, v3f u, f32 a)
+inline m4 m4_rot(m4 m, v3f u, f32 a)
 {
-    m4 res = m * mat_rotate(u, a);
+    m4 res = m * m4_rot(u, a);
 
     return res;
 }
 
-inline m4 mat_scale(m4 a, f32 b)
+inline m4 m4_sca(m4 a, f32 b)
 {
-    m4 res = mat_identity(b);
+    m4 res = m4_identity(b);
 
     res = a * res;
 
     return res;
 }
 
-inline m4 mat_transpose(m4 a)
+inline m4 m4_transpose(m4 a)
 {
     m4 res;
 
@@ -1334,7 +1490,7 @@ inline m4 mat_transpose(m4 a)
     return res;
 }
 
-inline m4 mat_proj_persp(f32 aspect_ratio, f32 fov_y, f32 near_z, f32 far_z)
+inline m4 m4_proj_persp(f32 aspect_ratio, f32 fov_y, f32 near_z, f32 far_z)
 {
     Assert(near_z > 0.0f && far_z > 0.0f);
     Assert(!near_equal_f32(fov_y, 0.0f, 0.00001f * 2.0f));
@@ -1358,7 +1514,7 @@ inline m4 mat_proj_persp(f32 aspect_ratio, f32 fov_y, f32 near_z, f32 far_z)
     return res;
 }
 
-inline m4 mat_proj_ortho(f32 aspect_ratio)
+inline m4 m4_proj_ortho(f32 aspect_ratio)
 {
     f32 a = 1.0f;
     f32 b = aspect_ratio;
@@ -1369,7 +1525,7 @@ inline m4 mat_proj_ortho(f32 aspect_ratio)
     return res;
 }
 
-inline m4 mat_col_3x3(v3f x, v3f y, v3f z)
+inline m4 m4_col_3x3(v3f x, v3f y, v3f z)
 {
     // clang-format off
     m4 res = {
@@ -1383,7 +1539,7 @@ inline m4 mat_col_3x3(v3f x, v3f y, v3f z)
     return res;
 }
 
-inline m4 mat_row_3x3(v3f x, v3f y, v3f z)
+inline m4 m4_row_3x3(v3f x, v3f y, v3f z)
 {
     // clang-format off
     m4 res = {
@@ -1397,9 +1553,9 @@ inline m4 mat_row_3x3(v3f x, v3f y, v3f z)
     return res;
 }
 
-inline m4 mat_translate(v3f t)
+inline m4 m4_trans(v3f t)
 {
-    m4 res = mat_identity();
+    m4 res = m4_identity();
 
     res.m[3][0] = t.x;
     res.m[3][1] = t.y;
@@ -1408,28 +1564,28 @@ inline m4 mat_translate(v3f t)
     return res;
 }
 
-inline m4 mat_translate_x(m4 a, f32 tx)
+inline m4 m4_trans_x(m4 a, f32 tx)
 {
     a.m[3][0] += tx;
 
     return a;
 }
 
-inline m4 mat_translate_y(m4 a, f32 ty)
+inline m4 m4_trans_y(m4 a, f32 ty)
 {
     a.m[3][1] += ty;
 
     return a;
 }
 
-inline m4 mat_translate_z(m4 a, f32 tz)
+inline m4 m4_trans_z(m4 a, f32 tz)
 {
     a.m[3][2] += tz;
 
     return a;
 }
 
-inline m4 mat_translate(m4 a, v3f t)
+inline m4 m4_trans(m4 a, v3f t)
 {
     a.m[3][0] += t.x;
     a.m[3][1] += t.y;
@@ -1438,7 +1594,7 @@ inline m4 mat_translate(m4 a, v3f t)
     return a;
 }
 
-inline m4 mat_set_translation(m4 a, v3f t)
+inline m4 m4_set_trans(m4 a, v3f t)
 {
     a.m[3][0] = t.x;
     a.m[3][1] = t.y;
@@ -1447,42 +1603,42 @@ inline m4 mat_set_translation(m4 a, v3f t)
     return a;
 }
 
-inline m4 mat_set_translation_x(m4 a, f32 tx)
+inline m4 m4_set_trans_x(m4 a, f32 tx)
 {
     a.m[3][0] = tx;
 
     return a;
 }
 
-inline m4 mat_set_translation_y(m4 a, f32 ty)
+inline m4 m4_set_trans_y(m4 a, f32 ty)
 {
     a.m[3][1] = ty;
 
     return a;
 }
 
-inline m4 mat_set_translation_z(m4 a, f32 tz)
+inline m4 m4_set_trans_z(m4 a, f32 tz)
 {
     a.m[3][2] = tz;
 
     return a;
 }
 
-inline v3f mat_get_col(m4 a, u32 c)
+inline v3f m4_get_col(m4 a, u32 c)
 {
     v3f res = { a.m[0][c], a.m[1][c], a.m[2][c] };
 
     return res;
 }
 
-inline v3f mat_get_row(m4 a, u32 r)
+inline v3f m4_get_row(m4 a, u32 r)
 {
     v3f res = { a.m[r][0], a.m[r][1], a.m[r][2] };
 
     return res;
 }
 
-inline m4 mat_uvn_to_m4(v3f pos, v3f u, v3f v, v3f n)
+inline m4 uvn_to_m4(v3f pos, v3f u, v3f v, v3f n)
 {
     m4 res = { u.x, u.y, u.z, -pos.x, v.x,  v.y,  v.z,  -pos.y,
                n.x, n.y, n.z, -pos.z, 0.0f, 0.0f, 0.0f, 1.0f };
@@ -1490,7 +1646,7 @@ inline m4 mat_uvn_to_m4(v3f pos, v3f u, v3f v, v3f n)
     return res;
 }
 
-inline m4 mat_look_to(v3f eye_pos, v3f eye_dir, v3f up_dir)
+inline m4 m4_look_to(v3f eye_pos, v3f eye_dir, v3f up_dir)
 {
     Assert(eye_dir != v3_zero<f32>());
     Assert(up_dir != v3_zero<f32>());
@@ -1507,29 +1663,29 @@ inline m4 mat_look_to(v3f eye_pos, v3f eye_dir, v3f up_dir)
     res.r[0] = v4_init(r0, d0);
     res.r[1] = v4_init(r1, d1);
     res.r[2] = v4_init(r2, d2);
-    res.r[3] = mat_identity().r[3];
+    res.r[3] = m4_identity().r[3];
 
     return res;
 }
 
-inline m4 mat_look_at(v3f eye_pos, v3f target_pos, v3f up_dir)
+inline m4 m4_look_at(v3f eye_pos, v3f target_pos, v3f up_dir)
 {
     v3f eye_dir = target_pos - eye_pos;
-    return mat_look_to(eye_pos, eye_dir, up_dir);
+    return m4_look_to(eye_pos, eye_dir, up_dir);
 }
 
-inline m4 mat_get_uvn(v3f forward, v3f up, v3f pos)
+inline m4 m4_get_uvn(v3f forward, v3f up, v3f pos)
 {
     v3f n = vec_normalize(forward);
     v3f u = vec_normalize(vec_cross(up, n));
     v3f v = vec_cross(n, u);
 
-    m4 res = mat_row_3x3(u, v, n) * mat_translate(-pos);
+    m4 res = m4_row_3x3(u, v, n) * m4_trans(-pos);
 
     return res;
 }
 
-inline m4 mat_inverse(m4 a)
+inline m4 m4_inverse(m4 a)
 {
 }
 
@@ -1538,7 +1694,7 @@ inline m4 mat_inverse(m4 a)
 // ===============================================================================================
 
 template<typename T>
-inline r2<T> operator*(r2<T>& lhs, T rhs)
+inline r2<T> operator*(r2<T> &lhs, T rhs)
 {
     r2<T> res;
 
@@ -1551,12 +1707,12 @@ inline r2<T> operator*(r2<T>& lhs, T rhs)
 }
 
 template<typename T>
-inline r2<T> operator+=(r2<T>& lhs, T rhs)
+inline r2<T> operator+=(r2<T> &lhs, T rhs)
 {
-    lhs.min.x += rhs;
-    lhs.min.y += rhs;
-    lhs.max.x += rhs;
-    lhs.max.y += rhs;
+    lhs.x0 += rhs;
+    lhs.y0 += rhs;
+    lhs.x1 += rhs;
+    lhs.y1 += rhs;
 
     return lhs;
 }
@@ -1619,7 +1775,7 @@ inline r2<T> rect_init_half_dim(v2<T> center, v2<T> half_dim)
 template<typename T>
 inline r2<T> rect_init_square(v2<T> center, T radius)
 {
-    v2<T> half_dim = v2_init(radius);
+    v2<T> half_dim { radius, radius };
 
     return rect_init_half_dim(center, half_dim);
 }
@@ -1678,15 +1834,15 @@ inline v3<T> rect_get_center(r3<T> a)
 template<typename T>
 inline bool rect_is_inside(r2<T> a, v2<T> b)
 {
-    bool res = b.x >= a.min.x && b.y >= a.min.y && b.x <= a.max.x && b.y <= a.max.y;
+    bool res = b.x >= a.x0 && b.y >= a.y0 && b.x <= a.x1 && b.y <= a.y1;
     return res;
 }
 
 template<typename T>
 inline bool rect_is_inside(r3<T> a, v3<T> b)
 {
-    bool res = b.x >= a.min.x && b.y >= a.min.y && b.x <= a.max.x && b.y <= a.max.y &&
-               b.z >= a.min.z && b.z <= a.max.z;
+    bool res =
+        b.x >= a.x0 && b.y >= a.y0 && b.x <= a.x1 && b.y <= a.y1 && b.z >= a.z0 && b.z <= a.z1;
     return res;
 }
 
@@ -1729,7 +1885,7 @@ inline r3<T> rect_add_radius(r3<T> a, T r)
 template<typename T>
 inline bool rect_intersect(r2<T> a, r2<T> b)
 {
-    bool res = !(b.max.x < a.min.x || b.min.x > a.max.x || b.max.y < a.min.y || b.min.y > a.max.y);
+    bool res = !(b.x1 < a.x0 || b.x0 > a.x1 || b.y1 < a.y0 || b.y0 > a.y1);
 
     return res;
 }
@@ -1737,8 +1893,8 @@ inline bool rect_intersect(r2<T> a, r2<T> b)
 template<typename T>
 inline bool rect_intersect(r3<T> a, r3<T> b)
 {
-    bool res = !(b.max.x < a.min.x || b.min.x > a.max.x || b.max.y < a.min.y || b.min.y > a.max.y ||
-                 b.max.z < a.min.z || b.min.z > a.max.z);
+    bool res =
+        !(b.x1 < a.x0 || b.x0 > a.x1 || b.y1 < a.y0 || b.y0 > a.y1 || b.z1 < a.z0 || b.z0 > a.z1);
 
     return res;
 }
@@ -1748,8 +1904,8 @@ inline v2f rect_barycenter(r2f a, v3f p)
 {
     v2f res;
 
-    res.x = safe_ratio_0(p.x - a.min.x, a.max.x - a.min.x);
-    res.y = safe_ratio_0(p.y - a.min.y, a.max.y - a.min.y);
+    res.x = safe_ratio_0(p.x - a.x0, a.x1 - a.x0);
+    res.y = safe_ratio_0(p.y - a.y0, a.y1 - a.y0);
 
     return res;
 }
@@ -1759,9 +1915,9 @@ inline v3f rect_barycenter(r3f a, v3f p)
 {
     v3f res;
 
-    res.x = safe_ratio_0(p.x - a.min.x, a.max.x - a.min.x);
-    res.y = safe_ratio_0(p.y - a.min.y, a.max.y - a.min.y);
-    res.z = safe_ratio_0(p.z - a.min.z, a.max.z - a.min.z);
+    res.x = safe_ratio_0(p.x - a.x0, a.x1 - a.x0);
+    res.y = safe_ratio_0(p.y - a.y0, a.y1 - a.y0);
+    res.z = safe_ratio_0(p.z - a.z0, a.z1 - a.z0);
 
     return res;
 }

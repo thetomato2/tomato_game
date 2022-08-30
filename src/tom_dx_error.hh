@@ -1,12 +1,10 @@
-// TODO: do I want a str_copy and not just a const char*?
 #define CHK_ERR(hrchk, str) \
     case hrchk: return str_cat(str);
-
 
 namespace tom
 {
 
-fn char* d3d_error_code(HRESULT hr)
+fn char *d3d_error_code(HRESULT hr)
 {
     // clang-format off
     switch (hr)

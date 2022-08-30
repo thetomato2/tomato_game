@@ -2,13 +2,13 @@
 namespace tom
 {
 
-function bool is_canonical(f32 rel_coord)
+fn bool is_canonical(f32 rel_coord)
 {
     return rel_coord >= chunk_size_meters * -0.5f - eps_f32 &&
            rel_coord <= chunk_size_meters * 0.5f + eps_f32;
 }
 
-function bool is_canonical(v3f rel_coord)
+fn bool is_canonical(v3f rel_coord)
 {
     return is_canonical(rel_coord.x) && is_canonical(rel_coord.y) && is_canonical(rel_coord.z);
 }

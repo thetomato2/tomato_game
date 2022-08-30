@@ -74,8 +74,8 @@ fn void fill_sound_buffer(SoundOutput& sound_output, i32 samples_to_write,
         BYTE *sound_buf_dat;
         if (SUCCEEDED(g_audio_render_client->GetBuffer((UINT32)samples_to_write,
                                                        &sound_buf_dat))) {
-            s16 *sourceSample = source_buffer.samples;
-            s16 *destSample   = (s16 *) sound_buf_dat;
+            i16 *sourceSample = source_buffer.samples;
+            i16 *destSample   = (i16 *) sound_buf_dat;
             for (szt i = 0; i < samples_to_write; ++i) {
                 *destSample++ = *sourceSample++;
                 *destSample++ = *sourceSample++;

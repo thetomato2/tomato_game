@@ -1,55 +1,36 @@
 namespace tom
 {
-#if 0
-struct cycle_counter
-{
-    enum type
-    {
-        temp1,
-        update,
-        total,
-        count
-    };
 
-    type t_;
+#ifdef TOM_INTERNAL
+
+enum
+{
+
+    debug_CycleCounter_FillPixel,
+    debug_CycleCounter_TestPixel,
+    debug_CycleCounter_DrawRect,
+    debug_CycleCounter_Render,
+    debug_CycleCounter_Count
+};
+
+struct debug_CycleCounter
+{
+    u32 hit_cnt;
     u64 cycle_cnt;
 };
 
-inline constexpr const char* get_cycle_counter_name(cycle_counter::type type)
-{
-    switch (type) {
-        case cycle_counter::type::temp1: return "temp1";
-        case cycle_counter::type::update: return "update";
-        case cycle_counter::type::total: return "total";
-        case cycle_counter::type::count: return "count";
+    #define BeginTimedBlock(ID) u64 start_cycle_cnt_##ID = __rdtsc()
+    #define EndTimedBlock(ID)                                            \
+        debug_global_mem->counters[debug_CycleCounter_##ID].cycle_cnt += \
+            __rdtsc() - start_cycle_cnt_##ID;                            \
+        ++debug_global_mem->counters[debug_CycleCounter_##ID].hit_cnt
+    #define PrintCounter(ID) \
+        printf("%s: %llu\n", #ID, debug_global_mem->counters[debug_CycleCounter_##ID].cycle_cnt)
 
-        default: {
-            INVALID_CODE_PATH;
-        } break;
-    }
-
-    return nullptr;
-}
-
-
-inline cycle_counter* get_cycle_counter(vector<cycle_counter>* counters, cycle_counter::type type)
-{
-    for (auto& counter : *counters) {
-        if (counter.t_ == type) {
-            return &counter;
-        }
-    }
-
-    return nullptr;
-}
-
-    #define BEGIN_TIMED_BLOCK(ID) u64 start_cycle_cnt_##ID = __rdtsc()
-    #define END_TIMED_BLOCK(ID)                                                                \
-        {                                                                                      \
-            auto* counter      = get_cycle_counter(&state->counters, cycle_counter::type::ID); \
-            counter->cycle_cnt = __rdtsc() - start_cycle_cnt_##ID;                             \
-        }
-
+#else if
+    #define BeginTimedBlock(ID)
+    #define EndTimedBlock(ID)
+    #define PrintCounter(ID)
 #endif
 
 inline i64 get_time()

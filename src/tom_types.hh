@@ -43,6 +43,11 @@ typedef intptr_t smm;
 #define I64_MIN (-0x7fffffffffffffffll - 1)
 #define I64_MAX 0x7fffffffffffffffll
 
+#define F32_MIN 1.175494351e-38f
+#define F32_MAX 3.402823466e+38f
+#define F64_MIN 2.2250738585072014e-308
+#define F64_MAX 1.7976931348623158e+308
+
 #define Bit(x) (1 << x)
 
 #define Kilobytes(val) ((val)*1024)
@@ -53,6 +58,7 @@ typedef intptr_t smm;
 template<typename T>
 union v2
 {
+    T e[2];
     struct
     {
         T x, y;
@@ -65,7 +71,6 @@ union v2
     {
         T w, h;
     };
-    T e[2];
 };
 
 typedef v2<f32> v2f;
@@ -75,6 +80,7 @@ typedef v2<u32> v2u;
 template<typename T>
 union v3
 {
+    T e[3];
     struct
     {
         T x, y, z;
@@ -83,12 +89,7 @@ union v3
     {
         T r, g, b;
     };
-    struct
-    {
-        v2<T> xy;
-        T _ignored0;
-    };
-    T e[3];
+    v2<T> xy;
 };
 
 typedef v3<f32> v3f;
@@ -98,6 +99,7 @@ typedef v3<u32> v3u;
 template<typename T>
 union v4
 {
+    T e[4];
     struct
     {
         T x, y, z, w;
@@ -106,22 +108,21 @@ union v4
     {
         T r, g, b, a;
     };
-    struct
-    {
-        v3<T> xyz;
-        T _ignored0;
-    };
-    struct
-    {
-        v3<T> rgb;
-        T _ignored1;
-    };
-    T e[4];
+    v3<T> xyz;
+    v3<T> rgb;
+    v2<T> xy;
 };
 
 typedef v4<f32> v4f;
 typedef v4<i32> v4i;
 typedef v4<u32> v4u;
+
+union m3
+{
+    f32 e[9];
+    f32 m[3][3];
+    v3f r[3];
+};
 
 union m4
 {

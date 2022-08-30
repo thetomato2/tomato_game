@@ -86,7 +86,7 @@ fn void move_entity(GameState* game, Entity* ent, v3f ent_delta, const f32 dt)
 
                         if (t_res >= 0.f && (t_min > t_res)) {
                             if (y >= min_y && y <= max_y) {
-                                t_min = max(0.f, t_res - eps_f32);
+                                t_min = max(0.f, t_res - EPS_F32);
                                 hit   = true;
                             }
                         }

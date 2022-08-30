@@ -279,7 +279,7 @@ fn void DS5_enum_devices(void* ptr_buf, u32 arr_len, u32* ds5_cnt)
                     // Get preparsed data
                     PHIDP_PREPARSED_DATA ppd;
                     if (HidD_GetPreparsedData(device_hnd, &ppd)) {
-                        // Get device capcbilitys
+                        // Get device capabilities
                         HIDP_CAPS device_caps;
                         if (HidP_GetCaps(ppd, &device_caps) == HIDP_STATUS_SUCCESS) {
                             // Check for device connection type
@@ -291,7 +291,7 @@ fn void DS5_enum_devices(void* ptr_buf, u32 arr_len, u32* ds5_cnt)
                                     // Device found and valid -> Inrement index
                                     input_arr_i++;
                                 }
-                                // Check if controler matches BT specifications
+                                // Check if controller matches BT specifications
                                 else if (device_caps.InputReportByteLength == 78) {
                                     ptr_info->connection = DS5_Connection::BT;
 
@@ -468,7 +468,7 @@ fn void DS5_process_trigger(DS5_TriggerEffect* effect, byt* buffer)
 {
     // Switch on effect
     switch (effect->type) {
-        // Continious
+        // Continuous
         case DS5_TriggerEffectType::continuous:
             // Mode
             buffer[0x00] = 0x01;
@@ -530,7 +530,7 @@ fn void DS5_create_hid_output_buffer(byt* hid_buf, DS5_State* state)
     hid_buf[0x00] = 0xFF;
     hid_buf[0x01] = 0xF7;
 
-    // Rumbel motors
+    // Rumble motors
     hid_buf[0x02] = state->rumble_L;
     hid_buf[0x03] = state->rumble_R;
 
@@ -556,8 +556,8 @@ fn void DS5_create_hid_output_buffer(byt* hid_buf, DS5_State* state)
     hid_buf[0x2E] = state->led_color.b;
 
     // Adaptive Triggers
-    DS5_process_trigger(&state->trigger_effect_L, &hid_buf[0x15]);
     DS5_process_trigger(&state->trigger_effect_R, &hid_buf[0x0A]);
+    DS5_process_trigger(&state->trigger_effect_L, &hid_buf[0x15]);
 }
 
 fn void ds5_get_input(DS5_Context* context, DS5_State* state)

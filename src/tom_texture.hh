@@ -92,10 +92,11 @@ fn Texture texture_load_from_file(const char *path)
     return result;
 }
 
-fn void make_sphere_nrm_map(Texture *tex, f32 rough)
+fn void make_sphere_nrm_map(Texture *tex, f32 rough, f32 cx = 1.0f, f32 cy = 1.0f)
 {
     f32 inv_width  = 1.0f / (tex->width - 1.0f);
     f32 inv_height = 1.0f / (tex->height - 1.0f);
+    f32 seven      = 0.707106781188f;
     u32 pitch      = texture_get_pitch(*tex);
 
     auto row = (byt *)tex->buf;
@@ -103,12 +104,47 @@ fn void make_sphere_nrm_map(Texture *tex, f32 rough)
         auto texel = (u32 *)row;
         for (i32 x = 0; x < tex->width; ++x) {
             v2f tex_uv    = { inv_width * (f32)x, inv_height * (f32)y };
-            f32 nx        = 2.0f * tex_uv.x - 1.0f;
-            f32 ny        = 2.0f * tex_uv.y - 1.0f;
+            f32 nx        = cx * (2.0f * tex_uv.x - 1.0f);
+            f32 ny        = cy * (2.0f * tex_uv.y - 1.0f);
             f32 root_term = 1.0f - square(nx) - square(ny);
-            v3f nrm       = { 0.0f, 0.0f, 1.0f };  // default
+            v3f nrm       = { 0, seven, seven };  // default
             if (root_term >= 0.0f) nrm = { nx, ny, sqrt_f32(root_term) };
             nrm      = vec_normalize(nrm);
+            v4f col  = { 0.5f * (nrm.x + 1.0f), 0.5f * (nrm.y + 1.0f), 0.5f * (nrm.z + 1.0f),
+                         rough };
+            *texel++ = v4f_to_color_u32(col).rgba;
+        }
+        row += pitch;
+    }
+}
+
+fn void make_pyramid_nrm_map(Texture *tex, f32 rough)
+{
+    f32 inv_width  = 1.0f / (tex->width - 1.0f);
+    f32 inv_height = 1.0f / (tex->height - 1.0f);
+    f32 seven      = 0.707106781188f;
+    u32 pitch      = texture_get_pitch(*tex);
+
+    auto row = (byt *)tex->buf;
+    for (i32 y = 0; y < tex->height; ++y) {
+        auto texel = (u32 *)row;
+        for (i32 x = 0; x < tex->width; ++x) {
+            v2f tex_uv = { inv_width * (f32)x, inv_height * (f32)y };
+            f32 inv_x  = tex->width - 1 - x;
+            v3f nrm    = { 0, 0, seven };
+
+            if (x < y) {
+                if (inv_x < y)
+                    nrm.x = -seven;
+                else
+                    nrm.y = seven;
+            } else {
+                if (inv_x < y)
+                    nrm.y = -seven;
+                else
+                    nrm.x = seven;
+            }
+
             v4f col  = { 0.5f * (nrm.x + 1.0f), 0.5f * (nrm.y + 1.0f), 0.5f * (nrm.z + 1.0f),
                          rough };
             *texel++ = v4f_to_color_u32(col).rgba;

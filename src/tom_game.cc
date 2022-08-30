@@ -90,9 +90,9 @@ fn void game_init(ThreadContext *thread, AppState *app)
     game->camera.dims.w            = 16.0f;
     game->camera.dims.h            = 9.0f;
 
-    // for (i32 i = -50; i < 50; ++i) {
-    //     add_entity(game, EntityType::tree, { (f32)i, 2.0f, 0.0f });
-    // }
+    for (i32 i = -50; i < 50; ++i) {
+        add_entity(game, EntityType::tree, { (f32)i, 4.0f, 0.0f });
+    }
 
     game->env_map_dims = { 512, 256 };
     for (auto &map : game->env_maps) {
@@ -111,10 +111,10 @@ fn void game_init(ThreadContext *thread, AppState *app)
     clear_color(game->env_maps[1].lod, { 0xff00ff00 });
     clear_color(game->env_maps[2].lod, { 0xffff0000 });
 
-    u32 n_checkers        = 16;
+    u32 n_checkers        = 32;
     Color_u32 checker_col = { 0xf8000000 };
     u32 checker_x         = (u32)((f32)game->env_maps[0].lod[0].width / (f32)n_checkers);
-    u32 checker_y         = (u32)((f32)game->env_maps[0].lod[0].height / (f32)n_checkers);
+    u32 checker_y         = checker_x;
     for (u32 y = 0; y < n_checkers; ++y) {
         for (u32 x = 0; x < n_checkers; x += 2) {
             r2u rc;
@@ -135,13 +135,15 @@ fn void game_init(ThreadContext *thread, AppState *app)
     game->test_alb.height = 128;
     game->test_alb.type   = Texture::Type::R8G8B8A8;
     game->test_alb.buf    = plat_malloc(texture_get_size(&game->test_alb));
-    clear_color(&game->test_alb, { 0xfff0f0f0 });
+    clear_color(&game->test_alb, { 0xff1e1e1e });
 
     game->test_nrm.width  = game->test_alb.width;
     game->test_nrm.height = game->test_alb.height;
     game->test_nrm.type   = game->test_alb.type;
     game->test_nrm.buf    = plat_malloc(texture_get_size(&game->test_nrm));
+    // make_sphere_nrm_map(&game->test_nrm, 0.0f, 0.0f, 1.0f);
     make_sphere_nrm_map(&game->test_nrm, 0.0f);
+    // make_pyramid_nrm_map(&game->test_nrm, 0.0f);
 }
 
 fn void game_update_and_render(ThreadContext *thread, AppState *app)
@@ -165,7 +167,11 @@ fn void game_update_and_render(ThreadContext *thread, AppState *app)
     EntityActions player_action = {};
     process_keyboard(kb, &player_action);
 #if USE_DS5
-    if (app->input.ds5_context[0].connected) process_ds5(app->input.ds5_state[0], &player_action);
+    for (u32 i = 0; i < DS5_MAX_CNT; ++i) {
+        if (app->input.ds5_context[i].connected) {
+            process_ds5(app->input.ds5_state[i], &player_action);
+        }
+    }
 #endif
     game->player_acts[1] = player_action;
 
@@ -211,7 +217,7 @@ fn void game_update_and_render(ThreadContext *thread, AppState *app)
                     ent_act       = game->player_acts[1];
                     cam->pos      = player->pos.xy;
                     cam_rc        = rect_init_dims(cam->pos, cam->dims);
-                    push_rect(render_group, { v3_init(cam->pos) }, cam->dims, { 0xff2c2c2c });
+                    push_rect(render_group, cam->pos, cam->dims, { 0xff2c2c2c });
                 } break;
                 case EntityType::wall: {
                     // do nothing
@@ -247,7 +253,7 @@ fn void game_update_and_render(ThreadContext *thread, AppState *app)
 
             v3f ent_delta = calc_entity_delta(ent, ent_act, move_spec, dt);
 
-            if (abs_f32(ent->vel.x) > 0.0f + eps_f32 || abs_f32(ent->vel.y) > 0.0f + eps_f32)
+            if (abs_f32(ent->vel.x) > 0.0f + EPS_F32 || abs_f32(ent->vel.y) > 0.0f + EPS_F32)
                 move_entity(game, ent, ent_delta, dt);
 
             // NOTE: changes the players direction for the sprite
@@ -293,10 +299,15 @@ fn void game_update_and_render(ThreadContext *thread, AppState *app)
         // ===========================================================================================
 
         auto push_texture_if = [&](Texture *tex) {
-            if (tex != nullptr)
-                push_texture(render_group, { ent->pos }, tex, ent->sprite_off);
-            else
-                push_rect(render_group, { ent->pos }, ent->dims.xy, color_u32(pink));
+            if (tex != nullptr) {
+                m3 model = m3_identity();
+                model    = m3_set_trans(model, ent->pos.xy);
+                model    = m3_sca_x(model, ent->dims.x);
+                model    = m3_sca_y(model, ent->dims.y);
+
+                push_texture(render_group, { model }, tex, ent->sprite_off, model);
+            } else
+                push_rect(render_group, ent->pos.xy, ent->dims.xy, color_u32(pink));
         };
 
         switch (ent->type) {
@@ -327,39 +338,9 @@ fn void game_update_and_render(ThreadContext *thread, AppState *app)
         }
 
         if (game->debug_draw_collision) {
-            push_rect_outline(render_group, { ent->pos }, ent->dims.xy, 2, color_u32(red));
-            push_rect_outline(render_group, { v3_init(cam->pos) }, cam->dims, 2,
-                              color_u32(light_blue));
+            push_rect_outline(render_group, ent->pos.xy, ent->dims.xy, 2, color_u32(red));
+            push_rect_outline(render_group, cam->pos, cam->dims, 2, color_u32(light_blue));
         }
-    }
-
-    v2f screen_mid = { (f32)back_buffer->width / 2.0f, (f32)back_buffer->height / 2.0f };
-    f32 angle      = app->time / 2.0f;
-    v2f origin     = screen_mid + game->debug_origin;
-    // v2f x_axis     = (200.0f + 20.0f * cos(angle)) * v2f { cos(angle), sin(angle) };
-    v2f x_axis = 200.0f * v2f { 1.0f, 0.0f };
-    v2f y_axis = vec_perp(x_axis);
-    // game->debug_origin.x = sin(app->time / 5.0f) * 400.0f;
-
-    // push_coord_system(render_group, origin - 0.5f * x_axis - 0.5f * y_axis, x_axis, y_axis,
-    //                   &game->bush_sprite, &game->test_nrm, &game->env_maps[2],
-    //                   &game->env_maps[1], &game->env_maps[0]);
-
-    push_coord_system(render_group, origin - 0.5f * x_axis - 0.5f * y_axis, x_axis, y_axis,
-                      &game->test_alb, &game->test_nrm, &game->env_maps[2], &game->env_maps[1],
-                      &game->env_maps[0]);
-
-    u32 y     = 0;
-    f32 scale = 0.9f * (((f32)back_buffer->height / (f32)CountOf(game->env_maps)) /
-                        (f32)game->env_maps[0].lod[0].height);
-    for (auto &map : game->env_maps) {
-        Texture *lod   = map.lod;
-        v2f map_origin = { 0.0f, (f32)y };
-        v2f map_x_axis = scale * v2f { (f32)lod->width, 0.0f };
-        v2f map_y_axis = scale * v2f { 0.0f, (f32)lod->height };
-        push_coord_system(render_group, map_origin, map_x_axis, map_y_axis, lod, nullptr, nullptr,
-                          nullptr, nullptr);
-        y += (u32)((f32)lod->height * scale);
     }
 
     draw_render_group(render_group, back_buffer);

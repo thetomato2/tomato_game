@@ -1,2 +1,2 @@
-# Text Editor losely based on Vim/NeoVim/4coder
+# A game, kinda
 made by the one and only TheTomato

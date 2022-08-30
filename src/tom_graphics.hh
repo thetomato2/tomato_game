@@ -17,7 +17,7 @@ struct EnviromentMap
 
 struct RenderBasis
 {
-    v3f pos;
+    m3 model;
 };
 
 enum class RenderGroupEntryType
@@ -45,18 +45,19 @@ struct RenderGroupEntryTexture
     RenderBasis basis;
     Texture *texture;
     v2f offset;
+    m3 model;
 };
 
 struct RenderGroupEntryRect
 {
-    RenderBasis basis;
+    v2f pos;
     v2f dims;
     Color_u32 color;
 };
 
 struct RenderGroupEntryRectOutline
 {
-    RenderBasis basis;
+    v2f pos;
     v2f dims;
     i32 thickness;
     Color_u32 color;
@@ -65,7 +66,7 @@ struct RenderGroupEntryRectOutline
 struct RenderGroupEntryCoordSystem
 {
     RenderGroupEntryType type;
-    v2f origin, x_axis, y_axis;
+    m3 model;
     Color_u32 color;
     Texture *albedo, *normal;
     EnviromentMap *top, *middle, *bottom;
