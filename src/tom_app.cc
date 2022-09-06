@@ -32,6 +32,7 @@ fn void handle_cycle_counters()
 }
 
 fn void on_device_change(AppState *app)
+
 {
     if (app->device_changed_delay > 0.5f) {
         app->device_changed_delay = 0.0f;
@@ -102,8 +103,24 @@ fn void app_init(AppState *app)
     app->game = (GameState *)plat_malloc(sizeof(GameState));
     app->fov  = 1.0f;
 
-    app->input       = init_input();
+    app->input = init_input();
+    for (u32 i = 0; i < app->input.ds5_cnt; ++i) {
+        if (app->input.ds5_context[i].connected) {
+            u32 controller_i = app->input.ds5_context[i].port;
+
+            app->input.ds5_state[i].trigger_effect_L.type = DS5_TriggerEffectType::gamecube;
+            app->input.ds5_state[i].trigger_effect_L.continuous.force     = 0xff;
+            app->input.ds5_state[i].trigger_effect_L.continuous.start_pos = 0x00;
+
+            app->input.ds5_state[i].trigger_effect_R.type = DS5_TriggerEffectType::gamecube;
+            app->input.ds5_state[i].trigger_effect_R.continuous.force     = 0xff;
+            app->input.ds5_state[i].trigger_effect_R.continuous.start_pos = 0x00;
+        }
+    }
+
     app->main_shader = d3d11_create_shader_prog(&app->d3d11, L"..\\..\\shaders\\fs_blit.hlsl");
+
+    app->input.ds5_state[0].led_color = { 0, 0, 255 };
 
     create_resources(app);
 
@@ -119,14 +136,27 @@ fn void app_update(AppState *app)
 
 #if USE_DS5
     if (key_pressed(kb->j))
-        app->input.ds5_state[0].trigger_effect_R.type = DS5_TriggerEffectType::calibrate;
+        app->input.ds5_state[0].trigger_effect_R.type = DS5_TriggerEffectType::gamecube;
     if (key_pressed(kb->k))
         app->input.ds5_state[0].trigger_effect_R.type = DS5_TriggerEffectType::none;
 
-    if (key_pressed(kb->n))
+    if (key_pressed(kb->l))
         app->input.ds5_state[0].trigger_effect_L.type = DS5_TriggerEffectType::calibrate;
-    if (key_pressed(kb->m))
+    if (key_pressed(kb->semicolon))
         app->input.ds5_state[0].trigger_effect_L.type = DS5_TriggerEffectType::none;
+
+    if (key_down(kb->v)) {
+        ++app->input.ds5_state[0].led_color.r;
+        printf("%u\n", ++app->input.ds5_state[0].led_color.r);
+    }
+    if (key_down(kb->b)) {
+        ++app->input.ds5_state[0].led_color.g;
+        printf("%u\n", ++app->input.ds5_state[0].led_color.g);
+    }
+    if (key_down(kb->n)) {
+        ++app->input.ds5_state[0].led_color.b;
+        printf("%u\n", ++app->input.ds5_state[0].led_color.b);
+    }
 #endif
 
     if (button_pressed(app->input.ds5_state[0].ps_logo)) {

@@ -1,0 +1,7 @@
+[
+{
+  "directory": "C:/dev/tomato_game/build/windows-release",
+  "command": "C:\\PROGRA~1\\LLVM\\bin\\CLANG_~1.EXE -DTOM_INTERNAL -DTOM_WIN32 -IC:/dev/tomato_game/src -O3 -DNDEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrt -std=c++20 -o CMakeFiles\\tomato_game.dir\\src\\winmain.cc.obj -c C:\\dev\\tomato_game\\src\\winmain.cc",
+  "file": "C:\\dev\\tomato_game\\src\\winmain.cc"
+}
+]

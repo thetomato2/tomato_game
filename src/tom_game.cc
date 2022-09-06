@@ -89,9 +89,14 @@ fn void game_init(ThreadContext *thread, AppState *app)
     game->camera.pos               = {};
     game->camera.dims.w            = 16.0f;
     game->camera.dims.h            = 9.0f;
+    game->camera.dims *= 1.2f;
+    game->camera.dims *= 60.0f / g_meters_to_pixels;
 
-    for (i32 i = -50; i < 50; ++i) {
-        add_entity(game, EntityType::tree, { (f32)i, 4.0f, 0.0f });
+    i32 tree_cnt = 100;
+    f32 x        = 0 - tree_cnt / 2;
+    for (i32 i = 0; i < tree_cnt; ++i) {
+        Entity *ent = add_entity(game, EntityType::tree, { x, 4.0f, 0.0f });
+        x += ent->dims.x + ent->dims.x * 0.1f;
     }
 
     game->env_map_dims = { 512, 256 };
@@ -181,11 +186,16 @@ fn void game_update_and_render(ThreadContext *thread, AppState *app)
     if (key_down(kb.add)) cam->dims += cam_inc;
     if (key_down(kb.subtract)) cam->dims -= cam_inc;
 
-    local constexpr f32 _spd = 100.0f;
-    if (key_down(kb.up)) game->debug_origin.y -= _spd * dt;
-    if (key_down(kb.down)) game->debug_origin.y += _spd * dt;
-    if (key_down(kb.left)) game->debug_origin.x -= _spd * dt;
-    if (key_down(kb.right)) game->debug_origin.x += _spd * dt;
+    local constexpr f32 zoom_inc = 0.3f;
+    f32 old_zoom                 = g_meters_to_pixels;
+    if (key_down(kb.down)) {
+        g_meters_to_pixels -= zoom_inc;
+        cam->dims *= old_zoom / g_meters_to_pixels;
+    }
+    if (key_down(kb.up)) {
+        g_meters_to_pixels += zoom_inc;
+        cam->dims *= old_zoom / g_meters_to_pixels;
+    }
 
     RenderGroup *render_group =
         alloc_render_group(&trans_arena, Megabytes(4), g_meters_to_pixels, *cam);
@@ -304,6 +314,7 @@ fn void game_update_and_render(ThreadContext *thread, AppState *app)
                 model    = m3_set_trans(model, ent->pos.xy);
                 model    = m3_sca_x(model, ent->dims.x);
                 model    = m3_sca_y(model, ent->dims.y);
+                // model    = m3_rot(model, app->time);
 
                 push_texture(render_group, { model }, tex, ent->sprite_off, model);
             } else

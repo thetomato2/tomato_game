@@ -8,6 +8,7 @@ global f64 g_mouse_y;
 global f64 g_scroll_x_off;
 global f64 g_scroll_y_off;
 
+// TODO: isolate this enum, it has global scope!!!
 enum Win32Key : byt
 {
     none           = 0,

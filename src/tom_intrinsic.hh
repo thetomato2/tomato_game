@@ -12,7 +12,7 @@ inline bitscan_result find_least_signifcant_set_bit(u32 val)
     bitscan_result result {};
 
 #if MSVC
-    result.found = _BitScanForward((ul*)&result.index, val);
+    result.found = _BitScanForward((unsigned long *)&result.index, val);
 #else
 
     for (u32 test {}; test < 32; ++test) {

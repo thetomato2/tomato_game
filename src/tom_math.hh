@@ -922,6 +922,17 @@ inline f32 vec_length(v4f a)
 }
 
 // NOTE: does not handle zero length, check vec_noz
+inline v2f vec_normalize(v2f a)
+{
+    // TODO: get rid of assert/ normalize or zero
+    f32 len = vec_length(a);
+    Assert(len != 0.0f);
+    v2f res = a / len;
+
+    return res;
+}
+
+// NOTE: does not handle zero length, check vec_noz
 inline v3f vec_normalize(v3f a)
 {
     // TODO: get rid of assert/ normalize or zero
@@ -930,6 +941,17 @@ inline v3f vec_normalize(v3f a)
     v3f res = a / len;
 
     return res;
+}
+
+// normalize or zero
+inline v2f vec_noz(v2f a)
+{
+    f32 len_sq = vec_length_sq(a);
+    if (len_sq > square(EPS_F32)) {
+        return a * (1.0f / sqrt_f32(len_sq));
+    }
+
+    return {};
 }
 
 // normalize or zero

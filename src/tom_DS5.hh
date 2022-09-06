@@ -99,7 +99,7 @@ struct DS5_Context
     bool connected;
     u32 port;
     wchar path[260];
-    void* hnd;
+    void *hnd;
     DS5_Connection connection;
     byt hid_buf[547];
 };
@@ -124,6 +124,7 @@ enum class DS5_TriggerEffectType : byt
     continuous = 0x01,
     Section    = 0x02,
     effect_ex  = 0x26,
+    gamecube   = 0x99,
     calibrate  = 0xfc
 
 };
@@ -205,7 +206,7 @@ struct DS5_State
     v3<i16> gyroscope;
 };
 
-fn u32 DS5_crc32_compute(byt* buffer, szt len)
+fn u32 DS5_crc32_compute(byt *buffer, szt len)
 {
     u32 result = DS5_crc_seed;
 
@@ -217,7 +218,7 @@ fn u32 DS5_crc32_compute(byt* buffer, szt len)
     return result;
 }
 
-fn void DS5_enum_devices(void* ptr_buf, u32 arr_len, u32* ds5_cnt)
+fn void DS5_enum_devices(void *ptr_buf, u32 arr_len, u32 *ds5_cnt)
 {
     // Get all hid devices from devs
     HANDLE hiddi_hnd = SetupDiGetClassDevs(&GUID_DEVINTERFACE_HID, NULL, NULL,
@@ -243,7 +244,7 @@ fn void DS5_enum_devices(void* ptr_buf, u32 arr_len, u32* ds5_cnt)
             DWORD required_sz = 0;
             SetupDiGetDeviceInterfaceDetailW(hiddi_hnd, &interface_info, NULL, 0, &required_sz,
                                              NULL);
-            ScopedPtr device_path = (SP_DEVICE_INTERFACE_DETAIL_DATA_W*)plat_malloc(required_sz);
+            ScopedPtr device_path = (SP_DEVICE_INTERFACE_DETAIL_DATA_W *)plat_malloc(required_sz);
             device_path->cbSize   = sizeof(SP_DEVICE_INTERFACE_DETAIL_DATA_W);
             SetupDiGetDeviceInterfaceDetailW(hiddi_hnd, &interface_info, device_path.get(),
                                              required_sz, NULL, NULL);
@@ -265,9 +266,9 @@ fn void DS5_enum_devices(void* ptr_buf, u32 arr_len, u32* ds5_cnt)
                 // Check if ids match
                 if (vendor_id == 0x054C && product_id == 0x0CE6) {
                     // Get pointer to target
-                    DS5_Info* ptr_info = nullptr;
+                    DS5_Info *ptr_info = nullptr;
                     if (input_arr_i < arr_len) {
-                        ptr_info = &(((DS5_Info*)ptr_buf)[input_arr_i]);
+                        ptr_info = &(((DS5_Info *)ptr_buf)[input_arr_i]);
                     }
 
                     // Copy path
@@ -323,15 +324,14 @@ fn void DS5_enum_devices(void* ptr_buf, u32 arr_len, u32* ds5_cnt)
     *ds5_cnt = input_arr_i;
 }
 
-fn u32 DS5_init(DS5_Context* out)
+fn u32 DS5_init(DS5_Context *out)
 {
-
     DS5_Info info[DS5_MAX_CNT];
     u32 controller_cnt = 0;
     DS5_enum_devices(info, CountOf(info), &controller_cnt);
 
     if (controller_cnt) {
-        PrintInfo(str_fmt("Found %u DaulSense controllers.", controller_cnt));
+        PrintInfo(str_fmt("Found %u DualSense controllers.", controller_cnt));
 
         for (u32 i = 0; i < controller_cnt; ++i) {
             HANDLE ds5_hnd =
@@ -353,7 +353,7 @@ fn u32 DS5_init(DS5_Context* out)
     return controller_cnt;
 }
 
-fn void DS5_process_button(Button* but, byt is_down)
+fn void DS5_process_button(Button *but, byt is_down)
 {
     if (but->ended_down && is_down) {
         ++but->half_transition_cnt;
@@ -366,7 +366,7 @@ fn void DS5_process_button(Button* but, byt is_down)
     }
 }
 
-fn void DS5_process_buttons(DS5_State* state, byt buttons_and_dpad, byt buttons_a, byt buttons_b)
+fn void DS5_process_buttons(DS5_State *state, byt buttons_and_dpad, byt buttons_a, byt buttons_b)
 {
     DS5_process_button(&state->dpad_U, buttons_and_dpad & DS5_ISTATE_DPAD_UP);
     DS5_process_button(&state->dpad_R, buttons_and_dpad & DS5_ISTATE_DPAD_RIGHT);
@@ -389,7 +389,7 @@ fn void DS5_process_buttons(DS5_State* state, byt buttons_and_dpad, byt buttons_
     DS5_process_button(&state->touch, buttons_b & DS5_ISTATE_BTN_B_PAD_BUTTON);
 }
 
-fn void DS5_parse_hid_buffer(byt* hid_buf, DS5_State* state)
+fn void DS5_parse_hid_buffer(byt *hid_buf, DS5_State *state)
 {
     state->stick_L.x = (byt)(((i16)(hid_buf[0x00] - 128)));
     state->stick_L.y = (byt)(((i16)(hid_buf[0x01] - 127)) * -1);
@@ -442,13 +442,13 @@ fn void DS5_parse_hid_buffer(byt* hid_buf, DS5_State* state)
     memcpy(state->accelerometer.e, &hid_buf[0x0f], sizeof(i16) * 3);
     memcpy(state->gyroscope.e, &hid_buf[0x15], sizeof(i16) * 3);
 
-    u32 touch_1_raw  = *(u32*)(&hid_buf[0x20]);
+    u32 touch_1_raw  = *(u32 *)(&hid_buf[0x20]);
     state->touch_1.y = (touch_1_raw & 0xFFF00000) >> 20;
     state->touch_1.x = (touch_1_raw & 0x000FFF00) >> 8;
     DS5_process_button(&state->touch_1_but, (touch_1_raw & (1 << 7)) == 0);
     state->touch_1_id = (touch_1_raw & 127);
 
-    u32 touch_2_raw  = *(u32*)(&hid_buf[0x24]);
+    u32 touch_2_raw  = *(u32 *)(&hid_buf[0x24]);
     state->touch_2.y = (touch_2_raw & 0xFFF00000) >> 20;
     state->touch_2.x = (touch_2_raw & 0x000FFF00) >> 8;
     DS5_process_button(&state->touch_2_but, (touch_2_raw & (1 << 7)) == 0);
@@ -464,32 +464,31 @@ fn void DS5_parse_hid_buffer(byt* hid_buf, DS5_State* state)
     state->battery.charge        = hid_buf[0x36] & 0x0F;
 }
 
-fn void DS5_process_trigger(DS5_TriggerEffect* effect, byt* buffer)
+fn void DS5_process_trigger(DS5_TriggerEffect *effect, byt *buffer)
 {
     // Switch on effect
     switch (effect->type) {
         // Continuous
-        case DS5_TriggerEffectType::continuous:
+        case DS5_TriggerEffectType::continuous: {
             // Mode
             buffer[0x00] = 0x01;
             // Parameters
             buffer[0x01] = effect->continuous.start_pos;
             buffer[0x02] = effect->continuous.force;
-
-            break;
+        } break;
 
         // Section
-        case DS5_TriggerEffectType::Section:
+        case DS5_TriggerEffectType::Section: {
             // Mode
+
             buffer[0x00] = 0x02;
             // Parameters
             buffer[0x01] = effect->continuous.start_pos;
             buffer[0x02] = effect->continuous.force;
-
-            break;
+        } break;
 
         // EffectEx
-        case DS5_TriggerEffectType::effect_ex:
+        case DS5_TriggerEffectType::effect_ex: {
             // Mode
             buffer[0x00] = 0x02 | 0x20 | 0x04;
             // Parameters
@@ -504,8 +503,18 @@ fn void DS5_process_trigger(DS5_TriggerEffect* effect, byt* buffer)
             buffer[0x06] = effect->effect_ex.end_force;
             // Frequency
             buffer[0x09] = max(1, effect->effect_ex.frequency / 2);
-
-            break;
+        } break;
+        case DS5_TriggerEffectType::gamecube: {
+            buffer[0x00] = 0x02;
+            buffer[0x01] = 0x90;
+            buffer[0x02] = 0xa0;
+            buffer[0x03] = 0xff;
+            buffer[0x04] = 0x00;
+            buffer[0x05] = 0x00;
+            buffer[0x06] = 0x00;
+            buffer[0x07] = 0x00;
+            buffer[0x08] = 0x00;
+        } break;
 
         // Calibrate
         case DS5_TriggerEffectType::calibrate:
@@ -525,7 +534,7 @@ fn void DS5_process_trigger(DS5_TriggerEffect* effect, byt* buffer)
     }
 }
 
-fn void DS5_create_hid_output_buffer(byt* hid_buf, DS5_State* state)
+fn void DS5_create_hid_output_buffer(byt *hid_buf, DS5_State *state)
 {
     hid_buf[0x00] = 0xFF;
     hid_buf[0x01] = 0xF7;
@@ -560,7 +569,7 @@ fn void DS5_create_hid_output_buffer(byt* hid_buf, DS5_State* state)
     DS5_process_trigger(&state->trigger_effect_L, &hid_buf[0x15]);
 }
 
-fn void ds5_get_input(DS5_Context* context, DS5_State* state)
+fn void ds5_get_input(DS5_Context *context, DS5_State *state)
 {
     if (!context->connected) {
         PrintInfo(str_fmt("DS5 controller %u was disconnected.", context->port));
@@ -595,7 +604,7 @@ fn void ds5_get_input(DS5_Context* context, DS5_State* state)
     }
 }
 
-fn void ds5_push_output(DS5_Context* context, DS5_State* state)
+fn void ds5_push_output(DS5_Context *context, DS5_State *state)
 {
     if (!context->connected) {
         PrintInfo(str_fmt("DS5 controller %u was disconnected.", context->port));
@@ -607,9 +616,9 @@ fn void ds5_push_output(DS5_Context* context, DS5_State* state)
     //  lrmbl = max(lrmbl - 0x200, 0);
     //  rrmbl = max(rrmbl - 0x100, 0);
 
-    state->rumble_L  = (lrmbl & 0xff00) >> 8UL;
-    state->rumble_R  = (rrmbl & 0xff00) >> 8UL;
-    state->led_color = { 0, 255, 0 };
+    state->rumble_L = (lrmbl & 0xff00) >> 8UL;
+    state->rumble_R = (rrmbl & 0xff00) >> 8UL;
+    // state->led_color = { 0, 255, 0 };
 
     state->player_leds.bitmask = 0;
     state->mic_led             = DS5_MicLed::off;

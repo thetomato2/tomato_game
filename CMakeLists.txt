@@ -69,8 +69,8 @@ list(APPEND COMPILE_DEFS
 
 list(APPEND LINKER_FLAGS
     # -STACK:0x100000,0x100000
-    -incremental:no
-    -opt:ref
+    # -incremental:no
+    # -opt:ref
     )
 
 list(APPEND COMMON_LINKER_LIBS

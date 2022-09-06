@@ -183,6 +183,7 @@ fn v3f sample_env_map(v2f screen_space_uv, v3f samp_dir, f32 rough, EnviromentMa
 fn void draw_rect_quickly(Texture *buffer, v2f origin, v2f x_axis, v2f y_axis, Texture *albedo,
                           v4f color = { 1.0f, 1.0f, 1.0f, 1.0f })
 {
+    Assert(albedo);
     BeginTimedBlock(DrawRect);
 
     f32 x_inv_len_sq = 1.0f / vec_length_sq(x_axis);
@@ -198,10 +199,6 @@ fn void draw_rect_quickly(Texture *buffer, v2f origin, v2f x_axis, v2f y_axis, T
 
     f32 x_axis_len = vec_length(x_axis);
     f32 y_axis_len = vec_length(y_axis);
-
-    v2f nx_axis = (y_axis_len / x_axis_len) * x_axis;
-    v2f ny_axis = (x_axis_len / y_axis_len) * y_axis;
-    f32 nz_sca  = 0.5f * (x_axis_len + y_axis_len);
 
     r2i rc = { max_width, max_height, 0, 0 };
 
@@ -223,62 +220,199 @@ fn void draw_rect_quickly(Texture *buffer, v2f origin, v2f x_axis, v2f y_axis, T
     rc.x1 = min(rc.x1, max_width);
     rc.y1 = min(rc.y1, max_height);
 
+    v2f nx_axis = x_inv_len_sq * x_axis;
+    v2f ny_axis = y_inv_len_sq * y_axis;
+
+    f32 one_255         = 255.0f;
+    f32 inv_255         = 1.0f / 255.0f;
+    __m128 inv_255_m128 = _mm_set1_ps(inv_255);
+
+    __m128 one_m128       = _mm_set1_ps(1.0f);
+    __m128 One_255_m128   = _mm_set1_ps(255.0f);
+    __m128 zero           = _mm_set1_ps(0.0f);
+    __m128 nx_axis_x_m128 = _mm_set1_ps(nx_axis.x);
+    __m128 nx_axis_y_m128 = _mm_set1_ps(nx_axis.y);
+    __m128 ny_axis_x_m128 = _mm_set1_ps(ny_axis.x);
+    __m128 ny_axis_y_m128 = _mm_set1_ps(ny_axis.y);
+    __m128 origin_x_m128  = _mm_set1_ps(origin.x);
+    __m128 origin_y_m128  = _mm_set1_ps(origin.y);
+
+    u32 texel_sz        = texture_get_texel_size(albedo->type);
+    u32 alb_pitch       = texture_get_pitch(albedo);
+    u32 alb_pitch_texel = alb_pitch / texel_sz;
+
+    u32 buf_pitch = texture_get_pitch(buffer);
     Assert(buffer->type == Texture::Type::R8G8B8A8);
-    u32 pitch = texture_get_pitch(buffer);
-    byt *row  = (byt *)buffer->buf + rc.x0 * texture_get_texel_size(buffer->type) + rc.y0 * pitch;
+    byt *row =
+        (byt *)buffer->buf + rc.x0 * texture_get_texel_size(buffer->type) + rc.y0 * buf_pitch;
+
+    BeginTimedBlock(ProcessPixel);
     for (i32 y = rc.y0; y < rc.y1; ++y) {
         u32 *pixel_ptr = (u32 *)row;
-        for (i32 x = rc.x0; x < rc.x1; ++x) {
-            BeginTimedBlock(TestPixel);
-            v2f pixel_v2f = { (f32)x, (f32)y };
-            v2f d         = pixel_v2f - origin;
+        for (i32 x = rc.x0; x < rc.x1; x += 4) {
+            __m128 t0_r = _mm_set1_ps(0.0f);
+            __m128 t0_g = _mm_set1_ps(0.0f);
+            __m128 t0_b = _mm_set1_ps(0.0f);
+            __m128 t0_a = _mm_set1_ps(0.0f);
 
-            f32 edge_0 = vec_dot(d, -vec_perp(x_axis));
-            f32 edge_1 = vec_dot(d - x_axis, -vec_perp(y_axis));
-            f32 edge_2 = vec_dot(d - y_axis, vec_perp(y_axis));
-            f32 edge_3 = vec_dot(d - x_axis - y_axis, vec_perp(x_axis));
+            __m128 t1_r = _mm_set1_ps(0.0f);
+            __m128 t1_g = _mm_set1_ps(0.0f);
+            __m128 t1_b = _mm_set1_ps(0.0f);
+            __m128 t1_a = _mm_set1_ps(0.0f);
 
-            if (edge_0 < 0 && edge_1 < 0 && edge_2 < 0 && edge_3 < 0) {
-                // start with the color
-                if (albedo) {
-                    BeginTimedBlock(FillPixel);
-                    v2f screen_space_uv = { inv_max_width * (f32)x, inv_max_height * (f32)y };
+            __m128 t2_r = _mm_set1_ps(0.0f);
+            __m128 t2_g = _mm_set1_ps(0.0f);
+            __m128 t2_b = _mm_set1_ps(0.0f);
+            __m128 t2_a = _mm_set1_ps(0.0f);
 
-                    f32 u = x_inv_len_sq * vec_dot(d, x_axis);
-                    f32 v = y_inv_len_sq * vec_dot(d, y_axis);
-                    Assert((u >= 0.0f) && (u <= 1.0f + EPS_F32));
-                    Assert((v >= 0.0f) && (v <= 1.0f + EPS_F32));
-                    f32 tx = 1.0f + (u * (f32)(albedo->width - 3));
-                    f32 ty = 1.0f + (v * (f32)(albedo->height - 3));
+            __m128 t3_r = _mm_set1_ps(0.0f);
+            __m128 t3_g = _mm_set1_ps(0.0f);
+            __m128 t3_b = _mm_set1_ps(0.0f);
+            __m128 t3_a = _mm_set1_ps(0.0f);
+
+            __m128 fx = _mm_set1_ps(0.0f);
+            __m128 fy = _mm_set1_ps(0.0f);
+
+            __m128 dest_r = _mm_set1_ps(0.0f);
+            __m128 dest_g = _mm_set1_ps(0.0f);
+            __m128 dest_b = _mm_set1_ps(0.0f);
+            __m128 dest_a = _mm_set1_ps(0.0f);
+
+            __m128 blend_r = _mm_set1_ps(0.0f);
+            __m128 blend_g = _mm_set1_ps(0.0f);
+            __m128 blend_b = _mm_set1_ps(0.0f);
+            __m128 blend_a = _mm_set1_ps(0.0f);
+
+            bool should_fill[4];
+
+#define mmSquare(a) _mm_mul_ps(a, a)
+#define M(a, i)     ((float *)&(a))[i]
+
+            __m128 pixel_px = _mm_set_ps((f32)(x + 3), (f32)(x + 2), (f32)(x + 1), (f32)(x + 0));
+            __m128 pixel_py = _mm_set1_ps((f32)y);
+
+            __m128 dx = _mm_sub_ps(pixel_px, origin_x_m128);
+            __m128 dy = _mm_sub_ps(pixel_py, origin_y_m128);
+
+            __m128 u = _mm_add_ps(_mm_mul_ps(dx, nx_axis_x_m128), _mm_mul_ps(dy, nx_axis_y_m128));
+            __m128 v = _mm_add_ps(_mm_mul_ps(dx, ny_axis_x_m128), _mm_mul_ps(dy, ny_axis_y_m128));
+
+            for (i32 i = 0; i < 4; ++i) {
+                should_fill[i] =
+                    M(u, i) >= 0.0f && M(u, i) <= 1.0f && M(v, i) >= 0.0f && M(v, i) <= 1.0f;
+
+                if (should_fill[i]) {
+                    // use the uv coords to get a texel out of the texture
+                    f32 tx = M(u, i) * (f32)(albedo->width - 2);
+                    f32 ty = M(v, i) * (f32)(albedo->height - 2);
 
                     i32 tex_x = (i32)tx;
                     i32 tex_y = (i32)ty;
 
-                    f32 fx = tx - (f32)tex_x;
-                    f32 fy = ty - (f32)tex_y;
+                    // this used for blending
+                    M(fx, i) = tx - (f32)tex_x;
+                    M(fy, i) = ty - (f32)tex_y;
 
                     Assert((tex_x >= 0) && (tex_x < albedo->width));
                     Assert((tex_y >= 0) && (tex_y < albedo->height));
 
-                    // set the texel to the albedo map sample
-                    BilinearSample alb_bi_samp = get_bilinear_sample(albedo, tex_x, tex_y);
-                    v4f texel                  = bilinear_sample_blend(alb_bi_samp, fx, fy, true);
+                    // get 4 texels in a square to use for blending
+                    auto texel_ptr = (u32 *)albedo->buf + tex_y * alb_pitch_texel + tex_x * 1;
+                    u32 samp_a     = *texel_ptr;
+                    u32 samp_b     = *(texel_ptr + 1);
+                    u32 samp_c     = *(texel_ptr + alb_pitch_texel);
+                    u32 samp_d     = *(texel_ptr + alb_pitch_texel + 1);
 
-                    // blending with input color
-                    texel = vec_hadamard(texel, color);
+                    // unpack
+                    M(t0_r, i) = (f32)((samp_a >> 0) & 0xff) / 255.0f;
+                    M(t0_g, i) = (f32)((samp_a >> 8) & 0xff) / 255.0f;
+                    M(t0_b, i) = (f32)((samp_a >> 16) & 0xff) / 255.0f;
+                    M(t0_a, i) = (f32)((samp_a >> 24) & 0xff) / 255.0f;
 
-                    v4f dest_col  = color_u32_to_v4f(*(u32 *)pixel_ptr);
-                    v4f blend_col = lerp(dest_col, texel, texel.a);
-                    blend_col.a   = 1.0f;
-                    *pixel_ptr    = v4f_to_color_u32(blend_col).rgba;
-                    EndTimedBlock(FillPixel);
+                    M(t1_r, i) = (f32)((samp_b >> 0) & 0xff) / 255.0f;
+                    M(t1_g, i) = (f32)((samp_b >> 8) & 0xff) / 255.0f;
+                    M(t1_b, i) = (f32)((samp_b >> 16) & 0xff) / 255.0f;
+                    M(t1_a, i) = (f32)((samp_b >> 24) & 0xff) / 255.0f;
+
+                    M(t2_r, i) = (f32)((samp_c >> 0) & 0xff) / 255.0f;
+                    M(t2_g, i) = (f32)((samp_c >> 8) & 0xff) / 255.0f;
+                    M(t2_b, i) = (f32)((samp_c >> 16) & 0xff) / 255.0f;
+                    M(t2_a, i) = (f32)((samp_c >> 24) & 0xff) / 255.0f;
+
+                    M(t3_r, i) = (f32)((samp_d >> 0) & 0xff) / 255.0f;
+                    M(t3_g, i) = (f32)((samp_d >> 8) & 0xff) / 255.0f;
+                    M(t3_b, i) = (f32)((samp_d >> 16) & 0xff) / 255.0f;
+                    M(t3_a, i) = (f32)((samp_d >> 24) & 0xff) / 255.0f;
+
+                    // unpack the pixel to write to in the back buffer
+                    M(dest_r, i) = (f32)((*pixel_ptr >> 0) & 0xff) / 255.0f;
+                    M(dest_g, i) = (f32)((*pixel_ptr >> 8) & 0xff) / 255.0f;
+                    M(dest_b, i) = (f32)((*pixel_ptr >> 16) & 0xff) / 255.0f;
+                    M(dest_a, i) = (f32)((*pixel_ptr >> 24) & 0xff) / 255.0f;
                 }
             }
-            ++pixel_ptr;
-            EndTimedBlock(TestPixel);
+
+            // for (i32 i = 0; i < 4; ++i) {
+            // }
+            // bi-linear texture blen
+            __m128 ifx = _mm_sub_ps(one_m128, fx);
+            __m128 ify = _mm_sub_ps(one_m128, fy);
+
+            __m128 l0 = _mm_mul_ps(ify, ifx);
+            __m128 l1 = _mm_mul_ps(ify, fx);
+            __m128 l2 = _mm_mul_ps(fy, ifx);
+            __m128 l3 = _mm_mul_ps(fy, fx);
+
+            __m128 texel_r =
+                _mm_add_ps(_mm_add_ps(_mm_add_ps(_mm_mul_ps(l0, t0_r), _mm_mul_ps(l1, t1_r)),
+                                      _mm_mul_ps(l2, t2_r)),
+                           _mm_mul_ps(l3, t3_r));
+            __m128 texel_g =
+                _mm_add_ps(_mm_add_ps(_mm_add_ps(_mm_mul_ps(l0, t0_g), _mm_mul_ps(l1, t1_g)),
+                                      _mm_mul_ps(l2, t2_g)),
+                           _mm_mul_ps(l3, t3_g));
+            __m128 texel_b =
+                _mm_add_ps(_mm_add_ps(_mm_add_ps(_mm_mul_ps(l0, t0_b), _mm_mul_ps(l1, t1_b)),
+                                      _mm_mul_ps(l2, t2_b)),
+                           _mm_mul_ps(l3, t3_b));
+            __m128 texel_a =
+                _mm_add_ps(_mm_add_ps(_mm_add_ps(_mm_mul_ps(l0, t0_a), _mm_mul_ps(l1, t1_a)),
+                                      _mm_mul_ps(l2, t2_a)),
+                           _mm_mul_ps(l3, t3_a));
+
+            // TODO: do I need this???
+            texel_r = _mm_mul_ps(texel_r, texel_a);
+            texel_g = _mm_mul_ps(texel_g, texel_a);
+            texel_b = _mm_mul_ps(texel_b, texel_a);
+
+            // linear blend the texel and the back buffer pixel
+            __m128 ita = _mm_sub_ps(one_m128, texel_a);
+
+            blend_r = _mm_add_ps(_mm_mul_ps(ita, dest_r), texel_r);
+            blend_g = _mm_add_ps(_mm_mul_ps(ita, dest_g), texel_g);
+            blend_b = _mm_add_ps(_mm_mul_ps(ita, dest_b), texel_b);
+            blend_a    = _mm_add_ps(_mm_mul_ps(ita, dest_a), texel_a);
+            // blend_a = _mm_set1_ps(1.0f);
+
+            for (i32 i = 0; i < 4; ++i) {
+                // pack the final color and write it to the back buffer
+                if (should_fill[i]) {
+                    *(pixel_ptr + i) = { (u32)(M(blend_r, i) * 255.0f) << 0 |
+                                         (u32)(M(blend_g, i) * 255.0f) << 8 |
+                                         (u32)(M(blend_b, i) * 255.0f) << 16 |
+                                         (u32)(M(blend_a, i) * 255.0f) << 24 };
+
+                    // *(pixel_ptr + i) = { (u32)(M(blend_r, i) + 0.5f) << 0 |
+                    //                      (u32)(M(blend_g, i) + 0.5f) << 8 |
+                    //                      (u32)(M(blend_b, i) + 0.5f) << 16 |
+                    //                      (u32)(M(blend_a, i) + 0.5f) << 24 };
+                }
+            }
+            pixel_ptr += 4;
         }
-        row += pitch;
+        row += buf_pitch;
     }
+    EndTimedBlockCounted(ProcessPixel, (rc.x1 - rc.x0 + 1) * (rc.y1 - rc.y0 + 1));
     EndTimedBlock(DrawRect);
 }
 
@@ -286,8 +420,6 @@ fn void draw_rect_slowly(Texture *buffer, v2f origin, v2f x_axis, v2f y_axis, Te
                          Texture *normal, EnviromentMap *top, EnviromentMap *middle,
                          EnviromentMap *bottom, v4f color = { 1.0f, 1.0f, 1.0f, 1.0f })
 {
-    BeginTimedBlock(DrawRect);
-
     f32 x_inv_len_sq = 1.0f / vec_length_sq(x_axis);
     f32 y_inv_len_sq = 1.0f / vec_length_sq(y_axis);
 
@@ -327,12 +459,12 @@ fn void draw_rect_slowly(Texture *buffer, v2f origin, v2f x_axis, v2f y_axis, Te
     rc.y1 = min(rc.y1, max_height);
 
     Assert(buffer->type == Texture::Type::R8G8B8A8);
-    u32 pitch = texture_get_pitch(buffer);
-    byt *row  = (byt *)buffer->buf + rc.x0 * texture_get_texel_size(buffer->type) + rc.y0 * pitch;
+    u32 buf_pitch = texture_get_pitch(buffer);
+    byt *row =
+        (byt *)buffer->buf + rc.x0 * texture_get_texel_size(buffer->type) + rc.y0 * buf_pitch;
     for (i32 y = rc.y0; y < rc.y1; ++y) {
         u32 *pixel_ptr = (u32 *)row;
         for (i32 x = rc.x0; x < rc.x1; ++x) {
-            BeginTimedBlock(TestPixel);
             v2f pixel_v2f = { (f32)x, (f32)y };
             v2f d         = pixel_v2f - origin;
 
@@ -344,7 +476,6 @@ fn void draw_rect_slowly(Texture *buffer, v2f origin, v2f x_axis, v2f y_axis, Te
             if (edge_0 < 0 && edge_1 < 0 && edge_2 < 0 && edge_3 < 0) {
                 // start with the color
                 if (albedo) {
-                    BeginTimedBlock(FillPixel);
                     v2f screen_space_uv = { inv_max_width * (f32)x, inv_max_height * (f32)y };
 
                     f32 u = x_inv_len_sq * vec_dot(d, x_axis);
@@ -430,15 +561,12 @@ fn void draw_rect_slowly(Texture *buffer, v2f origin, v2f x_axis, v2f y_axis, Te
                     v4f blend_col = lerp(dest_col, texel, texel.a);
                     blend_col.a   = 1.0f;
                     *pixel_ptr    = v4f_to_color_u32(blend_col).rgba;
-                    EndTimedBlock(FillPixel);
                 }
             }
             ++pixel_ptr;
-            EndTimedBlock(TestPixel);
         }
-        row += pitch;
+        row += buf_pitch;
     }
-    EndTimedBlock(DrawRect);
 }
 
 fn void draw_rect_slowly(Texture *buffer, m3 model, Texture *albedo, Texture *normal,
@@ -652,23 +780,32 @@ fn void draw_render_group(RenderGroup *group, Texture *back_buffer)
             case RenderGroupEntryType::texture: {
                 auto entry = (RenderGroupEntryTexture *)data;
                 Assert(entry->texture);
-                m3 world = m3_identity(g_meters_to_pixels);
+                m3 world   = m3_identity(g_meters_to_pixels);
                 m3 view    = entry->model * world;
                 v2f x_axis = view.r[0].xy;
                 v2f y_axis = view.r[1].xy;
+                // v2f y_axis = vec_perp(x_axis);
+                // v2f y_axis = vec_normalize(vec_perp(x_axis)) * vec_length(view.r[1].xy);
 
-                v2f pos = m3_get_p(entry->model);
-                v2f coord = get_screen_space_coord(group, back_buffer, pos);
+                // // v2f x_axis     = (200.0f + 20.0f * cos(angle)) * v2f { cos(angle),
+                // sin(angle)
+                // }; v2f x_axis = 200.0f * v2f { 1.0f, 0.0f }; v2f y_axis = vec_perp(x_axis);
+                // // game->debug_origin.x = sin(app->
+
+                v2f pos    = m3_get_p(entry->model);
+                v2f coord  = get_screen_space_coord(group, back_buffer, pos);
                 v2f origin = coord - 0.5f * x_axis - 0.5f * y_axis;
 
                 draw_rect_quickly(back_buffer, origin, x_axis, y_axis, entry->texture);
 
+#if 0
                 draw_square(back_buffer, origin, 3, color_u32(yellow));
                 draw_square(back_buffer, origin + x_axis, 3, color_u32(yellow));
                 draw_square(back_buffer, origin + y_axis, 3, color_u32(yellow));
                 draw_square(back_buffer, origin + x_axis + y_axis, 3, color_u32(yellow));
                 draw_square(back_buffer, origin + 0.5f * x_axis + 0.5f * y_axis, 3,
                             color_u32(orange));
+#endif
 
                 inc_base(entry);
             } break;
@@ -696,4 +833,5 @@ fn void draw_render_group(RenderGroup *group, Texture *back_buffer)
         }
     }
 }
+
 }  // namespace tom

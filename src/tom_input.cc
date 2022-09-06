@@ -245,19 +245,9 @@ fn Input init_input()
     AssignWin32Key(f11);
     AssignWin32Key(f12);
 
-    // Dualsense (PS5) controllers
-
+    // DualSense (PS5) controllers
     result.ds5_cnt = DS5_init(result.ds5_context);
 
-    for (u32 i = 0; i < result.ds5_cnt; ++i) {
-        result.ds5_state[i].trigger_effect_L.type                 = DS5_TriggerEffectType::continuous;
-        result.ds5_state[i].trigger_effect_L.continuous.force     = 0xff;
-        result.ds5_state[i].trigger_effect_L.continuous.start_pos = 0x00;
-
-        result.ds5_state[i].trigger_effect_R.type                 = DS5_TriggerEffectType::continuous;
-        result.ds5_state[i].trigger_effect_R.continuous.force     = 0xff;
-        result.ds5_state[i].trigger_effect_R.continuous.start_pos = 0x00;
-    }
 
     return result;
 }

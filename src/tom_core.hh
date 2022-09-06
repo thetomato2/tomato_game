@@ -1,3 +1,14 @@
+
+// #ifdef _MSVC
+//     #define MSVC 1
+// #endif
+
+#define MSVC 1
+
+// #ifdef _LLVM
+//     #define LLVM 1
+// #endif
+
 #include <cassert>
 #include <cmath>
 
@@ -24,7 +35,7 @@
 
 #if 1
     #include <dxgidebug.h>
-typedef HRESULT(WINAPI* LPDXGIGETDEBUGINTERFACE)(REFIID, void**);
+typedef HRESULT(WINAPI *LPDXGIGETDEBUGINTERFACE)(REFIID, void **);
 #endif
 
 #include <xinput.h>
@@ -40,16 +51,8 @@ typedef HRESULT(WINAPI* LPDXGIGETDEBUGINTERFACE)(REFIID, void**);
 #define STB_TRUETYPE_IMPLEMENTATION
 #include "../extern/stb/stb_truetype.h"
 
-#ifdef _MSVC
-    #define MSVC 1
-#endif
-
-#ifdef _LLVM
-    #define LLVM 1
-#endif
-
 #if MSVC
-    /* #include <intrin.h> */
+    #include <intrin.h> 
     #pragma intrinsic(_BitScanForward)
 #endif
 
@@ -143,7 +146,7 @@ enum CONSOLE_FG_COLORS
                 PrintRed("FAILED ASSERT:") printf(" %s at :%d\n", __FILE__, __LINE__); \
                 __debugbreak();                                                        \
             }                                                                          \
-            assert(x);                                                                  \
+            assert(x);                                                                 \
         } while (0)
     #define DebugBreak(x)   \
         if (x) {            \
@@ -193,12 +196,12 @@ inline bool is_flag_set(i32 flags, i32 flag)
     return flags & flag;
 }
 
-inline void set_flags(i32& flags, i32 flag)
+inline void set_flags(i32 &flags, i32 flag)
 {
     flags |= flag;
 }
 
-inline void clear_flags(i32& flags, i32 flag)
+inline void clear_flags(i32 &flags, i32 flag)
 {
     flags &= ~flag;
 }

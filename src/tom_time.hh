@@ -6,8 +6,7 @@ namespace tom
 enum
 {
 
-    debug_CycleCounter_FillPixel,
-    debug_CycleCounter_TestPixel,
+    debug_CycleCounter_ProcessPixel,
     debug_CycleCounter_DrawRect,
     debug_CycleCounter_Render,
     debug_CycleCounter_Count
@@ -24,6 +23,12 @@ struct debug_CycleCounter
         debug_global_mem->counters[debug_CycleCounter_##ID].cycle_cnt += \
             __rdtsc() - start_cycle_cnt_##ID;                            \
         ++debug_global_mem->counters[debug_CycleCounter_##ID].hit_cnt
+    #define EndTimedBlockCounted(ID, CNT)                                      \
+        {                                                                      \
+            debug_global_mem->counters[debug_CycleCounter_##ID].cycle_cnt +=   \
+                __rdtsc() - start_cycle_cnt_##ID;                              \
+            debug_global_mem->counters[debug_CycleCounter_##ID].hit_cnt += CNT; \
+        }
     #define PrintCounter(ID) \
         printf("%s: %llu\n", #ID, debug_global_mem->counters[debug_CycleCounter_##ID].cycle_cnt)
 

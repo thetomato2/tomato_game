@@ -6,8 +6,8 @@
 namespace tom
 {
 
-global constexpr u32 g_max_ent_cnt      = 65536;
-global constexpr f32 g_meters_to_pixels = 60.0f;
+global constexpr u32 g_max_ent_cnt = 65536;
+global f32 g_meters_to_pixels      = 30.0f;
 
 struct GameSoundOutputBuffer
 {
