@@ -1,3 +1,8 @@
+#ifndef TOM_MEMORY_HH
+#define TOM_MEMORY_HH
+
+#include "tom_core.hh"
+
 namespace tom
 {
 
@@ -21,7 +26,7 @@ inline Arena init_arena (void* base, szt size)
 
 inline void* push_size(Arena* arena, szt size)
 {
-    Assert((arena->used + size) <= arena->size);
+    TOM_ASSERT((arena->used + size) <= arena->size);
     void* result = arena->base + arena->used;
     arena->used += size;
 
@@ -66,10 +71,10 @@ inline void zero_array(T* ptr, szt count)
 // template<typename T>
 // function void zero_array(T* ptr)
 // {
-//     zero_size(ptr, CountOf(ptr));
+//     zero_size(ptr, ARR_CNTOf(ptr));
 // }
 
-#define ZeroArray(arr) zero_array(arr, CountOf(arr))
+#define ZeroArray(arr) zero_array(arr, ARR_CNT(arr))
 
 // #define PUSH_STRUCT(arena, type)       (type*)push_size(arena, sizeof(type))
 // #define PUSH_ARRAY(arena, count, type) (type*)push_size(arena, (count * sizeof(type)))
@@ -230,3 +235,5 @@ void swap(UniquePtr<T>& lhs, UniquePtr<T>& rhs)
 }
 
 }  // namespace tom
+
+#endif

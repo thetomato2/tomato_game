@@ -12,7 +12,6 @@ using wchar_t = uint16_t;
 // WinHelp is deprecate
 #define NOHELP
 // DirectX apps don't need GDI
-// NOTE: I am using GDI to slowly blit to the screen
 //#define NODRAWTEXT
 //#define NOGDI
 //#define NOBITMAP

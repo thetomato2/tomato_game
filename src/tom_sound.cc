@@ -62,7 +62,7 @@ fn void init_WASAPI(i32 samples_per_second, i32 buffer_size_in_samples)
 
     // Check if we got what we requested (better would to pass this value back
     // as real buffer size)
-    Assert(buffer_size_in_samples <= scast(i32, sound_frame_cnt));
+    TOM_ASSERT(buffer_size_in_samples <= scast(i32, sound_frame_cnt));
 #endif
 }
 

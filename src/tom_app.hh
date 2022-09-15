@@ -1,13 +1,12 @@
-#define USE_DS5 1
+#ifndef TOM_APP_HH
+#define TOM_APP_HH
 
 #include "tom_core.hh"
-#include "tom_intrinsic.hh"
 #include "tom_math.hh"
 #include "tom_color.hh"
 #include "tom_memory.hh"
 #include "tom_string.hh"
 #include "tom_time.hh"
-#include "tom_file_io.hh"
 #include "tom_texture.hh"
 #if USE_DS5
     #include "tom_DS5.hh"
@@ -24,6 +23,7 @@
 namespace tom
 {
 
+
 struct AppMemory
 {
     u64 permanent_storage_size;
@@ -35,10 +35,6 @@ struct AppMemory
     debug_CycleCounter counters[256];
 #endif
 };
-
-#ifdef TOM_INTERNAL
-global AppMemory *debug_global_mem;
-#endif
 
 struct AppState
 {
@@ -71,4 +67,8 @@ struct AppState
 
     D3D11ShaderProg main_shader;
 };
+
+i32 app_start(HINSTANCE hinst);
+
 }  // namespace tom
+#endif

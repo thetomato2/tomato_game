@@ -38,6 +38,8 @@ set(EXTERN_DIR ${CMAKE_CURRENT_LIST_DIR}/extern)
 # set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${BUILD_DIR})
 
 list(APPEND COMPILE_FLAGS
+    # -arch:AVX
+    # -arch:AVX2
     -fp:fast
     -fp:except-
     # -FC
@@ -97,7 +99,6 @@ file(GLOB FONTS
     )
 
 
-
 # add_library(stb STATIC
 #     ${EXTERN_DIR}/stb/stb_image.h
 #     ${EXTERN_DIR}/stb/stb_image.cpp
@@ -105,13 +106,57 @@ file(GLOB FONTS
 
 add_executable(tomato_game WIN32
     ${SOURCE_DIR}/winmain.cc
-    )
+    ${SOURCE_DIR}/tom_app.cc
+    ${SOURCE_DIR}/tom_app.hh
+    # ${SOURCE_DIR}/tom_camera.cc
+    # ${SOURCE_DIR}/tom_camera.hh
+    ${SOURCE_DIR}/tom_color.hh
+    ${SOURCE_DIR}/tom_core.hh
+    ${SOURCE_DIR}/tom_d3d11.cc
+    ${SOURCE_DIR}/tom_d3d11.hh
+    ${SOURCE_DIR}/tom_DS5.cc
+    ${SOURCE_DIR}/tom_DS5.hh
+    ${SOURCE_DIR}/tom_dx_error.hh
+    ${SOURCE_DIR}/tom_entity.cc
+    ${SOURCE_DIR}/tom_entity.hh
+    ${SOURCE_DIR}/tom_extern.cc
+    ${SOURCE_DIR}/tom_file_io.cc
+    ${SOURCE_DIR}/tom_file_io.hh
+    # ${SOURCE_DIR}/tom_font.cc
+    # ${SOURCE_DIR}/tom_font.hh
+    ${SOURCE_DIR}/tom_game.cc
+    ${SOURCE_DIR}/tom_game.hh
+    ${SOURCE_DIR}/tom_globals.hh
+    ${SOURCE_DIR}/tom_graphics.cc
+    ${SOURCE_DIR}/tom_graphics.hh
+    ${SOURCE_DIR}/tom_input.cc
+    ${SOURCE_DIR}/tom_input.hh
+    ${SOURCE_DIR}/tom_intrinsic.hh
+    ${SOURCE_DIR}/tom_math.hh
+    ${SOURCE_DIR}/tom_memory.hh
+    ${SOURCE_DIR}/tom_rng_nums.hh
+    ${SOURCE_DIR}/tom_sim.cc
+    ${SOURCE_DIR}/tom_sim.hh
+    # ${SOURCE_DIR}/tom_sound.cc
+    # ${SOURCE_DIR}/tom_sound.hh
+    ${SOURCE_DIR}/tom_string.hh
+    ${SOURCE_DIR}/tom_texture.hh
+    ${SOURCE_DIR}/tom_time.hh
+    ${SOURCE_DIR}/tom_types.hh
+    ${SOURCE_DIR}/tom_win32.cc
+    ${SOURCE_DIR}/tom_win32.hh
+    # ${SOURCE_DIR}/tom_world.cc
+    # ${SOURCE_DIR}/tom_world.hh
+    ${SOURCE_DIR}/winmain.cc
+)
 
 target_include_directories(tomato_game PRIVATE ${SOURCE_DIR})
 
 target_compile_options(tomato_game  PRIVATE
     ${Compile_FLags}
-    # -MTd
+    -mavx
+    -mavx2
+    # -march=knl
     )
 
 target_compile_definitions(tomato_game  PRIVATE ${COMPILE_DEFS})

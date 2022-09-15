@@ -1,10 +1,16 @@
+#ifndef TOM_DX_ERROR_HH
+#define TOM_DX_ERROR_HH
+
+#include "tom_core.hh"
+#include "tom_string.hh"
+
 #define CHK_ERR(hrchk, str) \
     case hrchk: return str_cat(str);
 
 namespace tom
 {
 
-fn char *d3d_error_code(HRESULT hr)
+inline char *d3d_error_code(HRESULT hr)
 {
     // clang-format off
     switch (hr)
@@ -419,3 +425,5 @@ fn char *d3d_error_code(HRESULT hr)
     return str_cat("DX ERROR NOT FOUND!");
 }
 }  // namespace tom
+
+#endif

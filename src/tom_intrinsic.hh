@@ -1,3 +1,6 @@
+#ifndef TOM_INTRIN_HH
+#define TOM_INTRIN_HH
+   
 namespace tom
 {
 
@@ -87,3 +90,5 @@ inline i32 ceilf_to_i32(f32 val)
 }
 
 }  // namespace tom
+
+#endif

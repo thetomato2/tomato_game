@@ -4,12 +4,18 @@
 // not a trivial thing to implement, but my Handmade spirit wills me so
 // ============================================================================================
 
+#ifndef TOM_STRING_HH
+#define TOM_STRING_HH
+
+#include "tom_core.hh"
+#include "tom_memory.hh"
+
 namespace tom
 {
 
-fn char itoc(u64 d)
+inline char itoc(u64 d)
 {
-    Assert(d < 10);
+    TOM_ASSERT(d < 10);
 
     switch (d) {
         case 0: return '0';
@@ -27,9 +33,9 @@ fn char itoc(u64 d)
     return '\0';
 }
 
-fn char itoc(i32 d)
+inline char itoc(i32 d)
 {
-    Assert(d < 10);
+    TOM_ASSERT(d < 10);
 
     switch (d) {
         case 0: return '0';
@@ -47,7 +53,7 @@ fn char itoc(i32 d)
     return '\0';
 }
 
-fn char *itos(u64 n)
+inline char *itos(u64 n)
 {
     szt len = 0;
     i32 x   = n;
@@ -67,7 +73,7 @@ fn char *itos(u64 n)
     return result;
 }
 
-fn char *itos(i32 n)
+inline char *itos(i32 n)
 {
     szt len = 0;
     i32 x   = n;
@@ -88,7 +94,7 @@ fn char *itos(i32 n)
 }
 
 // TODO: this is pretty barebones
-fn i32 stoi(const char *str)
+inline i32 stoi(const char *str)
 {
     i32 i = 0;
     while (*str >= '0' && *str <= '9') {
@@ -98,7 +104,7 @@ fn i32 stoi(const char *str)
     return i;
 }
 
-fn i32 stoi(const char c)
+inline i32 stoi(const char c)
 {
     switch (c) {
         case '0': return 0;
@@ -119,14 +125,14 @@ fn i32 stoi(const char c)
 }
 
 template<typename CharT>
-fn void str_copy(const CharT *str, CharT *buf)
+inline void str_copy(const CharT *str, CharT *buf)
 {
     for (; *str; ++str) *buf++ = *str;
     *buf = (CharT)'\0';
 }
 
 template<typename CharT>
-fn bool str_equal(const CharT *a, const CharT *b)
+inline bool str_equal(const CharT *a, const CharT *b)
 {
     while (*a && *a == *b) {
         ++a;
@@ -137,7 +143,7 @@ fn bool str_equal(const CharT *a, const CharT *b)
 }
 
 template<typename CharT>
-fn CharT *rev_str(const CharT *str)
+inline CharT *rev_str(const CharT *str)
 {
     szt len       = str_len(str);
     CharT *result = (CharT *)plat_malloc(sizeof(CharT) * (len + 1));
@@ -150,7 +156,7 @@ fn CharT *rev_str(const CharT *str)
 }
 
 template<typename CharT>
-fn szt str_len(const CharT *str)
+inline szt str_len(const CharT *str)
 {
     const CharT *s;
     for (s = str; *s; ++s)
@@ -161,7 +167,7 @@ fn szt str_len(const CharT *str)
 }
 
 template<typename... Args>
-fn szt str_len(Args... args)
+inline szt str_len(Args... args)
 {
     szt result = 0;
     for (auto s : { args... }) {
@@ -172,7 +178,7 @@ fn szt str_len(Args... args)
 }
 
 template<typename CharT, typename... Args>
-fn CharT *str_cat(const CharT *first, Args... args)
+inline CharT *str_cat(const CharT *first, Args... args)
 {
     szt buf_len = str_len(first) + str_len(std::forward<Args>(args)...);
     // CharT* result  = (CharT*)plat_malloc(sizeof(CharT) * (buf_len + 1));
@@ -194,7 +200,7 @@ fn CharT *str_cat(const CharT *first, Args... args)
 }
 
 template<typename CharT>
-fn CharT *str_cat(const CharT *str)
+inline CharT *str_cat(const CharT *str)
 {
     CharT *result  = (CharT *)plat_malloc(sizeof(CharT) * (str_len(str) + 1));
     CharT *buf_ptr = result;
@@ -207,7 +213,7 @@ fn CharT *str_cat(const CharT *str)
 }
 
 template<typename... Args>
-fn char *str_fmt(const char *format, Args... args)
+inline char *str_fmt(const char *format, Args... args)
 {
     szt buf_sz   = snprintf(nullptr, 0, format, args...) + 1;
     char *result = plat_malloc<char>(buf_sz);
@@ -216,7 +222,7 @@ fn char *str_fmt(const char *format, Args... args)
     return result;
 }
 
-fn char *convert_wstring_to_string(const wchar *wstr)
+inline char *convert_wstring_to_string(const wchar *wstr)
 {
     i32 cnt     = WideCharToMultiByte(CP_ACP, 0, wstr, -1, NULL, 0, NULL, NULL);
     auto result = plat_malloc<char>(cnt);
@@ -225,7 +231,7 @@ fn char *convert_wstring_to_string(const wchar *wstr)
     return result;
 }
 
-fn wchar *convert_string_to_wstring(const char *str)
+inline wchar *convert_string_to_wstring(const char *str)
 {
     i32 cnt     = MultiByteToWideChar(CP_ACP, 0, str, -1, NULL, 0);
     auto result = plat_malloc<wchar>(cnt);
@@ -234,7 +240,7 @@ fn wchar *convert_string_to_wstring(const char *str)
     return result;
 }
 
-fn char *convert_wstring_to_string_utf8(const wchar *wstr)
+inline char *convert_wstring_to_string_utf8(const wchar *wstr)
 {
     i32 cnt     = WideCharToMultiByte(CP_UTF8, 0, wstr, -1, NULL, 0, NULL, NULL);
     auto result = plat_malloc<char>(cnt);
@@ -243,7 +249,7 @@ fn char *convert_wstring_to_string_utf8(const wchar *wstr)
     return result;
 }
 
-fn wchar *convert_string_to_wstring_utf8(const char *str)
+inline wchar *convert_string_to_wstring_utf8(const char *str)
 {
     i32 cnt     = MultiByteToWideChar(CP_UTF8, 0, str, -1, NULL, 0);
     auto result = plat_malloc<wchar>(cnt);
@@ -253,3 +259,5 @@ fn wchar *convert_string_to_wstring_utf8(const char *str)
 }
 
 }  // namespace tom
+
+#endif

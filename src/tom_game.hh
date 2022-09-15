@@ -1,13 +1,18 @@
+#ifndef TOM_GAME_HH
+#define TOM_GAME_HH
+
+#include "tom_core.hh"
+#include "tom_memory.hh"
 #include "tom_graphics.hh"
-// #include "tom_world.hh"
+#include "tom_texture.hh"
 #include "tom_entity.hh"
 #include "tom_sim.hh"
 
 namespace tom
 {
 
-global constexpr u32 g_max_ent_cnt = 65536;
-global f32 g_meters_to_pixels      = 30.0f;
+////////////////////////////////////////////////////////////////////////////////////////////////
+// #Game Types
 
 struct GameSoundOutputBuffer
 {
@@ -27,9 +32,8 @@ struct GameState
     EntityActions player_acts[4];
 
     u32 ent_cnt;
-    Entity entities[g_max_ent_cnt];
+    Entity entities[tom::g_max_ent_cnt];
 
-    // TODO: make a struct for all textures?
     Texture player_sprites[4];
     Texture cat_sprites[2];
     Texture tree_sprite;
@@ -49,4 +53,12 @@ struct GameState
     EnviromentMap env_maps[3];
 };
 
+////////////////////////////////////////////////////////////////////////////////////////////////
+// #Game Functions
+struct AppState;
+void game_init(ThreadContext *thread, AppState *app);
+void game_update_and_render(ThreadContext *thread, AppState *app);
+
 }  // namespace tom
+
+#endif

@@ -1,3 +1,5 @@
+#include "tom_win32.hh"
+
 namespace tom
 {
 
@@ -10,7 +12,7 @@ global bool g_focus         = false;
 v2i g_win_dim               = {};
 i32 g_ms_scroll             = {};
 
-fn void toggle_fullscreen(Win32State* win32)
+void toggle_fullscreen(Win32State *win32)
 {
     DWORD dwStyle = (DWORD)GetWindowLong(win32->hwnd, GWL_STYLE);
     if (dwStyle & WS_OVERLAPPEDWINDOW) {
@@ -32,7 +34,7 @@ fn void toggle_fullscreen(Win32State* win32)
     }
 }
 
-fn v2i get_window_dimensions(HWND hwnd)
+v2i get_window_dimensions(HWND hwnd)
 {
     v2i result = {};
 
@@ -41,16 +43,16 @@ fn v2i get_window_dimensions(HWND hwnd)
     // GetWindowRect(hwnd, &client_rect);
     result.w = client_rect.right - client_rect.left;
     result.h = client_rect.bottom - client_rect.top;
-    
+
     return result;
 }
 
-fn void get_cwd(char* buf)
+void get_cwd(char *buf)
 {
     GetCurrentDirectoryA(MAX_PATH, buf);
 }
 
-fn bool dir_exists(const wchar* dir)
+bool dir_exists(const wchar *dir)
 {
     DWORD ftyp = GetFileAttributesW(dir);
     if (ftyp == INVALID_FILE_ATTRIBUTES) return false;
@@ -60,7 +62,7 @@ fn bool dir_exists(const wchar* dir)
     return false;
 }
 
-fn bool dir_exists(const char* dir)
+bool dir_exists(const char *dir)
 {
     DWORD ftyp = GetFileAttributesA(dir);
     if (ftyp == INVALID_FILE_ATTRIBUTES) return false;
@@ -70,15 +72,14 @@ fn bool dir_exists(const char* dir)
     return false;
 }
 
-fn void create_dir(const char* dir_name)
+void create_dir(const char *dir_name)
 {
     if (!dir_exists(dir_name)) {
         CreateDirectoryA(dir_name, NULL);
     }
 }
-
 #if 0
-fn void create_dir(wstring dir_name)
+internal void create_dir(wstring dir_name)
 {
     if (!dir_exists(dir_name.c_str())) {
         CreateDirectoryW(dir_name.c_str(), NULL);
@@ -89,7 +90,7 @@ fn void create_dir(wstring dir_name)
 // recursively deletes the specified directory and all its contents
 // absolute path of the directory that will be deleted
 // NOTE: the path must not be terminated with a path separator.
-fn  void rm_rf_dir(const wstring& path)
+internal void rm_rf_dir(const wstring& path)
 {
     if (path.back() == L'\\') {
         INVALID_CODE_PATH;
@@ -154,13 +155,13 @@ fn  void rm_rf_dir(const wstring& path)
 
 #endif
 
-fn void create_console()
+void create_console()
 {
     bool is_initialized = AllocConsole();
-    Assert(is_initialized);
+    TOM_ASSERT(is_initialized);
 
     if (is_initialized) {
-        FILE* fDummy;
+        FILE *fDummy;
         freopen_s(&fDummy, "CONOUT$", "w", stdout);
         freopen_s(&fDummy, "CONOUT$", "w", stderr);
         freopen_s(&fDummy, "CONIN$", "r", stdin);
@@ -177,7 +178,7 @@ fn void create_console()
     }
 }
 
-fn void process_pending_messages(Win32State* win32)
+void process_pending_messages(Win32State *win32)
 {
     win32->running       = g_running;
     win32->pause         = g_pause;
@@ -289,23 +290,23 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 
 typedef BOOL WINAPI SetProcessDpiAware(void);
 typedef BOOL WINAPI SetProcessDpiAwarenessContext(DPI_AWARENESS_CONTEXT);
-fn void prevent_windows_DPI_scaling()
+void prevent_windows_DPI_scaling()
 {
     HMODULE WinUser = LoadLibraryW(L"user32.dll");
-    SetProcessDpiAwarenessContext* dpi_context =
-        (SetProcessDpiAwarenessContext*)GetProcAddress(WinUser, "SetProcessDPIAwarenessContext");
+    SetProcessDpiAwarenessContext *dpi_context =
+        (SetProcessDpiAwarenessContext *)GetProcAddress(WinUser, "SetProcessDPIAwarenessContext");
     if (dpi_context) {
         dpi_context(DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE);
     } else {
-        SetProcessDpiAware* dpi_aware =
-            (SetProcessDpiAware*)GetProcAddress(WinUser, "SetProcessDPIAware");
+        SetProcessDpiAware *dpi_aware =
+            (SetProcessDpiAware *)GetProcAddress(WinUser, "SetProcessDPIAware");
         if (dpi_aware) {
             dpi_aware();
         }
     }
 }
 
-fn void create_window(Win32State* win32)
+void create_window(Win32State *win32)
 {
     win32->cls_name = "TomatoWinCls";
 
@@ -318,7 +319,7 @@ fn void create_window(Win32State* win32)
 
     if (!RegisterClass(&cls)) {
         printf("ERROR--> Failed to register window class!\n");
-        Assert(false);
+        TOM_ASSERT(false);
         return;
     }
 
@@ -339,12 +340,12 @@ fn void create_window(Win32State* win32)
 
     // if (AdjustWindowRect(&wr, dw_style, false) == 0) {
     //     printf("ERROR--> Failed to adjust window rect");
-    //     InvalidCodePath;
+    //     INVALID_CODE_PATH;
     // }
 
     if (AdjustWindowRectEx(&wr, dw_style, false, ex_style) == 0) {
         printf("ERROR--> Failed to adjust window rect");
-        InvalidCodePath;
+        INVALID_CODE_PATH;
     }
 
     win32->hwnd = CreateWindowEx(ex_style, cls.lpszClassName, _T("Tomato Game"), dw_style,
@@ -353,7 +354,7 @@ fn void create_window(Win32State* win32)
 
     if (!win32->hwnd) {
         printf("Failed to create window!\n");
-        Assert(win32->hwnd);
+        TOM_ASSERT(win32->hwnd);
         return;
     }
 
@@ -366,7 +367,7 @@ fn void create_window(Win32State* win32)
     win32->notify = RegisterDeviceNotification(
         win32->hwnd, &dev_broadcast,
         DEVICE_NOTIFY_WINDOW_HANDLE | DEVICE_NOTIFY_ALL_INTERFACE_CLASSES);
-    Assert(win32->notify);
+    TOM_ASSERT(win32->notify);
 
     ShowWindow(win32->hwnd, SW_SHOWNORMAL);
     UpdateWindow(win32->hwnd);

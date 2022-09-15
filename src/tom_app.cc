@@ -1,25 +1,20 @@
 #include "tom_app.hh"
 #include "tom_rng_nums.hh"
-#include "tom_file_io.cc"
-#include "tom_d3d11.cc"
-// #include "tom_camera.cc"
-#include "tom_input.cc"
-#include "tom_sound.cc"
-#include "tom_win32.cc"
-#include "tom_game.cc"
+#include "tom_time.hh"
 
 namespace tom
 {
+AppMemory *debug_global_mem;
 
 global ID3D11Texture2D *g_tex;
 global ID3D11Texture2D *g_staging_tex;
 global ID3D11ShaderResourceView *g_sha_rsc_view;
 
-fn void handle_cycle_counters()
+internal void handle_cycle_counters()
 {
 #ifdef TOM_INTERNAL
-    PrintMessage("Debug Cycle Counts:");
-    for (i32 i = 0; i < CountOf(debug_global_mem->counters); ++i) {
+    PRINT_MSG("Debug Cycle Counts:");
+    for (i32 i = 0; i < ARR_CNT(debug_global_mem->counters); ++i) {
         debug_CycleCounter *counter = &debug_global_mem->counters[i];
         if (counter->hit_cnt) {
             printf("cycles: %llu hits: %d avg: %llu\n", counter->cycle_cnt, counter->hit_cnt,
@@ -31,7 +26,7 @@ fn void handle_cycle_counters()
 #endif
 }
 
-fn void on_device_change(AppState *app)
+internal void on_device_change(AppState *app)
 
 {
     if (app->device_changed_delay > 0.5f) {
@@ -43,7 +38,7 @@ fn void on_device_change(AppState *app)
     }
 }
 
-fn void create_resources(AppState *app)
+internal void create_resources(AppState *app)
 {
     auto d3d11 = &app->d3d11;
 
@@ -80,7 +75,7 @@ fn void create_resources(AppState *app)
     d3d_Check(d3d11->device->CreateShaderResourceView(g_tex, nullptr, &g_sha_rsc_view));
 }
 
-fn void on_resize(AppState *app)
+internal void on_resize(AppState *app)
 {
     auto d3d11 = &app->d3d11;
 
@@ -98,8 +93,13 @@ fn void on_resize(AppState *app)
 
 /////////////////////////////////////////////////////////////////////////////////////////////////
 // #INIT
-fn void app_init(AppState *app)
+internal void app_init(AppState *app)
 {
+
+    i32 x = sizeof(x);
+    bool ddd = true;
+    printf("dude\n");
+
     app->game = (GameState *)plat_malloc(sizeof(GameState));
     app->fov  = 1.0f;
 
@@ -129,7 +129,7 @@ fn void app_init(AppState *app)
 
 /////////////////////////////////////////////////////////////////////////////////////////////////
 // #UPDATE
-fn void app_update(AppState *app)
+void app_update(AppState *app)
 {
     auto d3d11 = &app->d3d11;
     auto kb    = &app->input.keyboard;
@@ -165,9 +165,9 @@ fn void app_update(AppState *app)
     }
 
     if (app->win32.focus || !app->suspend_lost_focus) {
-        BeginTimedBlock(Render);
+        BEGIN_TIMED_BLOCK(Render);
         game_update_and_render(nullptr, app);
-        EndTimedBlock(Render);
+        END_TIMED_BLOCK(Render);
 
         if (key_pressed(kb->f8)) {
             local i32 x = 0;
@@ -227,9 +227,9 @@ fn void app_update(AppState *app)
 
 }  // namespace tom
 
-//////////////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////////
 // #START
-fn i32 app_start(HINSTANCE hinst)
+i32 app_start(HINSTANCE hinst)
 {
     const TCHAR *icon_path = _T("..\\..\\data\\tomato.ico");
     auto icon              = (HICON)(LoadImage(NULL, icon_path, IMAGE_ICON, 0, 0,
@@ -237,17 +237,17 @@ fn i32 app_start(HINSTANCE hinst)
 
     create_console();
     auto cons_hwnd = GetConsoleWindow();
-    Assert(cons_hwnd);
+    TOM_ASSERT(cons_hwnd);
     SendMessage(cons_hwnd, WM_SETICON, NULL, (LPARAM)icon);
-    SetConsoleColor(FG_WHITE);
+    SET_CONSOLE_COLOR(FG_WHITE);
 
     printf("Starting...\n");
 
     // set sleep to 1 ms intervals
-    Assert(timeBeginPeriod(1) == TIMERR_NOERROR);
+    TOM_ASSERT(timeBeginPeriod(1) == TIMERR_NOERROR);
 
 #if _CPPUWIND
-    PrintWarning("Exceptions are enabled!\n");
+    PRINT_WARN("Exceptions are enabled!\n");
 #endif
 
     AppState app                      = {};
@@ -391,16 +391,16 @@ fn i32 app_start(HINSTANCE hinst)
         app_update(&app);
 
         f32 work_secs_avg = 0.0f;
-        for (u32 i = 0; i < CountOf(app.work_secs); ++i) {
+        for (u32 i = 0; i < ARR_CNT(app.work_secs); ++i) {
             work_secs_avg += (f32)app.work_secs[i];
         }
-        work_secs_avg /= (f32)CountOf(app.work_secs);
+        work_secs_avg /= (f32)ARR_CNT(app.work_secs);
 
         auto work_counter = get_time();
         f32 work_seconds_elapsed =
             get_seconds_elapsed(last_counter, work_counter, app.performance_counter_frequency);
         app.work_secs[app.work_ind++] = work_seconds_elapsed;
-        if (app.work_ind == CountOf(app.work_secs)) app.work_ind = 0;
+        if (app.work_ind == ARR_CNT(app.work_secs)) app.work_ind = 0;
 
         // NOTE: win32 Sleep() ony guarantees the MINIMUN amound of time the thread will
         // sleep. its not the best solution for steady FPS in a game, but as a temporary soultion to
@@ -421,7 +421,7 @@ fn i32 app_start(HINSTANCE hinst)
                                                                 app.performance_counter_frequency);
             }
         } else {
-            PrintWarning("Missed frame timing!");
+            PRINT_WARN("Missed frame timing!");
         }
 
         auto end_counter = get_time();

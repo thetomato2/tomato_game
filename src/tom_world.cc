@@ -21,13 +21,13 @@ fn void recanonicalize_coord(i32& coord, f32& rel_coord)
     coord += offset;
     rel_coord -= offset * (f32)chunk_size_meters;
 
-    Assert(is_canonical(rel_coord));
+    TOM_ASSERT(is_canonical(rel_coord));
 }
 
 fn bool is_same_chunk(WorldPos a, WorldPos b)
 {
-    Assert(is_canonical(a.offset));
-    Assert(is_canonical(b.offset));
+    TOM_ASSERT(is_canonical(a.offset));
+    TOM_ASSERT(is_canonical(b.offset));
 
     return (a.chunk_x == b.chunk_x && a.chunk_y == b.chunk_y && a.chunk_z == b.chunk_z);
 }
@@ -46,7 +46,7 @@ fn WorldPos get_centered_point(i32 x, i32 y, i32 z)
 fn void init_world(World* World, f32 tile_sizes_in_meters)
 {
     World->first_free = nullptr;
-    for (i32 chunk_i = 0; chunk_i < CountOf(World->world_chunk_hash); ++chunk_i) {
+    for (i32 chunk_i = 0; chunk_i < ARR_CNTOf(World->world_chunk_hash); ++chunk_i) {
         World->world_chunk_hash[chunk_i].x                   = CHUNK_UNITIALIZED;  // null chunk
         World->world_chunk_hash[chunk_i].first_block.ent_cnt = 0;
     }
@@ -88,17 +88,17 @@ fn WorldPos map_into_chunk_space(WorldPos pos, v2f offset)
 fn WorldChunk* get_world_chunk(World* World, i32 chunk_x, i32 chunk_y, i32 chunk_z,
                                      Arena* arena = nullptr)
 {
-    Assert(chunk_x > -chunk_safe_margin);
-    Assert(chunk_y > -chunk_safe_margin);
-    Assert(chunk_z > -chunk_safe_margin);
-    Assert(chunk_x < chunk_safe_margin);
-    Assert(chunk_y < chunk_safe_margin);
-    Assert(chunk_z < chunk_safe_margin);
+    TOM_ASSERT(chunk_x > -chunk_safe_margin);
+    TOM_ASSERT(chunk_y > -chunk_safe_margin);
+    TOM_ASSERT(chunk_z > -chunk_safe_margin);
+    TOM_ASSERT(chunk_x < chunk_safe_margin);
+    TOM_ASSERT(chunk_y < chunk_safe_margin);
+    TOM_ASSERT(chunk_z < chunk_safe_margin);
 
     // TODO: better hash function!
     i32 hash_val  = 19 * chunk_x + 7 * chunk_y + 3 * chunk_z;
-    i32 hash_slot = (i32)hash_val & (CountOf(World->world_chunk_hash) - 1);
-    Assert(hash_slot < CountOf(World->world_chunk_hash));
+    i32 hash_slot = (i32)hash_val & (ARR_CNT(World->world_chunk_hash) - 1);
+    TOM_ASSERT(hash_slot < ARR_CNT(World->world_chunk_hash));
 
     WorldChunk* chunk = World->world_chunk_hash + hash_slot;
     do {
@@ -162,7 +162,7 @@ fn void change_entity_location_raw(Arena* arena, World* World, u32 ent_i, WorldP
                 // pull thee*ntity out its old block
                 WorldChunk* chunk =
                     get_world_chunk(World, old_pos->chunk_x, old_pos->chunk_y, old_pos->chunk_z);
-                Assert(chunk);
+                TOM_ASSERT(chunk);
                 if (chunk) {
                     bool found                    = false;
                     WorldEntityBlock* first_block = &chunk->first_block;
@@ -170,7 +170,7 @@ fn void change_entity_location_raw(Arena* arena, World* World, u32 ent_i, WorldP
                          block                   = block->next) {
                         for (u32 i {}; i < block->ent_cnt; ++i) {
                             if (block->ent_inds[i] == ent_i) {
-                                Assert(first_block->ent_cnt > 0);
+                                TOM_ASSERT(first_block->ent_cnt > 0);
                                 block->ent_inds[i] = first_block->ent_inds[--first_block->ent_cnt];
                                 if (first_block->ent_cnt == 0) {
                                     if (first_block->next) {
@@ -190,9 +190,9 @@ fn void change_entity_location_raw(Arena* arena, World* World, u32 ent_i, WorldP
             //  insert h*e Entity into its new block
             WorldChunk* chunk =
                 get_world_chunk(World, new_pos->chunk_x, new_pos->chunk_y, new_pos->chunk_z, arena);
-            Assert(chunk);
+            TOM_ASSERT(chunk);
             WorldEntityBlock* block = &chunk->first_block;
-            if (block->ent_cnt == CountOf(block->ent_inds)) {
+            if (block->ent_cnt == ARR_CNT(block->ent_inds)) {
                 // out of room! make new block
                 // REVIEW: this sem*s kinda backwards to me, it's like a backwards pointing list
                 WorldEntityBlock* old_block = World->first_free;
@@ -206,7 +206,7 @@ fn void change_entity_location_raw(Arena* arena, World* World, u32 ent_i, WorldP
                 block->ent_cnt = 0;
             }
 
-            Assert(block->ent_cnt < CountOf(block->ent_inds));
+            TOM_ASSERT(block->ent_cnt < ARR_CNT(block->ent_inds));
             block->ent_inds[block->ent_cnt++] = ent_i;
         }
     }

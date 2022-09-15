@@ -1,12 +1,13 @@
-#include "tom_graphics.cc"
-// #include "tom_world.cc"
-#include "tom_entity.cc"
-#include "tom_sim.cc"
+#include "tom_game.hh"
+#include "tom_input.hh"
+#include "tom_app.hh"
+#include "tom_entity.hh"
+#include "tom_sim.hh"
 
 namespace tom
 {
 
-fn void process_keyboard(const Keyboard &kb, EntityActions *entity_action)
+internal void process_keyboard(const Keyboard &kb, EntityActions *entity_action)
 {
     if (entity_action) {
         if (key_pressed(kb.t)) entity_action->start = true;
@@ -21,7 +22,7 @@ fn void process_keyboard(const Keyboard &kb, EntityActions *entity_action)
 }
 
 #if USE_DS5
-fn void process_ds5(const DS5_State &ds5, EntityActions *entity_action)
+internal void process_ds5(const DS5_State &ds5, EntityActions *entity_action)
 {
     if (entity_action) {
         if (button_pressed(ds5.menu)) entity_action->start = true;
@@ -39,7 +40,7 @@ fn void process_ds5(const DS5_State &ds5, EntityActions *entity_action)
 }
 #endif
 
-fn void game_init(ThreadContext *thread, AppState *app)
+void game_init(ThreadContext *thread, AppState *app)
 {
     // ===============================================================================================
     // #Initialization
@@ -53,6 +54,7 @@ fn void game_init(ThreadContext *thread, AppState *app)
 
     // load textures
     game->player_sprites[EntityDirection::north] =
+        // texture_load_from_file("../../assets/images/pink.png");
         texture_load_from_file("../../assets/images/player_n.png");
     game->player_sprites[EntityDirection::east] =
         texture_load_from_file("../../assets/images/player_e.png");
@@ -151,7 +153,7 @@ fn void game_init(ThreadContext *thread, AppState *app)
     // make_pyramid_nrm_map(&game->test_nrm, 0.0f);
 }
 
-fn void game_update_and_render(ThreadContext *thread, AppState *app)
+void game_update_and_render(ThreadContext *thread, AppState *app)
 {
     // ==============================================================================================
     // #START
@@ -258,7 +260,7 @@ fn void game_update_and_render(ThreadContext *thread, AppState *app)
                 case EntityType::stair: {
                     // TODO: stair logic?
                 } break;
-                default: InvalidCodePath;
+                default: INVALID_CODE_PATH;
             }
 
             v3f ent_delta = calc_entity_delta(ent, ent_act, move_spec, dt);
@@ -345,7 +347,7 @@ fn void game_update_and_render(ThreadContext *thread, AppState *app)
             } break;
             case EntityType::stair: {
             } break;
-            default: InvalidCodePath;
+            default: INVALID_CODE_PATH;
         }
 
         if (game->debug_draw_collision) {

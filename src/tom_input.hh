@@ -1,3 +1,12 @@
+#ifndef TOM_INPUT_HH
+#define TOM_INPUT_HH
+
+#include "tom_core.hh"
+#include "tom_math.hh"
+#if USE_DS5
+#include "tom_DS5.hh"
+#endif
+
 namespace tom
 {
 
@@ -9,7 +18,7 @@ global f64 g_scroll_x_off;
 global f64 g_scroll_y_off;
 
 // TODO: isolate this enum, it has global scope!!!
-enum Win32Key : byt
+enum class Win32Key : byt
 {
     none           = 0,
     back           = 0x8,
@@ -344,4 +353,11 @@ inline bool button_up(const Button b)
     return b.half_transition_cnt > 0 && b.ended_down == 0;
 }
 
+////////////////////////////////////////////////////////////////////////////////////////////////
+// #DECLARES
+Input init_input();
+void do_input(Input* input, HWND hwnd, i32 ms_scroll);
+
 }  // namespace tom
+
+#endif

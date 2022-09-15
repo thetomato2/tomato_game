@@ -1,3 +1,8 @@
+#ifndef TOM_ENTITY_HH
+#define TOM_ENTITY_HH
+
+#include "tom_core.hh"
+
 namespace tom
 {
 
@@ -78,4 +83,14 @@ inline EntityMoveSpec default_move_spec()
     return { 10.0f, 10.0f };
 }
 
+////////////////////////////////////////////////////////////////////////////////////////////////
+// #DECLARES
+
+struct GameState;
+
+Entity *get_entity(GameState *state, u32 ind);
+Entity* add_entity(GameState *game, EntityType type, v3f pos = {});
+
 }  // namespace tom
+
+#endif

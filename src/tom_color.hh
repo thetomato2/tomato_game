@@ -1,3 +1,9 @@
+#ifndef TOM_COLOR_HH
+#define TOM_COLOR_HH
+
+#include "tom_core.hh"
+#include "tom_math.hh"
+
 namespace tom
 {
 
@@ -33,10 +39,10 @@ enum TomColors
 
 inline Color_u32 v3f_to_color(v3f col, f32 a = 1.0f)
 {
-    Assert(col.r >= 0.0f && col.r <= 1.0f);
-    Assert(col.g >= 0.0f && col.b <= 1.0f);
-    Assert(col.b >= 0.0f && col.g <= 1.0f);
-    Assert(a >= 0.0f && a <= 1.0f);
+    TOM_ASSERT(col.r >= 0.0f && col.r <= 1.0f);
+    TOM_ASSERT(col.g >= 0.0f && col.b <= 1.0f);
+    TOM_ASSERT(col.b >= 0.0f && col.g <= 1.0f);
+    TOM_ASSERT(a >= 0.0f && a <= 1.0f);
 
     Color_u32 res;
 
@@ -50,10 +56,10 @@ inline Color_u32 v3f_to_color(v3f col, f32 a = 1.0f)
 
 inline Color_u32 v4f_to_color_u32(v4f col)
 {
-    Assert(col.r >= 0.0f && col.r <= 1.0f);
-    Assert(col.g >= 0.0f && col.b <= 1.0f);
-    Assert(col.b >= 0.0f && col.g <= 1.0f);
-    Assert(col.a >= 0.0f && col.a <= 1.0f);
+    TOM_ASSERT(col.r >= 0.0f && col.r <= 1.0f);
+    TOM_ASSERT(col.g >= 0.0f && col.b <= 1.0f);
+    TOM_ASSERT(col.b >= 0.0f && col.g <= 1.0f);
+    TOM_ASSERT(col.a >= 0.0f && col.a <= 1.0f);
 
     Color_u32 res;
 
@@ -174,17 +180,17 @@ fn constexpr v4f color_v4f(TomColors col)
     return res;
 }
 
-v4f sRGB_to_linear(v4f col)
+inline v4f sRGB_to_linear(v4f col)
 {
     return { square(col.r), square(col.g), square(col.b), square(col.a) };
 }
 
-v4f linear_to_sRGB(v4f col)
+inline v4f linear_to_sRGB(v4f col)
 {
     return { sqrt_f32(col.r), sqrt_f32(col.g), sqrt_f32(col.b), sqrt_f32(col.a) };
 }
 
-v4f premultiply_alpha(v4f col)
+inline v4f premultiply_alpha(v4f col)
 {
     return { col.r * col.a, col.g * col.a, col.b * col.a, col.a };
 }
@@ -200,3 +206,5 @@ global constexpr v3f blue_v3  = { 0.0f, 0.0f, 1.0f };
 global constexpr v3f pink_v3  = { 1.0f, 0.0f, 1.0f };
 
 }  // namespace tom
+
+#endif

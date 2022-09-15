@@ -1,7 +1,10 @@
+#include "tom_file_io.hh"
+#include "tom_memory.hh"
+
 namespace tom
 {
 
-fn bool write_file(const char* file_path, szt buf_sz, void* buf)
+bool write_file(const char *file_path, szt buf_sz, void *buf)
 {
     b32 success = false;
 
@@ -21,7 +24,7 @@ fn bool write_file(const char* file_path, szt buf_sz, void* buf)
     return success;
 }
 
-fn ReadFileResult read_file(const char* file_path)
+ReadFileResult read_file(const char *file_path)
 {
     ReadFileResult file = {};
 

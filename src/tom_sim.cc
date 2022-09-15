@@ -1,14 +1,16 @@
+#include "tom_entity.hh"
+#include "tom_app.hh"
 
 namespace tom
 {
 
-fn void add_hit_points(Entity* ent, i32 hp)
+internal void add_hit_points(Entity *ent, i32 hp)
 {
     ent->hp += hp;
     if (ent->hp > (i32)ent->max_hp) ent->hp = ent->max_hp;
 }
 
-fn void subtract_hit_points(Entity* ent, i32 hp)
+internal void subtract_hit_points(Entity *ent, i32 hp)
 {
     ent->hp -= hp;
     if (ent->hp < 0) {
@@ -18,8 +20,7 @@ fn void subtract_hit_points(Entity* ent, i32 hp)
     }
 }
 
-fn v3f calc_entity_delta(Entity* ent, EntityActions ent_act, EntityMoveSpec move_spec,
-                               const f32 dt)
+v3f calc_entity_delta(Entity *ent, EntityActions ent_act, EntityMoveSpec move_spec, const f32 dt)
 {
     v3f ent_accel = ent_act.dir;
 
@@ -37,7 +38,7 @@ fn v3f calc_entity_delta(Entity* ent, EntityActions ent_act, EntityMoveSpec move
     return ent_delta;
 }
 
-fn void move_entity(GameState* game, Entity* ent, v3f ent_delta, const f32 dt)
+void move_entity(GameState *game, Entity *ent, v3f ent_delta, const f32 dt)
 {
     f32 dist_remain = ent->dist_limit;
     if (dist_remain == 0.0f) {
@@ -52,15 +53,15 @@ fn void move_entity(GameState* game, Entity* ent, v3f ent_delta, const f32 dt)
         if (!(ent_delta_len > 0.0f)) break;  // if the ent delta is 0 that means no movmement
         if (ent_delta_len > dist_remain) t_min = dist_remain / ent_delta_len;
         v2f wall_nrm    = {};
-        Entity* hit_ent = nullptr;
+        Entity *hit_ent = nullptr;
 
         if (!is_flag_set(ent->flags, EntityFlags::nonspatial)) {
             // FIXME: this is N * N bad
-            for (Entity* test_ent = game->entities + 1; test_ent != game->entities + game->ent_cnt;
+            for (Entity *test_ent = game->entities + 1; test_ent != game->entities + game->ent_cnt;
                  ++test_ent) {
                 if (test_ent->ind == ent->ind) continue;  // don't test against self
 
-                // Assert(test_ent);  // nullptr probably means something broke
+                // TOM_ASSERT(test_ent);  // nullptr probably means something broke
                 // if (!should_collide(game, ent, test_ent)) continue;
                 // TODO: need this flag anymore?
 
@@ -132,7 +133,7 @@ fn void move_entity(GameState* game, Entity* ent, v3f ent_delta, const f32 dt)
     }
 }
 
-fn bool entity_overlap_rect(const r3f rect, Entity* ent)
+internal bool entity_overlap_rect(const r3f rect, Entity *ent)
 {
     r3f grown   = rect_add_dim(rect, ent->dims);
     bool result = rect_is_inside(rect, ent->pos);

@@ -1,9 +1,13 @@
+#include "tom_graphics.hh"
+#include "tom_time.hh"
+#include "tom_app.hh"
+
 namespace tom
 {
 
-fn void clear_color(Texture *buffer, Color_u32 color)
+internal void clear_color(Texture *buffer, Color_u32 color)
 {
-    Assert(buffer->type == Texture::Type::R8G8B8A8);
+    TOM_ASSERT(buffer->type == Texture::Type::R8G8B8A8);
     u32 pitch = texture_get_pitch(buffer);
     byt *row  = (byt *)buffer->buf;
     for (i32 y = 0; y < buffer->height; ++y) {
@@ -15,14 +19,14 @@ fn void clear_color(Texture *buffer, Color_u32 color)
     }
 }
 
-fn void draw_rect(Texture *buffer, i32 min_x, i32 min_y, i32 max_x, i32 max_y, Color_u32 color)
+void draw_rect(Texture *buffer, i32 min_x, i32 min_y, i32 max_x, i32 max_y, Color_u32 color)
 {
     if (min_x < 0) min_x = 0;
     if (min_y < 0) min_y = 0;
     if (max_x > buffer->width) max_x = buffer->width;
     if (max_y > buffer->height) max_y = buffer->height;
 
-    Assert(buffer->type == Texture::Type::R8G8B8A8);
+    TOM_ASSERT(buffer->type == Texture::Type::R8G8B8A8);
     u32 pitch = texture_get_pitch(buffer);
     byt *row  = (byt *)buffer->buf + min_x * texture_get_texel_size(buffer->type) + min_y * pitch;
 
@@ -39,57 +43,57 @@ fn void draw_rect(Texture *buffer, i32 min_x, i32 min_y, i32 max_x, i32 max_y, C
     }
 }
 
-fn void draw_rect(Texture *buffer, i32 min_x, i32 min_y, i32 max_x, i32 max_y, v3f color)
+void draw_rect(Texture *buffer, i32 min_x, i32 min_y, i32 max_x, i32 max_y, v3f color)
 {
     draw_rect(buffer, min_x, min_y, max_x, max_y, v3f_to_color(color));
 }
 
-fn void draw_rect(Texture *buffer, r2i rect, Color_u32 color)
+void draw_rect(Texture *buffer, r2i rect, Color_u32 color)
 {
     draw_rect(buffer, rect.x0, rect.y0, rect.x1, rect.y1, color);
 }
-fn void draw_rect(Texture *buffer, r2f rect, Color_u32 color)
+void draw_rect(Texture *buffer, r2f rect, Color_u32 color)
 {
     r2i rect_i32 = rect_f32_to_i32(rect);
     draw_rect(buffer, rect_i32.x0, rect_i32.y0, rect_i32.x1, rect_i32.y1, color);
 }
 
-fn void draw_rect(Texture *buffer, r2i rect, v3f color)
+void draw_rect(Texture *buffer, r2i rect, v3f color)
 {
     draw_rect(buffer, rect.x0, rect.y0, rect.x1, rect.y1, v3f_to_color(color));
 }
 
-fn void draw_rect(Texture *buffer, r2u rect, v3f color)
+void draw_rect(Texture *buffer, r2u rect, v3f color)
 {
     draw_rect(buffer, (i32)rect.x0, (i32)rect.y0, (i32)rect.x1, (i32)rect.y1, v3f_to_color(color));
 }
 
-fn void draw_rect(Texture *buffer, r2u rect, Color_u32 color)
+void draw_rect(Texture *buffer, r2u rect, Color_u32 color)
 {
     draw_rect(buffer, (i32)rect.x0, (i32)rect.y0, (i32)rect.x1, (i32)rect.y1, color);
 }
 
-fn void draw_rect(Texture *buffer, r2f rect, v3f color)
+void draw_rect(Texture *buffer, r2f rect, v3f color)
 {
     r2i rect_i32 = rect_f32_to_i32(rect);
     draw_rect(buffer, rect_i32.x0, rect_i32.y0, rect_i32.x1, rect_i32.y1, v3f_to_color(color));
 }
 
-fn void draw_square(Texture *buffer, v2f pos, f32 radius, Color_u32 color)
+void draw_square(Texture *buffer, v2f pos, f32 radius, Color_u32 color)
 {
     r2i rc = rect_f32_to_i32(rect_init_square(pos, radius));
     draw_rect(buffer, rc.x0, rc.y0, rc.x1, rc.y1, color);
 }
 
-fn void draw_rect_outline(Texture *buffer, i32 min_x, i32 min_y, f32 max_x, f32 max_y,
-                          i32 thickness, Color_u32 color)
+void draw_rect_outline(Texture *buffer, i32 min_x, i32 min_y, f32 max_x, f32 max_y, i32 thickness,
+                       Color_u32 color)
 {
     if (min_x < 0) min_x = 0;
     if (min_y < 0) min_y = 0;
     if (max_x > buffer->width) max_x = buffer->width;
     if (max_y > buffer->height) max_y = buffer->height;
 
-    Assert(buffer->type == Texture::Type::R8G8B8A8);
+    TOM_ASSERT(buffer->type == Texture::Type::R8G8B8A8);
     u32 pitch = texture_get_pitch(buffer);
     byt *row  = (byt *)buffer->buf + min_x * texture_get_texel_size(buffer->type) + min_y * pitch;
 
@@ -106,35 +110,35 @@ fn void draw_rect_outline(Texture *buffer, i32 min_x, i32 min_y, f32 max_x, f32 
     }
 }
 
-fn void draw_rect_outline(Texture *buffer, i32 min_x, i32 min_y, i32 max_x, i32 max_y,
-                          i32 thickness, v3f color)
+void draw_rect_outline(Texture *buffer, i32 min_x, i32 min_y, i32 max_x, i32 max_y, i32 thickness,
+                       v3f color)
 {
     draw_rect_outline(buffer, min_x, min_y, max_x, max_y, thickness, v3f_to_color(color));
 }
 
-fn void draw_rect_outline(Texture *buffer, r2i rect, i32 thickness, Color_u32 color)
+void draw_rect_outline(Texture *buffer, r2i rect, i32 thickness, Color_u32 color)
 {
     draw_rect_outline(buffer, rect.x0, rect.y0, rect.x1, rect.y1, thickness, color);
 }
-fn void draw_rect_outline(Texture *buffer, r2f rect, i32 thickness, Color_u32 color)
+void draw_rect_outline(Texture *buffer, r2f rect, i32 thickness, Color_u32 color)
 {
     r2i rect_i32 = rect_f32_to_i32(rect);
     draw_rect_outline(buffer, rect_i32.x0, rect_i32.y0, rect_i32.x1, rect_i32.y1, thickness, color);
 }
 
-fn void draw_rect_outline(Texture *buffer, r2i rect, i32 thickness, v3f color)
+void draw_rect_outline(Texture *buffer, r2i rect, i32 thickness, v3f color)
 {
     draw_rect_outline(buffer, rect.x0, rect.y0, rect.x1, rect.y1, thickness, v3f_to_color(color));
 }
 
-fn void draw_rect_outline(Texture *buffer, r2f rect, i32 thickness, v3f color)
+void draw_rect_outline(Texture *buffer, r2f rect, i32 thickness, v3f color)
 {
     r2i rect_i32 = rect_f32_to_i32(rect);
     draw_rect_outline(buffer, rect_i32.x0, rect_i32.y0, rect_i32.x1, rect_i32.y1, thickness,
                       v3f_to_color(color));
 }
 
-fn v4f bias_nrm(v4f nrm)
+internal v4f bias_nrm(v4f nrm)
 {
     v4f result;
 
@@ -146,15 +150,15 @@ fn v4f bias_nrm(v4f nrm)
     return result;
 }
 
-fn v3f sample_env_map(v2f screen_space_uv, v3f samp_dir, f32 rough, EnviromentMap *map,
-                      f32 dist_z = 1.0f)
+internal v3f sample_env_map(v2f screen_space_uv, v3f samp_dir, f32 rough, EnviromentMap *map,
+                            f32 dist_z = 1.0f)
 {
-    u32 lod_i = (u32)(rough * (f32)(CountOf(map->lod) - 1) + 0.5f);
-    Assert(lod_i < CountOf(map->lod));
+    u32 lod_i = (u32)(rough * (f32)(ARR_CNT(map->lod) - 1) + 0.5f);
+    TOM_ASSERT(lod_i < ARR_CNT(map->lod));
 
     Texture *lod = &map->lod[lod_i];
 
-    Assert(samp_dir.y > 0.0f);
+    TOM_ASSERT(samp_dir.y > 0.0f);
     f32 uv_per_meter = 0.01f;
     f32 c            = (uv_per_meter * dist_z) / samp_dir.y;
     v2f offset       = c * v2f { samp_dir.x, samp_dir.z };
@@ -170,8 +174,8 @@ fn v3f sample_env_map(v2f screen_space_uv, v3f samp_dir, f32 rough, EnviromentMa
     f32 fx = tx - (f32)x;
     f32 fy = ty - (f32)y;
 
-    Assert(x >= 0 && x < lod->width);
-    Assert(y >= 0 && y < lod->height);
+    TOM_ASSERT(x >= 0 && x < lod->width);
+    TOM_ASSERT(y >= 0 && y < lod->height);
 
     BilinearSample samp = get_bilinear_sample(lod, x, y);
 
@@ -180,11 +184,10 @@ fn v3f sample_env_map(v2f screen_space_uv, v3f samp_dir, f32 rough, EnviromentMa
     return result;
 }
 
-fn void draw_rect_quickly(Texture *buffer, v2f origin, v2f x_axis, v2f y_axis, Texture *albedo,
-                          v4f color = { 1.0f, 1.0f, 1.0f, 1.0f })
+void draw_rect_128(Texture *buffer, v2f origin, v2f x_axis, v2f y_axis, Texture *albedo, v4f color)
 {
-    Assert(albedo);
-    BeginTimedBlock(DrawRect);
+    TOM_ASSERT(albedo);
+    BEGIN_TIMED_BLOCK(DrawRect);
 
     f32 x_inv_len_sq = 1.0f / vec_length_sq(x_axis);
     f32 y_inv_len_sq = 1.0f / vec_length_sq(y_axis);
@@ -228,197 +231,484 @@ fn void draw_rect_quickly(Texture *buffer, v2f origin, v2f x_axis, v2f y_axis, T
     __m128 inv_255_m128 = _mm_set1_ps(inv_255);
 
     __m128 one_m128       = _mm_set1_ps(1.0f);
-    __m128 One_255_m128   = _mm_set1_ps(255.0f);
-    __m128 zero           = _mm_set1_ps(0.0f);
+    __m128 four_m128      = _mm_set1_ps(4.0f);
+    __m128 one_255_m128   = _mm_set1_ps(255.0f);
+    __m128 zero_m128      = _mm_set1_ps(0.0f);
+    __m128 mask_ff        = _mm_set1_epi32(0xff);
     __m128 nx_axis_x_m128 = _mm_set1_ps(nx_axis.x);
     __m128 nx_axis_y_m128 = _mm_set1_ps(nx_axis.y);
     __m128 ny_axis_x_m128 = _mm_set1_ps(ny_axis.x);
     __m128 ny_axis_y_m128 = _mm_set1_ps(ny_axis.y);
     __m128 origin_x_m128  = _mm_set1_ps(origin.x);
     __m128 origin_y_m128  = _mm_set1_ps(origin.y);
+    __m128 width_m2       = _mm_set1_ps((f32)(albedo->width - 2));
+    __m128 height_m2      = _mm_set1_ps((f32)(albedo->height - 2));
 
     u32 texel_sz        = texture_get_texel_size(albedo->type);
     u32 alb_pitch       = texture_get_pitch(albedo);
     u32 alb_pitch_texel = alb_pitch / texel_sz;
 
     u32 buf_pitch = texture_get_pitch(buffer);
-    Assert(buffer->type == Texture::Type::R8G8B8A8);
+    TOM_ASSERT(buffer->type == Texture::Type::R8G8B8A8);
     byt *row =
         (byt *)buffer->buf + rc.x0 * texture_get_texel_size(buffer->type) + rc.y0 * buf_pitch;
 
-    BeginTimedBlock(ProcessPixel);
+    BEGIN_TIMED_BLOCK(ProcessPixel);
     for (i32 y = rc.y0; y < rc.y1; ++y) {
+        __m128 pixel_py = _mm_set1_ps((f32)y);
+        pixel_py        = _mm_sub_ps(pixel_py, origin_y_m128);
+        __m128 pixel_px =
+            _mm_set_ps((f32)(rc.x0 + 3), (f32)(rc.x0 + 2), (f32)(rc.x0 + 1), (f32)(rc.x0 + 0));
+        pixel_px = _mm_sub_ps(pixel_px, origin_x_m128);
+
         u32 *pixel_ptr = (u32 *)row;
+
         for (i32 x = rc.x0; x < rc.x1; x += 4) {
-            __m128 t0_r = _mm_set1_ps(0.0f);
-            __m128 t0_g = _mm_set1_ps(0.0f);
-            __m128 t0_b = _mm_set1_ps(0.0f);
-            __m128 t0_a = _mm_set1_ps(0.0f);
-
-            __m128 t1_r = _mm_set1_ps(0.0f);
-            __m128 t1_g = _mm_set1_ps(0.0f);
-            __m128 t1_b = _mm_set1_ps(0.0f);
-            __m128 t1_a = _mm_set1_ps(0.0f);
-
-            __m128 t2_r = _mm_set1_ps(0.0f);
-            __m128 t2_g = _mm_set1_ps(0.0f);
-            __m128 t2_b = _mm_set1_ps(0.0f);
-            __m128 t2_a = _mm_set1_ps(0.0f);
-
-            __m128 t3_r = _mm_set1_ps(0.0f);
-            __m128 t3_g = _mm_set1_ps(0.0f);
-            __m128 t3_b = _mm_set1_ps(0.0f);
-            __m128 t3_a = _mm_set1_ps(0.0f);
-
-            __m128 fx = _mm_set1_ps(0.0f);
-            __m128 fy = _mm_set1_ps(0.0f);
-
-            __m128 dest_r = _mm_set1_ps(0.0f);
-            __m128 dest_g = _mm_set1_ps(0.0f);
-            __m128 dest_b = _mm_set1_ps(0.0f);
-            __m128 dest_a = _mm_set1_ps(0.0f);
-
-            __m128 blend_r = _mm_set1_ps(0.0f);
-            __m128 blend_g = _mm_set1_ps(0.0f);
-            __m128 blend_b = _mm_set1_ps(0.0f);
-            __m128 blend_a = _mm_set1_ps(0.0f);
-
-            bool should_fill[4];
-
 #define mmSquare(a) _mm_mul_ps(a, a)
-#define M(a, i)     ((float *)&(a))[i]
+#define M(a, i)     ((f32 *)&(a))[i]
+#define MI(a, i)    ((u32 *)&(a))[i]
 
-            __m128 pixel_px = _mm_set_ps((f32)(x + 3), (f32)(x + 2), (f32)(x + 1), (f32)(x + 0));
-            __m128 pixel_py = _mm_set1_ps((f32)y);
+            __m128i original_dest = _mm_loadu_si128((__m128i *)pixel_ptr);
 
-            __m128 dx = _mm_sub_ps(pixel_px, origin_x_m128);
-            __m128 dy = _mm_sub_ps(pixel_py, origin_y_m128);
+            __m128 u = _mm_add_ps(_mm_mul_ps(pixel_px, nx_axis_x_m128),
+                                  _mm_mul_ps(pixel_py, nx_axis_y_m128));
+            __m128 v = _mm_add_ps(_mm_mul_ps(pixel_px, ny_axis_x_m128),
+                                  _mm_mul_ps(pixel_py, ny_axis_y_m128));
 
-            __m128 u = _mm_add_ps(_mm_mul_ps(dx, nx_axis_x_m128), _mm_mul_ps(dy, nx_axis_y_m128));
-            __m128 v = _mm_add_ps(_mm_mul_ps(dx, ny_axis_x_m128), _mm_mul_ps(dy, ny_axis_y_m128));
+            __m128i write_msk = _mm_castps_si128(
+                _mm_and_ps(_mm_and_ps(_mm_cmpge_ps(u, zero_m128), _mm_cmple_ps(u, one_m128)),
+                           _mm_and_ps(_mm_cmpge_ps(v, zero_m128), _mm_cmple_ps(v, one_m128))));
 
-            for (i32 i = 0; i < 4; ++i) {
-                should_fill[i] =
-                    M(u, i) >= 0.0f && M(u, i) <= 1.0f && M(v, i) >= 0.0f && M(v, i) <= 1.0f;
+            {
+                u = _mm_min_ps(_mm_max_ps(u, zero_m128), one_m128);
+                v = _mm_min_ps(_mm_max_ps(v, zero_m128), one_m128);
 
-                if (should_fill[i]) {
-                    // use the uv coords to get a texel out of the texture
-                    f32 tx = M(u, i) * (f32)(albedo->width - 2);
-                    f32 ty = M(v, i) * (f32)(albedo->height - 2);
+                __m128 tx = _mm_mul_ps(u, width_m2);
+                __m128 ty = _mm_mul_ps(v, height_m2);
 
-                    i32 tex_x = (i32)tx;
-                    i32 tex_y = (i32)ty;
+                __m128i fetch_x_128 = _mm_cvttps_epi32(tx);
+                __m128i fetch_y_128 = _mm_cvttps_epi32(ty);
 
-                    // this used for blending
-                    M(fx, i) = tx - (f32)tex_x;
-                    M(fy, i) = ty - (f32)tex_y;
+                __m128 fx = _mm_sub_ps(tx, _mm_cvtepi32_ps(fetch_x_128));
+                __m128 fy = _mm_sub_ps(ty, _mm_cvtepi32_ps(fetch_y_128));
+                __m128i samp_a;
+                __m128i samp_b;
+                __m128i samp_c;
+                __m128i samp_d;
 
-                    Assert((tex_x >= 0) && (tex_x < albedo->width));
-                    Assert((tex_y >= 0) && (tex_y < albedo->height));
+                for (i32 i = 0; i < 4; ++i) {
+                    i32 fetch_x = MI(fetch_x_128, i);
+                    i32 fetch_y = MI(fetch_y_128, i);
 
-                    // get 4 texels in a square to use for blending
-                    auto texel_ptr = (u32 *)albedo->buf + tex_y * alb_pitch_texel + tex_x * 1;
-                    u32 samp_a     = *texel_ptr;
-                    u32 samp_b     = *(texel_ptr + 1);
-                    u32 samp_c     = *(texel_ptr + alb_pitch_texel);
-                    u32 samp_d     = *(texel_ptr + alb_pitch_texel + 1);
+                    TOM_ASSERT((fetch_x >= 0) && (fetch_x < albedo->width));
+                    TOM_ASSERT((fetch_y >= 0) && (fetch_y < albedo->height));
 
-                    // unpack
-                    M(t0_r, i) = (f32)((samp_a >> 0) & 0xff) / 255.0f;
-                    M(t0_g, i) = (f32)((samp_a >> 8) & 0xff) / 255.0f;
-                    M(t0_b, i) = (f32)((samp_a >> 16) & 0xff) / 255.0f;
-                    M(t0_a, i) = (f32)((samp_a >> 24) & 0xff) / 255.0f;
-
-                    M(t1_r, i) = (f32)((samp_b >> 0) & 0xff) / 255.0f;
-                    M(t1_g, i) = (f32)((samp_b >> 8) & 0xff) / 255.0f;
-                    M(t1_b, i) = (f32)((samp_b >> 16) & 0xff) / 255.0f;
-                    M(t1_a, i) = (f32)((samp_b >> 24) & 0xff) / 255.0f;
-
-                    M(t2_r, i) = (f32)((samp_c >> 0) & 0xff) / 255.0f;
-                    M(t2_g, i) = (f32)((samp_c >> 8) & 0xff) / 255.0f;
-                    M(t2_b, i) = (f32)((samp_c >> 16) & 0xff) / 255.0f;
-                    M(t2_a, i) = (f32)((samp_c >> 24) & 0xff) / 255.0f;
-
-                    M(t3_r, i) = (f32)((samp_d >> 0) & 0xff) / 255.0f;
-                    M(t3_g, i) = (f32)((samp_d >> 8) & 0xff) / 255.0f;
-                    M(t3_b, i) = (f32)((samp_d >> 16) & 0xff) / 255.0f;
-                    M(t3_a, i) = (f32)((samp_d >> 24) & 0xff) / 255.0f;
-
-                    // unpack the pixel to write to in the back buffer
-                    M(dest_r, i) = (f32)((*pixel_ptr >> 0) & 0xff) / 255.0f;
-                    M(dest_g, i) = (f32)((*pixel_ptr >> 8) & 0xff) / 255.0f;
-                    M(dest_b, i) = (f32)((*pixel_ptr >> 16) & 0xff) / 255.0f;
-                    M(dest_a, i) = (f32)((*pixel_ptr >> 24) & 0xff) / 255.0f;
+                    auto texel_ptr = (u32 *)albedo->buf + fetch_y * alb_pitch_texel + fetch_x;
+                    MI(samp_a, i)  = *texel_ptr;
+                    MI(samp_b, i)  = *(texel_ptr + 1);
+                    MI(samp_c, i)  = *(texel_ptr + alb_pitch_texel);
+                    MI(samp_d, i)  = *(texel_ptr + alb_pitch_texel + 1);
                 }
+
+                // NOTE(casey): Unpack bilinear samples
+                __m128 t0_r = _mm_cvtepi32_ps(_mm_and_si128(samp_a, mask_ff));
+                __m128 t0_g = _mm_cvtepi32_ps(_mm_and_si128(_mm_srli_epi32(samp_a, 8), mask_ff));
+                __m128 t0_b = _mm_cvtepi32_ps(_mm_and_si128(_mm_srli_epi32(samp_a, 16), mask_ff));
+                __m128 t0_a = _mm_cvtepi32_ps(_mm_and_si128(_mm_srli_epi32(samp_a, 24), mask_ff));
+
+                __m128 t1_r = _mm_cvtepi32_ps(_mm_and_si128(samp_b, mask_ff));
+                __m128 t1_g = _mm_cvtepi32_ps(_mm_and_si128(_mm_srli_epi32(samp_b, 8), mask_ff));
+                __m128 t1_b = _mm_cvtepi32_ps(_mm_and_si128(_mm_srli_epi32(samp_b, 16), mask_ff));
+                __m128 t1_a = _mm_cvtepi32_ps(_mm_and_si128(_mm_srli_epi32(samp_b, 24), mask_ff));
+
+                __m128 t2_r = _mm_cvtepi32_ps(_mm_and_si128(samp_c, mask_ff));
+                __m128 t2_g = _mm_cvtepi32_ps(_mm_and_si128(_mm_srli_epi32(samp_c, 8), mask_ff));
+                __m128 t2_b = _mm_cvtepi32_ps(_mm_and_si128(_mm_srli_epi32(samp_c, 16), mask_ff));
+                __m128 t2_a = _mm_cvtepi32_ps(_mm_and_si128(_mm_srli_epi32(samp_c, 24), mask_ff));
+
+                __m128 t3_r = _mm_cvtepi32_ps(_mm_and_si128(samp_d, mask_ff));
+                __m128 t3_g = _mm_cvtepi32_ps(_mm_and_si128(_mm_srli_epi32(samp_d, 8), mask_ff));
+                __m128 t3_b = _mm_cvtepi32_ps(_mm_and_si128(_mm_srli_epi32(samp_d, 16), mask_ff));
+                __m128 t3_a = _mm_cvtepi32_ps(_mm_and_si128(_mm_srli_epi32(samp_d, 24), mask_ff));
+
+                // load destination
+                __m128 dest_r = _mm_cvtepi32_ps(_mm_and_si128(original_dest, mask_ff));
+                __m128 dest_g =
+                    _mm_cvtepi32_ps(_mm_and_si128(_mm_srli_epi32(original_dest, 8), mask_ff));
+                __m128 dest_b =
+                    _mm_cvtepi32_ps(_mm_and_si128(_mm_srli_epi32(original_dest, 16), mask_ff));
+                __m128 dest_a =
+                    _mm_cvtepi32_ps(_mm_and_si128(_mm_srli_epi32(original_dest, 24), mask_ff));
+
+                // normalize
+                t0_r = _mm_mul_ps(inv_255_m128, t0_r);
+                t0_g = _mm_mul_ps(inv_255_m128, t0_g);
+                t0_b = _mm_mul_ps(inv_255_m128, t0_b);
+                t0_a = _mm_mul_ps(inv_255_m128, t0_a);
+
+                t1_r = _mm_mul_ps(inv_255_m128, t1_r);
+                t1_g = _mm_mul_ps(inv_255_m128, t1_g);
+                t1_b = _mm_mul_ps(inv_255_m128, t1_b);
+                t1_a = _mm_mul_ps(inv_255_m128, t1_a);
+
+                t2_r = _mm_mul_ps(inv_255_m128, t2_r);
+                t2_g = _mm_mul_ps(inv_255_m128, t2_g);
+                t2_b = _mm_mul_ps(inv_255_m128, t2_b);
+                t2_a = _mm_mul_ps(inv_255_m128, t2_a);
+
+                t3_r = _mm_mul_ps(inv_255_m128, t3_r);
+                t3_g = _mm_mul_ps(inv_255_m128, t3_g);
+                t3_b = _mm_mul_ps(inv_255_m128, t3_b);
+                t3_a = _mm_mul_ps(inv_255_m128, t3_a);
+
+                // for (i32 i = 0; i < 4; ++i) {
+                // }
+                // bi-linear texture blen
+                __m128 ifx = _mm_sub_ps(one_m128, fx);
+                __m128 ify = _mm_sub_ps(one_m128, fy);
+
+                __m128 l0 = _mm_mul_ps(ify, ifx);
+                __m128 l1 = _mm_mul_ps(ify, fx);
+                __m128 l2 = _mm_mul_ps(fy, ifx);
+                __m128 l3 = _mm_mul_ps(fy, fx);
+
+                __m128 texel_r =
+                    _mm_add_ps(_mm_add_ps(_mm_add_ps(_mm_mul_ps(l0, t0_r), _mm_mul_ps(l1, t1_r)),
+                                          _mm_mul_ps(l2, t2_r)),
+                               _mm_mul_ps(l3, t3_r));
+                __m128 texel_g =
+                    _mm_add_ps(_mm_add_ps(_mm_add_ps(_mm_mul_ps(l0, t0_g), _mm_mul_ps(l1, t1_g)),
+                                          _mm_mul_ps(l2, t2_g)),
+                               _mm_mul_ps(l3, t3_g));
+                __m128 texel_b =
+                    _mm_add_ps(_mm_add_ps(_mm_add_ps(_mm_mul_ps(l0, t0_b), _mm_mul_ps(l1, t1_b)),
+                                          _mm_mul_ps(l2, t2_b)),
+                               _mm_mul_ps(l3, t3_b));
+                __m128 texel_a =
+                    _mm_add_ps(_mm_add_ps(_mm_add_ps(_mm_mul_ps(l0, t0_a), _mm_mul_ps(l1, t1_a)),
+                                          _mm_mul_ps(l2, t2_a)),
+                               _mm_mul_ps(l3, t3_a));
+
+                // TODO: do I need this???
+                texel_r = _mm_mul_ps(texel_r, texel_a);
+                texel_g = _mm_mul_ps(texel_g, texel_a);
+                texel_b = _mm_mul_ps(texel_b, texel_a);
+
+                dest_r = _mm_mul_ps(inv_255_m128, dest_r);
+                dest_g = _mm_mul_ps(inv_255_m128, dest_g);
+                dest_b = _mm_mul_ps(inv_255_m128, dest_b);
+                dest_a = _mm_mul_ps(inv_255_m128, dest_a);
+
+                // linear blend the texel and the back buffer pixel
+                __m128 ita     = _mm_sub_ps(one_m128, texel_a);
+                __m128 blend_r = _mm_add_ps(_mm_mul_ps(ita, dest_r), texel_r);
+                __m128 blend_g = _mm_add_ps(_mm_mul_ps(ita, dest_g), texel_g);
+                __m128 blend_b = _mm_add_ps(_mm_mul_ps(ita, dest_b), texel_b);
+                __m128 blend_a = _mm_add_ps(_mm_mul_ps(ita, dest_a), texel_a);
+
+                // to easily convert to u8 later
+                blend_r = _mm_mul_ps(one_255_m128, blend_r);
+                blend_g = _mm_mul_ps(one_255_m128, blend_g);
+                blend_b = _mm_mul_ps(one_255_m128, blend_b);
+                blend_a = _mm_mul_ps(one_255_m128, blend_a);
+
+                __m128i int_r = _mm_cvtps_epi32(blend_r);
+                __m128i int_g = _mm_cvtps_epi32(blend_g);
+                __m128i int_b = _mm_cvtps_epi32(blend_b);
+                __m128i int_a = _mm_cvtps_epi32(blend_a);
+
+                __m128i sr = int_r;
+                __m128i sg = _mm_slli_epi32(int_g, 8);
+                __m128i sb = _mm_slli_epi32(int_b, 16);
+                __m128i sa = _mm_slli_epi32(int_a, 24);
+
+                __m128i out = _mm_or_si128(_mm_or_si128(sr, sg), _mm_or_si128(sb, sa));
+
+                __m128i msk_out = _mm_or_si128(_mm_and_si128(write_msk, out),
+                                               _mm_andnot_si128(write_msk, original_dest));
+                _mm_storeu_si128((__m128i *)pixel_ptr, msk_out);
             }
-
-            // for (i32 i = 0; i < 4; ++i) {
-            // }
-            // bi-linear texture blen
-            __m128 ifx = _mm_sub_ps(one_m128, fx);
-            __m128 ify = _mm_sub_ps(one_m128, fy);
-
-            __m128 l0 = _mm_mul_ps(ify, ifx);
-            __m128 l1 = _mm_mul_ps(ify, fx);
-            __m128 l2 = _mm_mul_ps(fy, ifx);
-            __m128 l3 = _mm_mul_ps(fy, fx);
-
-            __m128 texel_r =
-                _mm_add_ps(_mm_add_ps(_mm_add_ps(_mm_mul_ps(l0, t0_r), _mm_mul_ps(l1, t1_r)),
-                                      _mm_mul_ps(l2, t2_r)),
-                           _mm_mul_ps(l3, t3_r));
-            __m128 texel_g =
-                _mm_add_ps(_mm_add_ps(_mm_add_ps(_mm_mul_ps(l0, t0_g), _mm_mul_ps(l1, t1_g)),
-                                      _mm_mul_ps(l2, t2_g)),
-                           _mm_mul_ps(l3, t3_g));
-            __m128 texel_b =
-                _mm_add_ps(_mm_add_ps(_mm_add_ps(_mm_mul_ps(l0, t0_b), _mm_mul_ps(l1, t1_b)),
-                                      _mm_mul_ps(l2, t2_b)),
-                           _mm_mul_ps(l3, t3_b));
-            __m128 texel_a =
-                _mm_add_ps(_mm_add_ps(_mm_add_ps(_mm_mul_ps(l0, t0_a), _mm_mul_ps(l1, t1_a)),
-                                      _mm_mul_ps(l2, t2_a)),
-                           _mm_mul_ps(l3, t3_a));
-
-            // TODO: do I need this???
-            texel_r = _mm_mul_ps(texel_r, texel_a);
-            texel_g = _mm_mul_ps(texel_g, texel_a);
-            texel_b = _mm_mul_ps(texel_b, texel_a);
-
-            // linear blend the texel and the back buffer pixel
-            __m128 ita = _mm_sub_ps(one_m128, texel_a);
-
-            blend_r = _mm_add_ps(_mm_mul_ps(ita, dest_r), texel_r);
-            blend_g = _mm_add_ps(_mm_mul_ps(ita, dest_g), texel_g);
-            blend_b = _mm_add_ps(_mm_mul_ps(ita, dest_b), texel_b);
-            blend_a    = _mm_add_ps(_mm_mul_ps(ita, dest_a), texel_a);
-            // blend_a = _mm_set1_ps(1.0f);
-
-            for (i32 i = 0; i < 4; ++i) {
-                // pack the final color and write it to the back buffer
-                if (should_fill[i]) {
-                    *(pixel_ptr + i) = { (u32)(M(blend_r, i) * 255.0f) << 0 |
-                                         (u32)(M(blend_g, i) * 255.0f) << 8 |
-                                         (u32)(M(blend_b, i) * 255.0f) << 16 |
-                                         (u32)(M(blend_a, i) * 255.0f) << 24 };
-
-                    // *(pixel_ptr + i) = { (u32)(M(blend_r, i) + 0.5f) << 0 |
-                    //                      (u32)(M(blend_g, i) + 0.5f) << 8 |
-                    //                      (u32)(M(blend_b, i) + 0.5f) << 16 |
-                    //                      (u32)(M(blend_a, i) + 0.5f) << 24 };
-                }
-            }
+            pixel_px = _mm_add_ps(pixel_px, four_m128);
             pixel_ptr += 4;
         }
         row += buf_pitch;
     }
-    EndTimedBlockCounted(ProcessPixel, (rc.x1 - rc.x0 + 1) * (rc.y1 - rc.y0 + 1));
-    EndTimedBlock(DrawRect);
+    END_TIMED_BLOCK_COUNTED(ProcessPixel, (rc.x1 - rc.x0 + 1) * (rc.y1 - rc.y0 + 1));
+    END_TIMED_BLOCK(DrawRect);
 }
 
-fn void draw_rect_slowly(Texture *buffer, v2f origin, v2f x_axis, v2f y_axis, Texture *albedo,
-                         Texture *normal, EnviromentMap *top, EnviromentMap *middle,
-                         EnviromentMap *bottom, v4f color = { 1.0f, 1.0f, 1.0f, 1.0f })
+#if 1
+void draw_rect_256(Texture *buffer, v2f origin, v2f x_axis, v2f y_axis, Texture *albedo, v4f color)
+{
+    TOM_ASSERT(albedo);
+    BEGIN_TIMED_BLOCK(DrawRect);
+
+    f32 x_inv_len_sq = 1.0f / vec_length_sq(x_axis);
+    f32 y_inv_len_sq = 1.0f / vec_length_sq(y_axis);
+
+    color = premultiply_alpha(color);
+
+    i32 max_width  = buffer->width - 1;
+    i32 max_height = buffer->height - 1;
+
+    f32 inv_max_width  = 1.0f / max_width;
+    f32 inv_max_height = 1.0f / max_height;
+
+    f32 x_axis_len = vec_length(x_axis);
+    f32 y_axis_len = vec_length(y_axis);
+
+    r2i rc = { max_width, max_height, 0, 0 };
+
+    v2f points[4] = { origin, origin + x_axis, origin + y_axis, origin + x_axis + y_axis };
+    for (auto p : points) {
+        i32 x_floor = floorf_to_i32(p.x);
+        i32 y_floor = floorf_to_i32(p.y);
+        i32 x_ceil  = ceilf_to_i32(p.x);
+        i32 y_ceil  = ceilf_to_i32(p.y);
+
+        rc.x0 = min(rc.x0, x_floor);
+        rc.y0 = min(rc.y0, y_floor);
+        rc.x1 = max(rc.x1, x_ceil);
+        rc.y1 = max(rc.y1, y_ceil);
+    }
+
+    rc.x0 = max(rc.x0, 0);
+    rc.y0 = max(rc.y0, 0);
+    rc.x1 = min(rc.x1, max_width);
+    rc.y1 = min(rc.y1, max_height);
+
+    v2f nx_axis = x_inv_len_sq * x_axis;
+    v2f ny_axis = y_inv_len_sq * y_axis;
+
+    f32 one_255         = 255.0f;
+    f32 inv_255         = 1.0f / 255.0f;
+    __m256 inv_255_m256 = _mm256_set1_ps(inv_255);
+
+    __m256 one_m256       = _mm256_set1_ps(1.0f);
+    __m256 four_m256      = _mm256_set1_ps(4.0f);
+    __m256 eight_m256     = _mm256_set1_ps(8.0f);
+    __m256 one_255_m256   = _mm256_set1_ps(255.0f);
+    __m256 zero_m256      = _mm256_set1_ps(0.0f);
+    __m256 mask_ff        = _mm256_set1_epi32(0xff);
+    __m256 nx_axis_x_m256 = _mm256_set1_ps(nx_axis.x);
+    __m256 nx_axis_y_m256 = _mm256_set1_ps(nx_axis.y);
+    __m256 ny_axis_x_m256 = _mm256_set1_ps(ny_axis.x);
+    __m256 ny_axis_y_m256 = _mm256_set1_ps(ny_axis.y);
+    __m256 origin_x_m256  = _mm256_set1_ps(origin.x);
+    __m256 origin_y_m256  = _mm256_set1_ps(origin.y);
+    __m256 width_m2       = _mm256_set1_ps((f32)(albedo->width - 2));
+    __m256 height_m2      = _mm256_set1_ps((f32)(albedo->height - 2));
+
+    u32 texel_sz        = texture_get_texel_size(albedo->type);
+    u32 alb_pitch       = texture_get_pitch(albedo);
+    u32 alb_pitch_texel = alb_pitch / texel_sz;
+
+    u32 buf_pitch = texture_get_pitch(buffer);
+    TOM_ASSERT(buffer->type == Texture::Type::R8G8B8A8);
+    byt *row =
+        (byt *)buffer->buf + rc.x0 * texture_get_texel_size(buffer->type) + rc.y0 * buf_pitch;
+
+    BEGIN_TIMED_BLOCK(ProcessPixel);
+    for (i32 y = rc.y0; y < rc.y1; ++y) {
+        __m256 pixel_py = _mm256_set1_ps((f32)y);
+        pixel_py        = _mm256_sub_ps(pixel_py, origin_y_m256);
+        __m256 pixel_px =
+            _mm256_set_ps((f32)(rc.x0 + 7), (f32)(rc.x0 + 6), (f32)(rc.x0 + 5), (f32)(rc.x0 + 4),
+                          (f32)(rc.x0 + 3), (f32)(rc.x0 + 2), (f32)(rc.x0 + 1), (f32)(rc.x0 + 0));
+        pixel_px = _mm256_sub_ps(pixel_px, origin_x_m256);
+
+        u32 *pixel_ptr = (u32 *)row;
+
+        for (i32 x = rc.x0; x < rc.x1; x += 8) {
+    #define mmSquare(a) _mm_mul_ps(a, a)
+    #define M(a, i)     ((f32 *)&(a))[i]
+    #define MI(a, i)    ((u32 *)&(a))[i]
+
+            __m256i original_dest = _mm256_loadu_si256((__m256i *)pixel_ptr);
+
+            __m256 u = _mm256_add_ps(_mm256_mul_ps(pixel_px, nx_axis_x_m256),
+                                     _mm256_mul_ps(pixel_py, nx_axis_y_m256));
+            __m256 v = _mm256_add_ps(_mm256_mul_ps(pixel_px, ny_axis_x_m256),
+                                     _mm256_mul_ps(pixel_py, ny_axis_y_m256));
+
+            __m256i write_msk = _mm256_castps_si256(_mm256_and_ps(
+                _mm256_and_ps(_mm256_cmp_ps(u, zero_m256, 0x0d), _mm256_cmp_ps(u, one_m256, 0x02)),
+                _mm256_and_ps(_mm256_cmp_ps(v, zero_m256, 0x0d), _mm256_cmp_ps(v, one_m256, 0x02))));
+
+            {
+                u = _mm256_min_ps(_mm256_max_ps(u, zero_m256), one_m256);
+                v = _mm256_min_ps(_mm256_max_ps(v, zero_m256), one_m256);
+
+                __m256 tx = _mm256_mul_ps(u, width_m2);
+                __m256 ty = _mm256_mul_ps(v, height_m2);
+
+                __m256i fetch_x_256 = _mm256_cvttps_epi32(tx);
+                __m256i fetch_y_256 = _mm256_cvttps_epi32(ty);
+
+                __m256 fx = _mm256_sub_ps(tx, _mm256_cvtepi32_ps(fetch_x_256));
+                __m256 fy = _mm256_sub_ps(ty, _mm256_cvtepi32_ps(fetch_y_256));
+                __m256i samp_a;
+                __m256i samp_b;
+                __m256i samp_c;
+                __m256i samp_d;
+
+                for (i32 i = 0; i < 8; ++i) {
+                    i32 fetch_x = MI(fetch_x_256, i);
+                    i32 fetch_y = MI(fetch_y_256, i);
+
+                    TOM_ASSERT((fetch_x >= 0) && (fetch_x < albedo->width));
+                    TOM_ASSERT((fetch_y >= 0) && (fetch_y < albedo->height));
+
+                    auto texel_ptr = (u32 *)albedo->buf + fetch_y * alb_pitch_texel + fetch_x;
+                    MI(samp_a, i)  = *texel_ptr;
+                    MI(samp_b, i)  = *(texel_ptr + 1);
+                    MI(samp_c, i)  = *(texel_ptr + alb_pitch_texel);
+                    MI(samp_d, i)  = *(texel_ptr + alb_pitch_texel + 1);
+                }
+
+                // NOTE(casey): Unpack bilinear samples
+                __m256 t0_r = _mm256_cvtepi32_ps(_mm256_and_si256(samp_a, mask_ff));
+                __m256 t0_g =
+                    _mm256_cvtepi32_ps(_mm256_and_si256(_mm256_srli_epi32(samp_a, 8), mask_ff));
+                __m256 t0_b =
+                    _mm256_cvtepi32_ps(_mm256_and_si256(_mm256_srli_epi32(samp_a, 16), mask_ff));
+                __m256 t0_a =
+                    _mm256_cvtepi32_ps(_mm256_and_si256(_mm256_srli_epi32(samp_a, 24), mask_ff));
+
+                __m256 t1_r = _mm256_cvtepi32_ps(_mm256_and_si256(samp_b, mask_ff));
+                __m256 t1_g =
+                    _mm256_cvtepi32_ps(_mm256_and_si256(_mm256_srli_epi32(samp_b, 8), mask_ff));
+                __m256 t1_b =
+                    _mm256_cvtepi32_ps(_mm256_and_si256(_mm256_srli_epi32(samp_b, 16), mask_ff));
+                __m256 t1_a =
+                    _mm256_cvtepi32_ps(_mm256_and_si256(_mm256_srli_epi32(samp_b, 24), mask_ff));
+
+                __m256 t2_r = _mm256_cvtepi32_ps(_mm256_and_si256(samp_c, mask_ff));
+                __m256 t2_g =
+                    _mm256_cvtepi32_ps(_mm256_and_si256(_mm256_srli_epi32(samp_c, 8), mask_ff));
+                __m256 t2_b =
+                    _mm256_cvtepi32_ps(_mm256_and_si256(_mm256_srli_epi32(samp_c, 16), mask_ff));
+                __m256 t2_a =
+                    _mm256_cvtepi32_ps(_mm256_and_si256(_mm256_srli_epi32(samp_c, 24), mask_ff));
+
+                __m256 t3_r = _mm256_cvtepi32_ps(_mm256_and_si256(samp_d, mask_ff));
+                __m256 t3_g =
+                    _mm256_cvtepi32_ps(_mm256_and_si256(_mm256_srli_epi32(samp_d, 8), mask_ff));
+                __m256 t3_b =
+                    _mm256_cvtepi32_ps(_mm256_and_si256(_mm256_srli_epi32(samp_d, 16), mask_ff));
+                __m256 t3_a =
+                    _mm256_cvtepi32_ps(_mm256_and_si256(_mm256_srli_epi32(samp_d, 24), mask_ff));
+
+                // load destination
+                __m256 dest_r = _mm256_cvtepi32_ps(_mm256_and_si256(original_dest, mask_ff));
+                __m256 dest_g = _mm256_cvtepi32_ps(
+                    _mm256_and_si256(_mm256_srli_epi32(original_dest, 8), mask_ff));
+                __m256 dest_b = _mm256_cvtepi32_ps(
+                    _mm256_and_si256(_mm256_srli_epi32(original_dest, 16), mask_ff));
+                __m256 dest_a = _mm256_cvtepi32_ps(
+                    _mm256_and_si256(_mm256_srli_epi32(original_dest, 24), mask_ff));
+
+                // normalize
+                t0_r = _mm256_mul_ps(inv_255_m256, t0_r);
+                t0_g = _mm256_mul_ps(inv_255_m256, t0_g);
+                t0_b = _mm256_mul_ps(inv_255_m256, t0_b);
+                t0_a = _mm256_mul_ps(inv_255_m256, t0_a);
+
+                t1_r = _mm256_mul_ps(inv_255_m256, t1_r);
+                t1_g = _mm256_mul_ps(inv_255_m256, t1_g);
+                t1_b = _mm256_mul_ps(inv_255_m256, t1_b);
+                t1_a = _mm256_mul_ps(inv_255_m256, t1_a);
+
+                t2_r = _mm256_mul_ps(inv_255_m256, t2_r);
+                t2_g = _mm256_mul_ps(inv_255_m256, t2_g);
+                t2_b = _mm256_mul_ps(inv_255_m256, t2_b);
+                t2_a = _mm256_mul_ps(inv_255_m256, t2_a);
+
+                t3_r = _mm256_mul_ps(inv_255_m256, t3_r);
+                t3_g = _mm256_mul_ps(inv_255_m256, t3_g);
+                t3_b = _mm256_mul_ps(inv_255_m256, t3_b);
+                t3_a = _mm256_mul_ps(inv_255_m256, t3_a);
+
+                // for (i32 i = 0; i < 4; ++i) {
+                // }
+                // bi-linear texture blen
+                __m256 ifx = _mm256_sub_ps(one_m256, fx);
+                __m256 ify = _mm256_sub_ps(one_m256, fy);
+
+                __m256 l0 = _mm256_mul_ps(ify, ifx);
+                __m256 l1 = _mm256_mul_ps(ify, fx);
+                __m256 l2 = _mm256_mul_ps(fy, ifx);
+                __m256 l3 = _mm256_mul_ps(fy, fx);
+
+                __m256 texel_r = _mm256_add_ps(
+                    _mm256_add_ps(_mm256_add_ps(_mm256_mul_ps(l0, t0_r), _mm256_mul_ps(l1, t1_r)),
+                                  _mm256_mul_ps(l2, t2_r)),
+                    _mm256_mul_ps(l3, t3_r));
+                __m256 texel_g = _mm256_add_ps(
+                    _mm256_add_ps(_mm256_add_ps(_mm256_mul_ps(l0, t0_g), _mm256_mul_ps(l1, t1_g)),
+                                  _mm256_mul_ps(l2, t2_g)),
+                    _mm256_mul_ps(l3, t3_g));
+                __m256 texel_b = _mm256_add_ps(
+                    _mm256_add_ps(_mm256_add_ps(_mm256_mul_ps(l0, t0_b), _mm256_mul_ps(l1, t1_b)),
+                                  _mm256_mul_ps(l2, t2_b)),
+                    _mm256_mul_ps(l3, t3_b));
+                __m256 texel_a = _mm256_add_ps(
+                    _mm256_add_ps(_mm256_add_ps(_mm256_mul_ps(l0, t0_a), _mm256_mul_ps(l1, t1_a)),
+                                  _mm256_mul_ps(l2, t2_a)),
+                    _mm256_mul_ps(l3, t3_a));
+
+                // TODO: do I need this???
+                texel_r = _mm256_mul_ps(texel_r, texel_a);
+                texel_g = _mm256_mul_ps(texel_g, texel_a);
+                texel_b = _mm256_mul_ps(texel_b, texel_a);
+
+                dest_r = _mm256_mul_ps(inv_255_m256, dest_r);
+                dest_g = _mm256_mul_ps(inv_255_m256, dest_g);
+                dest_b = _mm256_mul_ps(inv_255_m256, dest_b);
+                dest_a = _mm256_mul_ps(inv_255_m256, dest_a);
+
+                // linear blend the texel and the back buffer pixel
+                __m256 ita     = _mm256_sub_ps(one_m256, texel_a);
+                __m256 blend_r = _mm256_add_ps(_mm256_mul_ps(ita, dest_r), texel_r);
+                __m256 blend_g = _mm256_add_ps(_mm256_mul_ps(ita, dest_g), texel_g);
+                __m256 blend_b = _mm256_add_ps(_mm256_mul_ps(ita, dest_b), texel_b);
+                __m256 blend_a = _mm256_add_ps(_mm256_mul_ps(ita, dest_a), texel_a);
+
+                // to easily convert to u8 later
+                blend_r = _mm256_mul_ps(one_255_m256, blend_r);
+                blend_g = _mm256_mul_ps(one_255_m256, blend_g);
+                blend_b = _mm256_mul_ps(one_255_m256, blend_b);
+                blend_a = _mm256_mul_ps(one_255_m256, blend_a);
+
+                __m256i int_r = _mm256_cvtps_epi32(blend_r);
+                __m256i int_g = _mm256_cvtps_epi32(blend_g);
+                __m256i int_b = _mm256_cvtps_epi32(blend_b);
+                __m256i int_a = _mm256_cvtps_epi32(blend_a);
+
+                __m256i sr = int_r;
+                __m256i sg = _mm256_slli_epi32(int_g, 8);
+                __m256i sb = _mm256_slli_epi32(int_b, 16);
+                __m256i sa = _mm256_slli_epi32(int_a, 24);
+
+                __m256i out = _mm256_or_si256(_mm256_or_si256(sr, sg), _mm256_or_si256(sb, sa));
+
+                __m256i msk_out = _mm256_or_si256(_mm256_and_si256(write_msk, out),
+                                                  _mm256_andnot_si256(write_msk, original_dest));
+                _mm256_storeu_si256((__m256i *)pixel_ptr, msk_out);
+            }
+            pixel_px = _mm256_add_ps(pixel_px, eight_m256);
+            pixel_ptr += 8;
+        }
+        row += buf_pitch;
+    }
+    END_TIMED_BLOCK_COUNTED(ProcessPixel, (rc.x1 - rc.x0 + 1) * (rc.y1 - rc.y0 + 1));
+    END_TIMED_BLOCK(DrawRect);
+}
+#endif
+
+void draw_rect_slowly(Texture *buffer, v2f origin, v2f x_axis, v2f y_axis, Texture *albedo,
+                      Texture *normal, EnviromentMap *top, EnviromentMap *middle,
+                      EnviromentMap *bottom, v4f color)
 {
     f32 x_inv_len_sq = 1.0f / vec_length_sq(x_axis);
     f32 y_inv_len_sq = 1.0f / vec_length_sq(y_axis);
@@ -458,7 +748,7 @@ fn void draw_rect_slowly(Texture *buffer, v2f origin, v2f x_axis, v2f y_axis, Te
     rc.x1 = min(rc.x1, max_width);
     rc.y1 = min(rc.y1, max_height);
 
-    Assert(buffer->type == Texture::Type::R8G8B8A8);
+    TOM_ASSERT(buffer->type == Texture::Type::R8G8B8A8);
     u32 buf_pitch = texture_get_pitch(buffer);
     byt *row =
         (byt *)buffer->buf + rc.x0 * texture_get_texel_size(buffer->type) + rc.y0 * buf_pitch;
@@ -480,8 +770,8 @@ fn void draw_rect_slowly(Texture *buffer, v2f origin, v2f x_axis, v2f y_axis, Te
 
                     f32 u = x_inv_len_sq * vec_dot(d, x_axis);
                     f32 v = y_inv_len_sq * vec_dot(d, y_axis);
-                    Assert((u >= 0.0f) && (u <= 1.0f + EPS_F32));
-                    Assert((v >= 0.0f) && (v <= 1.0f + EPS_F32));
+                    TOM_ASSERT((u >= 0.0f) && (u <= 1.0f + EPS_F32));
+                    TOM_ASSERT((v >= 0.0f) && (v <= 1.0f + EPS_F32));
                     f32 tx = 1.0f + (u * (f32)(albedo->width - 3));
                     f32 ty = 1.0f + (v * (f32)(albedo->height - 3));
 
@@ -491,8 +781,8 @@ fn void draw_rect_slowly(Texture *buffer, v2f origin, v2f x_axis, v2f y_axis, Te
                     f32 fx = tx - (f32)tex_x;
                     f32 fy = ty - (f32)tex_y;
 
-                    Assert((tex_x >= 0) && (tex_x < albedo->width));
-                    Assert((tex_y >= 0) && (tex_y < albedo->height));
+                    TOM_ASSERT((tex_x >= 0) && (tex_x < albedo->width));
+                    TOM_ASSERT((tex_y >= 0) && (tex_y < albedo->height));
 
                     // set the texel to the albedo map sample
                     BilinearSample alb_bi_samp = get_bilinear_sample(albedo, tex_x, tex_y);
@@ -503,7 +793,7 @@ fn void draw_rect_slowly(Texture *buffer, v2f origin, v2f x_axis, v2f y_axis, Te
 
                     if (normal) {
                         // NOTE: just to make it simpler for now
-                        Assert(normal->height == albedo->height);
+                        TOM_ASSERT(normal->height == albedo->height);
                         u32 nrm_texel_sz = texture_get_texel_size(normal->type);
                         u32 nrm_pitch =
                             texture_get_pitch(albedo);  // TODO: different sized normal maps
@@ -569,9 +859,8 @@ fn void draw_rect_slowly(Texture *buffer, v2f origin, v2f x_axis, v2f y_axis, Te
     }
 }
 
-fn void draw_rect_slowly(Texture *buffer, m3 model, Texture *albedo, Texture *normal,
-                         EnviromentMap *top, EnviromentMap *middle, EnviromentMap *bottom,
-                         v4f color = { 1.0f, 1.0f, 1.0f, 1.0f })
+void draw_rect_slowly(Texture *buffer, m3 model, Texture *albedo, Texture *normal,
+                      EnviromentMap *top, EnviromentMap *middle, EnviromentMap *bottom, v4f color)
 {
     m3 world   = m3_identity(g_meters_to_pixels);
     m3 view    = world * model;
@@ -583,7 +872,7 @@ fn void draw_rect_slowly(Texture *buffer, m3 model, Texture *albedo, Texture *no
     draw_rect_slowly(buffer, origin, x_axis, y_axis, albedo, normal, top, middle, bottom, color);
 }
 
-fn void draw_texture(Texture *buffer, Texture *tex, v2f pos)
+void draw_texture(Texture *buffer, Texture *tex, v2f pos)
 {
     r2i rect;
     rect.x0 = round_f32_to_i32(pos.x - ((f32)tex->width) / 2.0f);
@@ -609,7 +898,7 @@ fn void draw_texture(Texture *buffer, Texture *tex, v2f pos)
         rect.y1 = buffer->height;
     }
 
-    Assert(buffer->type == Texture::Type::R8G8B8A8);
+    TOM_ASSERT(buffer->type == Texture::Type::R8G8B8A8);
     u32 pitch   = texture_get_pitch(buffer);
     u32 *source = (u32 *)tex->buf + (y_offset * tex->width);
     byt *row =
@@ -632,8 +921,8 @@ fn void draw_texture(Texture *buffer, Texture *tex, v2f pos)
     }
 }
 
-fn RenderGroup *alloc_render_group(Arena *arena, u32 max_pushbuffer_sz, f32 meters_to_pixels,
-                                   Camera cam)
+RenderGroup *alloc_render_group(Arena *arena, u32 max_pushbuffer_sz, f32 meters_to_pixels,
+                                Camera cam)
 {
     auto result               = push_struct<RenderGroup>(arena);
     result->pushbuffer_base   = (byt *)push_size(arena, max_pushbuffer_sz);
@@ -646,7 +935,7 @@ fn RenderGroup *alloc_render_group(Arena *arena, u32 max_pushbuffer_sz, f32 mete
 }
 
 // NOTE: fucking stupid but I just wanted to get it done quick
-fn u32 get_entry_size(RenderGroupEntryType type)
+internal u32 get_entry_size(RenderGroupEntryType type)
 {
     switch (type) {
         case RenderGroupEntryType::clear: return sizeof(RenderGroupEntryClear);
@@ -654,13 +943,13 @@ fn u32 get_entry_size(RenderGroupEntryType type)
         case RenderGroupEntryType::rect_outline: return sizeof(RenderGroupEntryRectOutline);
         case RenderGroupEntryType::texture: return sizeof(RenderGroupEntryTexture);
         case RenderGroupEntryType::coord_system: return sizeof(RenderGroupEntryCoordSystem);
-        default: InvalidCodePath;
+        default: INVALID_CODE_PATH;
     }
 
     return U32_MAX;
 }
 
-fn void *push_render_element(RenderGroup *group, RenderGroupEntryType type)
+internal void *push_render_element(RenderGroup *group, RenderGroupEntryType type)
 {
     void *result = nullptr;
     u32 entry_sz = sizeof(RenderGroupEntryHeader) + get_entry_size(type);
@@ -671,57 +960,57 @@ fn void *push_render_element(RenderGroup *group, RenderGroupEntryType type)
         result       = header + 1;
         group->pushbuffer_sz += entry_sz;
     } else {
-        InvalidCodePath;
+        INVALID_CODE_PATH;
     }
 
     return result;
 }
 
-fn void push_clear(RenderGroup *group, Color_u32 color)
+void push_clear(RenderGroup *group, Color_u32 color)
 {
     auto entry = (RenderGroupEntryClear *)push_render_element(group, RenderGroupEntryType::clear);
-    Assert(entry);
+    TOM_ASSERT(entry);
     entry->clear_color = color;
 }
 
-fn void push_texture(RenderGroup *group, RenderBasis basis, Texture *texture, v2f offset, m3 model)
+void push_texture(RenderGroup *group, RenderBasis basis, Texture *texture, v2f offset, m3 model)
 {
     auto entry =
         (RenderGroupEntryTexture *)push_render_element(group, RenderGroupEntryType::texture);
-    Assert(entry);
+    TOM_ASSERT(entry);
     entry->basis   = basis;
     entry->offset  = offset;
     entry->texture = texture;
     entry->model   = model;
 }
 
-fn void push_rect(RenderGroup *group, v2f pos, v2f dims, Color_u32 color)
+void push_rect(RenderGroup *group, v2f pos, v2f dims, Color_u32 color)
 {
     auto entry = (RenderGroupEntryRect *)push_render_element(group, RenderGroupEntryType::rect);
-    Assert(entry);
+    TOM_ASSERT(entry);
     entry->pos   = pos;
     entry->dims  = dims;
     entry->color = color;
 }
 
-fn void push_rect_outline(RenderGroup *group, v2f pos, v2f dims, i32 thickness, Color_u32 color)
+void push_rect_outline(RenderGroup *group, v2f pos, v2f dims, i32 thickness, Color_u32 color)
 {
     auto entry = (RenderGroupEntryRectOutline *)push_render_element(
         group, RenderGroupEntryType::rect_outline);
-    Assert(entry);
+    TOM_ASSERT(entry);
     entry->pos       = pos;
     entry->dims      = dims;
     entry->thickness = thickness;
     entry->color     = color;
 }
 
-fn void push_coord_system(RenderGroup *group, m3 model, Texture *albedo, Texture *normal,
-                          EnviromentMap *top, EnviromentMap *middle, EnviromentMap *bottom,
-                          Color_u32 color = { 0xffffffff })
+void push_coord_system(RenderGroup *group, m3 model, Texture *albedo, Texture *normal,
+                       EnviromentMap *top, EnviromentMap *middle, EnviromentMap *bottom,
+                       Color_u32 color)
 {
     auto entry = (RenderGroupEntryCoordSystem *)push_render_element(
         group, RenderGroupEntryType::coord_system);
-    Assert(entry);
+    TOM_ASSERT(entry);
     entry->model  = model;
     entry->color  = color;
     entry->albedo = albedo;
@@ -731,7 +1020,7 @@ fn void push_coord_system(RenderGroup *group, m3 model, Texture *albedo, Texture
     entry->bottom = bottom;
 }
 
-fn v2f get_screen_space_coord(RenderGroup *group, Texture *back_buffer, v2f pos)
+internal v2f get_screen_space_coord(RenderGroup *group, Texture *back_buffer, v2f pos)
 {
     r2f cam_rc              = rect_init_dims(group->cam.pos, group->cam.dims);
     v2i buf_mid             = { back_buffer->width / 2, back_buffer->height / 2 };
@@ -749,7 +1038,7 @@ fn v2f get_screen_space_coord(RenderGroup *group, Texture *back_buffer, v2f pos)
     return result;
 }
 
-fn void draw_render_group(RenderGroup *group, Texture *back_buffer)
+void draw_render_group(RenderGroup *group, Texture *back_buffer)
 {
     for (u32 base_address = 0; base_address < group->pushbuffer_sz;) {
         auto header   = (RenderGroupEntryHeader *)(group->pushbuffer_base + base_address);
@@ -779,7 +1068,7 @@ fn void draw_render_group(RenderGroup *group, Texture *back_buffer)
             } break;
             case RenderGroupEntryType::texture: {
                 auto entry = (RenderGroupEntryTexture *)data;
-                Assert(entry->texture);
+                TOM_ASSERT(entry->texture);
                 m3 world   = m3_identity(g_meters_to_pixels);
                 m3 view    = entry->model * world;
                 v2f x_axis = view.r[0].xy;
@@ -796,7 +1085,8 @@ fn void draw_render_group(RenderGroup *group, Texture *back_buffer)
                 v2f coord  = get_screen_space_coord(group, back_buffer, pos);
                 v2f origin = coord - 0.5f * x_axis - 0.5f * y_axis;
 
-                draw_rect_quickly(back_buffer, origin, x_axis, y_axis, entry->texture);
+                // draw_rect_128(back_buffer, origin, x_axis, y_axis, entry->texture);
+                draw_rect_256(back_buffer, origin, x_axis, y_axis, entry->texture);
 
 #if 0
                 draw_square(back_buffer, origin, 3, color_u32(yellow));
@@ -806,7 +1096,6 @@ fn void draw_render_group(RenderGroup *group, Texture *back_buffer)
                 draw_square(back_buffer, origin + 0.5f * x_axis + 0.5f * y_axis, 3,
                             color_u32(orange));
 #endif
-
                 inc_base(entry);
             } break;
             case RenderGroupEntryType::coord_system: {
@@ -829,7 +1118,7 @@ fn void draw_render_group(RenderGroup *group, Texture *back_buffer)
                             color_u32(orange));
                 inc_base(entry);
             } break;
-            default: InvalidCodePath;
+            default: INVALID_CODE_PATH;
         }
     }
 }

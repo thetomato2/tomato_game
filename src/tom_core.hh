@@ -1,9 +1,13 @@
+#ifndef TOM_CORE_HH
+#define TOM_CORE_HH
 
+TOM_CORE_HH
 // #ifdef _MSVC
 //     #define MSVC 1
 // #endif
 
-#define MSVC 1
+#define MSVC    1
+#define USE_DS5 1
 
 // #ifdef _LLVM
 //     #define LLVM 1
@@ -42,17 +46,12 @@ typedef HRESULT(WINAPI *LPDXGIGETDEBUGINTERFACE)(REFIID, void **);
 #include <mmdeviceapi.h>
 #include <audioclient.h>
 
-#define STB_IMAGE_IMPLEMENTATION
 #include "../extern/stb/stb_image.h"
-
-#define STB_IMAGE_WRITE_IMPLEMENTATION
 #include "../extern/stb/stb_image_write.h"
-
-#define STB_TRUETYPE_IMPLEMENTATION
 #include "../extern/stb/stb_truetype.h"
 
 #if MSVC
-    #include <intrin.h> 
+    #include <intrin.h>
     #pragma intrinsic(_BitScanForward)
 #endif
 
@@ -93,60 +92,60 @@ enum CONSOLE_FG_COLORS
     FG_WHITE        = 15
 };
 
-#define SetConsoleColor(x)                                 \
+#define SET_CONSOLE_COLOR(x)                               \
     {                                                      \
         HANDLE hConsole = GetStdHandle(STD_OUTPUT_HANDLE); \
         SetConsoleTextAttribute(hConsole, x);              \
     }
 
-#define PrintRed(str)        \
-    SetConsoleColor(FG_RED); \
-    printf(str);             \
-    SetConsoleColor(FG_WHITE);
-
-#define PrintGreen(str)        \
-    SetConsoleColor(FG_GREEN); \
+#define PRINT_RED(str)         \
+    SET_CONSOLE_COLOR(FG_RED); \
     printf(str);               \
-    SetConsoleColor(FG_WHITE);
+    SET_CONSOLE_COLOR(FG_WHITE);
 
-#define PrintBlue(str)        \
-    SetConsoleColor(FG_BLUE); \
-    printf(str);              \
-    SetConsoleColor(FG_WHITE);
+#define PRINT_GREEN(str)         \
+    SET_CONSOLE_COLOR(FG_GREEN); \
+    printf(str);                 \
+    SET_CONSOLE_COLOR(FG_WHITE);
 
-#define PrintYellow(str)        \
-    SetConsoleColor(FG_YELLOW); \
+#define PRINT_BLUE(str)         \
+    SET_CONSOLE_COLOR(FG_BLUE); \
     printf(str);                \
-    SetConsoleColor(FG_WHITE);
+    SET_CONSOLE_COLOR(FG_WHITE);
 
-#define PrintInfo(str)    \
-    PrintGreen("INFO: "); \
+#define PRINT_YELLOW(str)         \
+    SET_CONSOLE_COLOR(FG_YELLOW); \
+    printf(str);                  \
+    SET_CONSOLE_COLOR(FG_WHITE);
+
+#define PRINT_INFO(str)    \
+    PRINT_GREEN("INFO: "); \
     printf("%s\n", str)
 
-#define PrintMessage(str)   \
-    PrintBlue("MESSAGE: "); \
+#define PRINT_MSG(str)       \
+    PRINT_BLUE("MESSAGE: "); \
     printf("%s\n", str);
 
-#define PrintWarning(str)     \
-    PrintYellow("WARNING: "); \
+#define PRINT_WARN(str)        \
+    PRINT_YELLOW("WARNING: "); \
     printf("%s\n", str)
 
-#define PrintCorruption(str)  \
-    PrintRed("CORRUPTION: "); \
+#define PRINT_CORRUPTION(str)  \
+    PRINT_RED("CORRUPTION: "); \
     printf("%s\n", str);
 
-#define PrintError(str)  \
-    PrintRed("ERROR: "); \
+#define PRINT_ERR(str)    \
+    PRINT_RED("ERROR: "); \
     printf("%s\n", str)
 
 #ifdef TOM_INTERNAL
-    #define Assert(x)                                                                  \
-        do {                                                                           \
-            if (!(x)) {                                                                \
-                PrintRed("FAILED ASSERT:") printf(" %s at :%d\n", __FILE__, __LINE__); \
-                __debugbreak();                                                        \
-            }                                                                          \
-            assert(x);                                                                 \
+    #define TOM_ASSERT(x)                                                               \
+        do {                                                                            \
+            if (!(x)) {                                                                 \
+                PRINT_RED("FAILED ASSERT:") printf(" %s at :%d\n", __FILE__, __LINE__); \
+                __debugbreak();                                                         \
+            }                                                                           \
+            assert(x);                                                                  \
         } while (0)
     #define DebugBreak(x)   \
         if (x) {            \
@@ -154,19 +153,19 @@ enum CONSOLE_FG_COLORS
         }
     #define InternalOnlyExecute(args) args
 #else
-    #define Assert(x)
+    #define TOM_ASSERT(x)
     #define DebugBreak(x)
     #define InternalOnlyExecute(args)
 #endif
 
-#define InvalidCodePath Assert(!"Invalid code path!")
-#define InvalidDefaultCase \
+#define INVALID_CODE_PATH TOM_ASSERT(!"Invalid code path!")
+#define INVALID_DEFAULT_CASE \
     default: {             \
-        InvalidCodePath;   \
+        INVALID_CODE_PATH; \
     } break
-#define NotImplemented Assert(!"Not implemented!")
+#define NOT_IMPLEMENTED TOM_ASSERT(!"Not implemented!")
 
-#define CTAssert(Expr) static_assert(Expr, "Assertion failed: " #Expr)
+#define CTTOM_ASSERT(Expr) static_assert(Expr, "TOM_ASSERTion failed: " #Expr)
 
 #ifdef __cplusplus
 extern "C++"
@@ -174,13 +173,13 @@ extern "C++"
     template<typename _CountofType, size_t _SizeOfArray>
     char (*__countof_helper(_UNALIGNED _CountofType (&_Array)[_SizeOfArray]))[_SizeOfArray];
 
-    #define CountOf(_Array) (sizeof(*__countof_helper(_Array)) + 0)
+    #define ARR_CNT(_Array) (sizeof(*__countof_helper(_Array)) + 0)
 }
 #else
-    #define CountOf(_Array) (sizeof(_Array) / sizeof(_Array[0]))
+    #define ARR_CNT(_Array) (sizeof(_Array) / sizeof(_Array[0]))
 #endif
 
-#define OffsetOf(type, member) (umm)&(((type *)0)->member
+#define OFFSET(type, member) (umm)&(((type *)0)->member
 
 namespace tom
 {
@@ -212,4 +211,8 @@ inline u32 safe_truncate_u32_to_u64(u64 value)
     return result;
 }
 
+#include "tom_globals.hh"
+
 }  // namespace tom
+
+#endif

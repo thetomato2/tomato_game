@@ -1,3 +1,10 @@
+#ifndef TOM_TEXTURE_HH
+#define TOM_TEXTURE_HH
+
+#include "tom_core.hh"
+#include "tom_math.hh"
+#include "tom_color.hh"
+
 namespace tom
 {
 
@@ -61,7 +68,7 @@ fn u32 texture_get_size(Texture tex)
 
 fn u32 texture_get_size(Texture *tex)
 {
-    Assert(tex);
+    TOM_ASSERT(tex);
     if (tex) return tex->width * tex->height * texture_get_texel_size(tex->type);
     return 0;
 }
@@ -73,13 +80,13 @@ fn u32 texture_get_pitch(Texture tex)
 
 fn u32 texture_get_pitch(Texture *tex)
 {
-    Assert(tex);
+    TOM_ASSERT(tex);
     if (tex) return texture_get_texel_size(tex->type) * tex->width;
     return 0;
 }
 
 // FIXME:this leaks but I don't care atm
-// TODO: use a memroy arena?
+// TODO: use arena?
 fn Texture texture_load_from_file(const char *path)
 {
     Texture result;
@@ -188,3 +195,4 @@ fn v4f bilinear_sample_blend(BilinearSample samp, f32 fx, f32 fy, bool pre_mult_
 }
 
 }  // namespace tom
+#endif

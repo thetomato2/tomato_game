@@ -202,7 +202,7 @@ fn ttf_GlyphResult load_ttf_glyph(const char* file_path, f32 point_sz, char glyp
 
     auto ttf_file = read_file(file_path);
     if (ttf_file.contents == nullptr) {
-        InvalidCodePath;
+        INVALID_CODE_PATH;
     }
 
     i32 bake_width  = 64;
@@ -238,7 +238,7 @@ fn FontSheet create_font_sheet(const char* name, const char* file_path, f32 poin
 
     auto ttf_file = read_file(file_path);
     if (ttf_file.contents == nullptr) {
-        InvalidCodePath;
+        INVALID_CODE_PATH;
     }
 
     stbtt_fontinfo font;

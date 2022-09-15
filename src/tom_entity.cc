@@ -1,7 +1,16 @@
+#include "tom_entity.hh"
+#include "tom_game.hh"
+
 namespace tom
 {
 
-fn Entity *get_entity(GameState *state, u32 ind)
+internal void int_hit_points(Entity *ent, u32 hp)
+{
+    ent->max_hp = hp;
+    ent->hp     = ent->max_hp;
+}
+
+Entity *get_entity(GameState *state, u32 ind)
 {
     Entity *result = nullptr;
 
@@ -12,15 +21,9 @@ fn Entity *get_entity(GameState *state, u32 ind)
     return result;
 }
 
-fn void init_hit_points(Entity *ent, u32 hp)
+Entity *add_entity(GameState *game, EntityType type, v3f pos)
 {
-    ent->max_hp = hp;
-    ent->hp     = ent->max_hp;
-}
-
-fn Entity* add_entity(GameState *game, EntityType type, v3f pos = {})
-{
-    Assert(game->ent_cnt < g_max_ent_cnt);
+    TOM_ASSERT(game->ent_cnt < g_max_ent_cnt);
     Entity *ent = &game->entities[game->ent_cnt];
     ent->ind    = game->ent_cnt++;
     ent->type   = type;
@@ -56,7 +59,7 @@ fn Entity* add_entity(GameState *game, EntityType type, v3f pos = {})
         case EntityType::stair: {
         } break;
         default: {
-            InvalidCodePath;
+            INVALID_CODE_PATH;
         } break;
     }
 

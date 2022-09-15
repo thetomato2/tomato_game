@@ -1,3 +1,7 @@
+#ifndef TOM_SOUND_HH
+#define TOM_SOUND_HH
+
+#include "tom_core.hh"
 namespace
 {
 
@@ -28,3 +32,5 @@ struct SoundState
 };
 
 }  // namespace
+
+#endif

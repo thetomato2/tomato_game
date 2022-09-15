@@ -1,9 +1,12 @@
+#ifndef TOM_MATH_HH
+#define TOM_MATH_HH
+#include "tom_core.hh"
+
 namespace tom
 {
 
-// ===============================================================================================
+/////////////////////////////////////////////////////////////////////////////////////////////////
 // #FREE_FUNCS
-// ===============================================================================================
 
 global constexpr f32 EPS_F32    = 0.00001f;
 global constexpr f32 XM_PI      = 3.141592654f;
@@ -12,6 +15,91 @@ global constexpr f32 XM_1DIVPI  = 0.318309886f;
 global constexpr f32 XM_1DIV2PI = 0.159154943f;
 global constexpr f32 XM_PIDIV2  = 1.570796327f;
 global constexpr f32 XM_PIDIV4  = 0.785398163f;
+
+struct bitscan_result
+{
+    bool found;
+    u32 index;
+};
+
+inline bitscan_result find_least_signifcant_set_bit(u32 val)
+{
+    bitscan_result result {};
+
+#if MSVC
+    result.found = _BitScanForward((unsigned long *)&result.index, val);
+#else
+
+    for (u32 test {}; test < 32; ++test) {
+        if (val & (1 << test)) {
+            result.index = test;
+            result.found = true;
+        }
+    }
+
+#endif
+    return result;
+}
+
+inline i32 round_f32_to_i32(f32 val)
+{
+    i32 result = (i32)roundf(val);
+    return result;
+}
+
+inline u32 round_f32_to_u32(f32 val)
+{
+    u32 result = (u32)roundf(val);
+    return result;
+}
+
+inline i32 floorf_to_i32(f32 val)
+{
+    i32 result = (i32)floorf(val);
+    return result;
+}
+
+inline f32 tom_sin(f32 angle)
+{
+    f32 result = sinf(angle);
+    return result;
+}
+
+inline f32 tom_cos(f32 angle)
+{
+    f32 result = cosf(angle);
+    return result;
+}
+
+inline f32 tom_atan2(f32 x, f32 y)
+{
+    f32 result = atan2f(x, y);
+    return result;
+}
+
+inline f32 sqrt_f32(f32 val)
+{
+    f32 result = sqrtf(val);
+    return result;
+}
+
+inline f32 abs_f32(f32 val)
+{
+    f32 result = fabsf(val);
+    return result;
+}
+
+inline i32 sign_of(i32 val)
+{
+    i32 result = (val >= 0) ? 1 : -1;
+    return result;
+}
+
+inline i32 ceilf_to_i32(f32 val)
+{
+    i32 result = (i32)ceilf(val);
+    return result;
+}
 
 inline f32 to_radian(f32 val)
 {
@@ -70,8 +158,8 @@ inline bool equals_f32(f32 a, f32 b)
 
 inline void scalar_sin_cos(f32 *p_sin, f32 *p_cos, f32 val)
 {
-    Assert(p_sin);
-    Assert(p_cos);
+    TOM_ASSERT(p_sin);
+    TOM_ASSERT(p_cos);
     f32 quo = XM_1DIV2PI * val;
 
     if (val >= 0.0f)
@@ -156,7 +244,7 @@ T min(T a, T b)
 template<typename T>
 inline f32 normalize_coord(T min, T max, T a)
 {
-    Assert(a >= min && a <= max);
+    TOM_ASSERT(a >= min && a <= max);
     return ((f32)a - f32(min)) / ((f32)max - (f32)min);
 }
 
@@ -195,9 +283,8 @@ inline v4f clamp_01(v4f val)
     return res;
 }
 
-// ===============================================================================================
+/////////////////////////////////////////////////////////////////////////////////////////////////
 // #VECTOR 2
-// ===============================================================================================
 
 template<typename T>
 inline v2<T> operator+(v2<T> lhs, v2<T> rhs)
@@ -350,9 +437,8 @@ inline bool operator!=(v2<T> &lhs, v2<T> &rhs)
     return !(lhs == rhs);
 }
 
-// ===============================================================================================
+/////////////////////////////////////////////////////////////////////////////////////////////////
 // #VECTOR 3
-// ===============================================================================================
 
 template<typename T>
 inline v3<T> v3_init(T a)
@@ -551,9 +637,8 @@ inline bool operator!=(v3<T> &lhs, v3<T> rhs)
     return !(lhs == rhs);
 }
 
-// ===============================================================================================
+/////////////////////////////////////////////////////////////////////////////////////////////////
 // #VECTOR 4
-// ===============================================================================================
 
 template<typename T>
 inline v4<T> v4_init(T x, T y, T z, T w)
@@ -801,9 +886,8 @@ inline bool operator!=(v4<T> lhs, v4<T> &rhs)
     return !(lhs == rhs);
 }
 
-// ===============================================================================================
+/////////////////////////////////////////////////////////////////////////////////////////////////
 // #VECTOR FUNCS
-// ===============================================================================================
 
 template<typename T>
 inline v2<T> vec_perp(v2<T> a)
@@ -926,7 +1010,7 @@ inline v2f vec_normalize(v2f a)
 {
     // TODO: get rid of assert/ normalize or zero
     f32 len = vec_length(a);
-    Assert(len != 0.0f);
+    TOM_ASSERT(len != 0.0f);
     v2f res = a / len;
 
     return res;
@@ -937,7 +1021,7 @@ inline v3f vec_normalize(v3f a)
 {
     // TODO: get rid of assert/ normalize or zero
     f32 len = vec_length(a);
-    Assert(len != 0.0f);
+    TOM_ASSERT(len != 0.0f);
     v3f res = a / len;
 
     return res;
@@ -1031,9 +1115,8 @@ inline v3f vec_barycenter(v3f p, v3f a, v3f b, v3f c)
     return res;
 }
 
-// ===============================================================================================
+//////////////////////////////////////////////////////////////////////////////////////////////////
 // #Quaternion
-// ===============================================================================================
 
 using quat = v4f;  // Quaternion
 
@@ -1514,10 +1597,10 @@ inline m4 m4_transpose(m4 a)
 
 inline m4 m4_proj_persp(f32 aspect_ratio, f32 fov_y, f32 near_z, f32 far_z)
 {
-    Assert(near_z > 0.0f && far_z > 0.0f);
-    Assert(!near_equal_f32(fov_y, 0.0f, 0.00001f * 2.0f));
-    Assert(!near_equal_f32(aspect_ratio, 0.0f));
-    Assert(!near_equal_f32(near_z, far_z));
+    TOM_ASSERT(near_z > 0.0f && far_z > 0.0f);
+    TOM_ASSERT(!near_equal_f32(fov_y, 0.0f, 0.00001f * 2.0f));
+    TOM_ASSERT(!near_equal_f32(aspect_ratio, 0.0f));
+    TOM_ASSERT(!near_equal_f32(near_z, far_z));
 
     f32 sin_fov, cos_fov;
     scalar_sin_cos(&sin_fov, &cos_fov, 0.5f * fov_y);
@@ -1670,8 +1753,8 @@ inline m4 uvn_to_m4(v3f pos, v3f u, v3f v, v3f n)
 
 inline m4 m4_look_to(v3f eye_pos, v3f eye_dir, v3f up_dir)
 {
-    Assert(eye_dir != v3_zero<f32>());
-    Assert(up_dir != v3_zero<f32>());
+    TOM_ASSERT(eye_dir != v3_zero<f32>());
+    TOM_ASSERT(up_dir != v3_zero<f32>());
 
     v3f r2 = vec_normalize(eye_dir);
     v3f r0 = vec_normalize(vec_cross(up_dir, r2));
@@ -1707,13 +1790,12 @@ inline m4 m4_get_uvn(v3f forward, v3f up, v3f pos)
     return res;
 }
 
-inline m4 m4_inverse(m4 a)
-{
-}
+// inline m4 m4_inverse(m4 a)
+// {
+// }
 
-// ===============================================================================================
+/////////////////////////////////////////////////////////////////////////////////////////////////
 // #RECTANGLE FUNCS
-// ===============================================================================================
 
 template<typename T>
 inline r2<T> operator*(r2<T> &lhs, T rhs)
@@ -1971,3 +2053,5 @@ inline r3i rect_f32_to_i32(r3f a)
 }
 
 }  // namespace tom
+
+#endif

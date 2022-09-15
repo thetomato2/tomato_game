@@ -1,3 +1,5 @@
+#include "tom_input.hh"
+
 namespace tom
 {
 
@@ -21,7 +23,7 @@ xinput_set_state* XInputSetState_ { _xinput_set_state };
 #define XInputGetState XInputGetState_
 #define XInputSetState XInputSetState_
 
-fn void load_Xinput()
+internal void load_Xinput()
 {
     HMODULE XInputLibrary = LoadLibraryA("xinput1_4.dll");
     if (!XInputLibrary) {
@@ -35,7 +37,7 @@ fn void load_Xinput()
     }
 }
 
-fn void process_keyboard_message(Button& new_state, const b32 is_down)
+internal void process_keyboard_message(Button& new_state, const b32 is_down)
 {
     if (new_state.ended_down != (is_down != 0)) {
         new_state.ended_down = is_down;
@@ -43,7 +45,7 @@ fn void process_keyboard_message(Button& new_state, const b32 is_down)
     }
 }
 
-fn void process_Xinput_digital_button(DWORD Xinput_button_state_, Button& old_state_,
+internal void process_Xinput_digital_button(DWORD Xinput_button_state_, Button& old_state_,
                                             DWORD button_bit_, Button& new_state)
 {
     new_state.ended_down = ((Xinput_button_state_ & button_bit_) == button_bit_);
@@ -52,115 +54,115 @@ fn void process_Xinput_digital_button(DWORD Xinput_button_state_, Button& old_st
 }
 
 // NOTE: mod = Shift
-fn char win32key_to_char_mod(Win32Key key)
+internal char win32key_to_char_mod(Win32Key key)
 {
     switch (key) {
-        case space: return ' ';
-        case d1: return '!';
-        case d2: return '@';
-        case d3: return '#';
-        case d4: return '$';
-        case d5: return '%';
-        case d6: return '^';
-        case d7: return '&';
-        case d8: return '*';
-        case d9: return '(';
-        case d0: return ')';
-        case a: return 'A';
-        case b: return 'B';
-        case c: return 'C';
-        case d: return 'D';
-        case e: return 'E';
-        case f: return 'F';
-        case g: return 'G';
-        case h: return 'H';
-        case i: return 'I';
-        case j: return 'J';
-        case k: return 'K';
-        case l: return 'L';
-        case m: return 'M';
-        case n: return 'N';
-        case o: return 'O';
-        case p: return 'P';
-        case q: return 'Q';
-        case r: return 'R';
-        case s: return 'S';
-        case t: return 'T';
-        case u: return 'U';
-        case v: return 'V';
-        case w: return 'W';
-        case x: return 'X';
-        case y: return 'Y';
-        case z: return 'Z';
-        case add: return '=';
-        case enter: return '\n';
-        case subtract: return '_';
-        case semicolon: return ':';
-        case comma: return '>';
-        case period: return '<';
-        case quotes: return '\"';
-        case open_brackets: return '{';
-        case close_brackets: return '}';
-        case tilde: return '~';
-        case backslash: return '|';
-        case question: return '?';
+        case Win32Key::space: return ' ';
+        case Win32Key::d1: return '!';
+        case Win32Key::d2: return '@';
+        case Win32Key::d3: return '#';
+        case Win32Key::d4: return '$';
+        case Win32Key::d5: return '%';
+        case Win32Key::d6: return '^';
+        case Win32Key::d7: return '&';
+        case Win32Key::d8: return '*';
+        case Win32Key::d9: return '(';
+        case Win32Key::d0: return ')';
+        case Win32Key::a: return 'A';
+        case Win32Key::b: return 'B';
+        case Win32Key::c: return 'C';
+        case Win32Key::d: return 'D';
+        case Win32Key::e: return 'E';
+        case Win32Key::f: return 'F';
+        case Win32Key::g: return 'G';
+        case Win32Key::h: return 'H';
+        case Win32Key::i: return 'I';
+        case Win32Key::j: return 'J';
+        case Win32Key::k: return 'K';
+        case Win32Key::l: return 'L';
+        case Win32Key::m: return 'M';
+        case Win32Key::n: return 'N';
+        case Win32Key::o: return 'O';
+        case Win32Key::p: return 'P';
+        case Win32Key::q: return 'Q';
+        case Win32Key::r: return 'R';
+        case Win32Key::s: return 'S';
+        case Win32Key::t: return 'T';
+        case Win32Key::u: return 'U';
+        case Win32Key::v: return 'V';
+        case Win32Key::w: return 'W';
+        case Win32Key::x: return 'X';
+        case Win32Key::y: return 'Y';
+        case Win32Key::z: return 'Z';
+        case Win32Key::add: return '=';
+        case Win32Key::enter: return '\n';
+        case Win32Key::subtract: return '_';
+        case Win32Key::semicolon: return ':';
+        case Win32Key::comma: return '>';
+        case Win32Key::period: return '<';
+        case Win32Key::quotes: return '\"';
+        case Win32Key::open_brackets: return '{';
+        case Win32Key::close_brackets: return '}';
+        case Win32Key::tilde: return '~';
+        case Win32Key::backslash: return '|';
+        case Win32Key::question: return '?';
     }
 
     return '\0';
 }
 
-fn char win32key_to_char(Win32Key key)
+internal char win32key_to_char(Win32Key key)
 {
     switch (key) {
-        case space: return ' ';
-        case d1: return '1';
-        case d2: return '2';
-        case d3: return '3';
-        case d4: return '4';
-        case d5: return '5';
-        case d6: return '6';
-        case d7: return '7';
-        case d8: return '8';
-        case d9: return '9';
-        case d0: return '0';
-        case a: return 'a';
-        case b: return 'b';
-        case c: return 'c';
-        case d: return 'd';
-        case e: return 'e';
-        case f: return 'f';
-        case g: return 'g';
-        case h: return 'h';
-        case i: return 'i';
-        case j: return 'j';
-        case k: return 'k';
-        case l: return 'l';
-        case m: return 'm';
-        case n: return 'n';
-        case o: return 'o';
-        case p: return 'p';
-        case q: return 'q';
-        case r: return 'r';
-        case s: return 's';
-        case t: return 't';
-        case u: return 'u';
-        case v: return 'v';
-        case w: return 'w';
-        case x: return 'x';
-        case y: return 'y';
-        case z: return 'z';
-        case add: return '+';
-        case enter: return '\n';
-        case subtract: return '-';
-        case semicolon: return ';';
-        case comma: return ',';
-        case period: return '.';
-        case quotes: return '\'';
-        case open_brackets: return '[';
-        case close_brackets: return ']';
-        case tilde: return '`';
-        case backslash: return '\\';
-        case question: return '/';
+        case Win32Key::space: return ' ';
+        case Win32Key::d1: return '1';
+        case Win32Key::d2: return '2';
+        case Win32Key::d3: return '3';
+        case Win32Key::d4: return '4';
+        case Win32Key::d5: return '5';
+        case Win32Key::d6: return '6';
+        case Win32Key::d7: return '7';
+        case Win32Key::d8: return '8';
+        case Win32Key::d9: return '9';
+        case Win32Key::d0: return '0';
+        case Win32Key::a: return 'a';
+        case Win32Key::b: return 'b';
+        case Win32Key::c: return 'c';
+        case Win32Key::d: return 'd';
+        case Win32Key::e: return 'e';
+        case Win32Key::f: return 'f';
+        case Win32Key::g: return 'g';
+        case Win32Key::h: return 'h';
+        case Win32Key::i: return 'i';
+        case Win32Key::j: return 'j';
+        case Win32Key::k: return 'k';
+        case Win32Key::l: return 'l';
+        case Win32Key::m: return 'm';
+        case Win32Key::n: return 'n';
+        case Win32Key::o: return 'o';
+        case Win32Key::p: return 'p';
+        case Win32Key::q: return 'q';
+        case Win32Key::r: return 'r';
+        case Win32Key::s: return 's';
+        case Win32Key::t: return 't';
+        case Win32Key::u: return 'u';
+        case Win32Key::v: return 'v';
+        case Win32Key::w: return 'w';
+        case Win32Key::x: return 'x';
+        case Win32Key::y: return 'y';
+        case Win32Key::z: return 'z';
+        case Win32Key::add: return '+';
+        case Win32Key::enter: return '\n';
+        case Win32Key::subtract: return '-';
+        case Win32Key::semicolon: return ';';
+        case Win32Key::comma: return ',';
+        case Win32Key::period: return '.';
+        case Win32Key::quotes: return '\'';
+        case Win32Key::open_brackets: return '[';
+        case Win32Key::close_brackets: return ']';
+        case Win32Key::tilde: return '`';
+        case Win32Key::backslash: return '\\';
+        case Win32Key::question: return '/';
     }
 
     return '\0';
@@ -168,7 +170,7 @@ fn char win32key_to_char(Win32Key key)
 
 #define AssignWin32Key(key) result.keyboard.key.name = Win32Key::key;
 
-fn Input init_input()
+Input init_input()
 {
     Input result = {};
 
@@ -245,14 +247,16 @@ fn Input init_input()
     AssignWin32Key(f11);
     AssignWin32Key(f12);
 
+#if USE_DS5
     // DualSense (PS5) controllers
     result.ds5_cnt = DS5_init(result.ds5_context);
+#endif
 
 
     return result;
 }
 
-fn void do_input(Input* input, HWND hwnd, i32 ms_scroll)
+void do_input(Input* input, HWND hwnd, i32 ms_scroll)
 {
     // mouse cursor
     POINT mouse_point;
@@ -265,7 +269,7 @@ fn void do_input(Input* input, HWND hwnd, i32 ms_scroll)
 
     input->mouse.scroll = ms_scroll;
 
-    for (szt key = 0; key < CountOf(input->mouse.buttons); ++key) {
+    for (szt key = 0; key < ARR_CNT(input->mouse.buttons); ++key) {
         if (input->mouse.buttons[key].half_transition_cnt > 0 &&
             input->mouse.buttons[key].ended_down == 0)
             input->mouse.buttons[key].half_transition_cnt = 0;
@@ -276,7 +280,7 @@ fn void do_input(Input* input, HWND hwnd, i32 ms_scroll)
     process_keyboard_message(input->mouse.buttons[1], ::GetKeyState(VK_RBUTTON) & (1 << 15));
     process_keyboard_message(input->mouse.buttons[2], ::GetKeyState(VK_MBUTTON) & (1 << 15));
 
-    for (szt key = 0; key < CountOf(input->keyboard.keys); ++key) {
+    for (szt key = 0; key < ARR_CNT(input->keyboard.keys); ++key) {
         if (input->keyboard.keys[key].half_transition_cnt > 0 &&
             input->keyboard.keys[key].ended_down == 0)
             input->keyboard.keys[key].half_transition_cnt = 0;
@@ -284,7 +288,7 @@ fn void do_input(Input* input, HWND hwnd, i32 ms_scroll)
 
     for (u32 i = 0; i < Keyboard::key_cnt; ++i) {
         process_keyboard_message(input->keyboard.keys[i],
-                                 ::GetKeyState(input->keyboard.keys[i].name) & (1 << 15));
+                                 ::GetKeyState((i32)input->keyboard.keys[i].name) & (1 << 15));
     }
 
 #if USE_DS5
@@ -335,7 +339,7 @@ fn void do_input(Input* input, HWND hwnd, i32 ms_scroll)
             new_controller.min_y = new_controller.max_y = new_controller.end_left_stick_y =
                 stick_left_y;
 
-            for (szt button = 0; button < CountOf(old_controller.buttons); ++button) {
+            for (szt button = 0; button < ARR_CNT(old_controller.buttons); ++button) {
                 if (!old_controller.buttons[button].ended_down)
                     old_controller.buttons[button].half_transition_cnt = 0;
             }
