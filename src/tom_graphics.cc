@@ -1,11 +1,12 @@
 #include "tom_graphics.hh"
+
 #include "tom_time.hh"
 #include "tom_app.hh"
 
 namespace tom
 {
 
-internal void clear_color(Texture *buffer, Color_u32 color)
+void clear_color(Texture *buffer, Color_u32 color)
 {
     TOM_ASSERT(buffer->type == Texture::Type::R8G8B8A8);
     u32 pitch = texture_get_pitch(buffer);
@@ -43,48 +44,6 @@ void draw_rect(Texture *buffer, i32 min_x, i32 min_y, i32 max_x, i32 max_y, Colo
     }
 }
 
-void draw_rect(Texture *buffer, i32 min_x, i32 min_y, i32 max_x, i32 max_y, v3f color)
-{
-    draw_rect(buffer, min_x, min_y, max_x, max_y, v3f_to_color(color));
-}
-
-void draw_rect(Texture *buffer, r2i rect, Color_u32 color)
-{
-    draw_rect(buffer, rect.x0, rect.y0, rect.x1, rect.y1, color);
-}
-void draw_rect(Texture *buffer, r2f rect, Color_u32 color)
-{
-    r2i rect_i32 = rect_f32_to_i32(rect);
-    draw_rect(buffer, rect_i32.x0, rect_i32.y0, rect_i32.x1, rect_i32.y1, color);
-}
-
-void draw_rect(Texture *buffer, r2i rect, v3f color)
-{
-    draw_rect(buffer, rect.x0, rect.y0, rect.x1, rect.y1, v3f_to_color(color));
-}
-
-void draw_rect(Texture *buffer, r2u rect, v3f color)
-{
-    draw_rect(buffer, (i32)rect.x0, (i32)rect.y0, (i32)rect.x1, (i32)rect.y1, v3f_to_color(color));
-}
-
-void draw_rect(Texture *buffer, r2u rect, Color_u32 color)
-{
-    draw_rect(buffer, (i32)rect.x0, (i32)rect.y0, (i32)rect.x1, (i32)rect.y1, color);
-}
-
-void draw_rect(Texture *buffer, r2f rect, v3f color)
-{
-    r2i rect_i32 = rect_f32_to_i32(rect);
-    draw_rect(buffer, rect_i32.x0, rect_i32.y0, rect_i32.x1, rect_i32.y1, v3f_to_color(color));
-}
-
-void draw_square(Texture *buffer, v2f pos, f32 radius, Color_u32 color)
-{
-    r2i rc = rect_f32_to_i32(rect_init_square(pos, radius));
-    draw_rect(buffer, rc.x0, rc.y0, rc.x1, rc.y1, color);
-}
-
 void draw_rect_outline(Texture *buffer, i32 min_x, i32 min_y, f32 max_x, f32 max_y, i32 thickness,
                        Color_u32 color)
 {
@@ -108,34 +67,6 @@ void draw_rect_outline(Texture *buffer, i32 min_x, i32 min_y, f32 max_x, f32 max
         }
         row += pitch;
     }
-}
-
-void draw_rect_outline(Texture *buffer, i32 min_x, i32 min_y, i32 max_x, i32 max_y, i32 thickness,
-                       v3f color)
-{
-    draw_rect_outline(buffer, min_x, min_y, max_x, max_y, thickness, v3f_to_color(color));
-}
-
-void draw_rect_outline(Texture *buffer, r2i rect, i32 thickness, Color_u32 color)
-{
-    draw_rect_outline(buffer, rect.x0, rect.y0, rect.x1, rect.y1, thickness, color);
-}
-void draw_rect_outline(Texture *buffer, r2f rect, i32 thickness, Color_u32 color)
-{
-    r2i rect_i32 = rect_f32_to_i32(rect);
-    draw_rect_outline(buffer, rect_i32.x0, rect_i32.y0, rect_i32.x1, rect_i32.y1, thickness, color);
-}
-
-void draw_rect_outline(Texture *buffer, r2i rect, i32 thickness, v3f color)
-{
-    draw_rect_outline(buffer, rect.x0, rect.y0, rect.x1, rect.y1, thickness, v3f_to_color(color));
-}
-
-void draw_rect_outline(Texture *buffer, r2f rect, i32 thickness, v3f color)
-{
-    r2i rect_i32 = rect_f32_to_i32(rect);
-    draw_rect_outline(buffer, rect_i32.x0, rect_i32.y0, rect_i32.x1, rect_i32.y1, thickness,
-                      v3f_to_color(color));
 }
 
 internal v4f bias_nrm(v4f nrm)
@@ -437,8 +368,9 @@ void draw_rect_128(Texture *buffer, v2f origin, v2f x_axis, v2f y_axis, Texture 
     END_TIMED_BLOCK(DrawRect);
 }
 
-#if 1
-void draw_rect_256(Texture *buffer, v2f origin, v2f x_axis, v2f y_axis, Texture *albedo, v4f color)
+// AVX2
+void draw_texture_256(Texture *buffer, v2f origin, v2f x_axis, v2f y_axis, Texture *albedo,
+                      r2i clip, bool even, v4f color)
 {
     TOM_ASSERT(albedo);
     BEGIN_TIMED_BLOCK(DrawRect);
@@ -472,10 +404,14 @@ void draw_rect_256(Texture *buffer, v2f origin, v2f x_axis, v2f y_axis, Texture 
         rc.y1 = max(rc.y1, y_ceil);
     }
 
-    rc.x0 = max(rc.x0, 0);
-    rc.y0 = max(rc.y0, 0);
-    rc.x1 = min(rc.x1, max_width);
-    rc.y1 = min(rc.y1, max_height);
+    rc = rect_clip(rc, clip);
+
+    // rc.x0 = max(rc.x0, 0);
+    // rc.y0 = max(rc.y0, 0);
+    // rc.x1 = min(rc.x1, max_width);
+    // rc.y1 = min(rc.y1, max_height);
+
+    if (!even == (rc.y0 % 2 == 0)) ++rc.y0;
 
     v2f nx_axis = x_inv_len_sq * x_axis;
     v2f ny_axis = y_inv_len_sq * y_axis;
@@ -504,12 +440,13 @@ void draw_rect_256(Texture *buffer, v2f origin, v2f x_axis, v2f y_axis, Texture 
     u32 alb_pitch_texel = alb_pitch / texel_sz;
 
     u32 buf_pitch = texture_get_pitch(buffer);
+    u32 row_adv   = buf_pitch * 2;
     TOM_ASSERT(buffer->type == Texture::Type::R8G8B8A8);
     byt *row =
         (byt *)buffer->buf + rc.x0 * texture_get_texel_size(buffer->type) + rc.y0 * buf_pitch;
 
     BEGIN_TIMED_BLOCK(ProcessPixel);
-    for (i32 y = rc.y0; y < rc.y1; ++y) {
+    for (i32 y = rc.y0; y < rc.y1; y += 2) {
         __m256 pixel_py = _mm256_set1_ps((f32)y);
         pixel_py        = _mm256_sub_ps(pixel_py, origin_y_m256);
         __m256 pixel_px =
@@ -520,9 +457,9 @@ void draw_rect_256(Texture *buffer, v2f origin, v2f x_axis, v2f y_axis, Texture 
         u32 *pixel_ptr = (u32 *)row;
 
         for (i32 x = rc.x0; x < rc.x1; x += 8) {
-    #define mmSquare(a) _mm_mul_ps(a, a)
-    #define M(a, i)     ((f32 *)&(a))[i]
-    #define MI(a, i)    ((u32 *)&(a))[i]
+#define mmSquare(a) _mm_mul_ps(a, a)
+#define M(a, i)     ((f32 *)&(a))[i]
+#define MI(a, i)    ((u32 *)&(a))[i]
 
             __m256i original_dest = _mm256_loadu_si256((__m256i *)pixel_ptr);
 
@@ -533,7 +470,8 @@ void draw_rect_256(Texture *buffer, v2f origin, v2f x_axis, v2f y_axis, Texture 
 
             __m256i write_msk = _mm256_castps_si256(_mm256_and_ps(
                 _mm256_and_ps(_mm256_cmp_ps(u, zero_m256, 0x0d), _mm256_cmp_ps(u, one_m256, 0x02)),
-                _mm256_and_ps(_mm256_cmp_ps(v, zero_m256, 0x0d), _mm256_cmp_ps(v, one_m256, 0x02))));
+                _mm256_and_ps(_mm256_cmp_ps(v, zero_m256, 0x0d),
+                              _mm256_cmp_ps(v, one_m256, 0x02))));
 
             {
                 u = _mm256_min_ps(_mm256_max_ps(u, zero_m256), one_m256);
@@ -699,12 +637,11 @@ void draw_rect_256(Texture *buffer, v2f origin, v2f x_axis, v2f y_axis, Texture 
             pixel_px = _mm256_add_ps(pixel_px, eight_m256);
             pixel_ptr += 8;
         }
-        row += buf_pitch;
+        row += row_adv;
     }
     END_TIMED_BLOCK_COUNTED(ProcessPixel, (rc.x1 - rc.x0 + 1) * (rc.y1 - rc.y0 + 1));
     END_TIMED_BLOCK(DrawRect);
 }
-#endif
 
 void draw_rect_slowly(Texture *buffer, v2f origin, v2f x_axis, v2f y_axis, Texture *albedo,
                       Texture *normal, EnviromentMap *top, EnviromentMap *middle,
@@ -1038,7 +975,7 @@ internal v2f get_screen_space_coord(RenderGroup *group, Texture *back_buffer, v2
     return result;
 }
 
-void draw_render_group(RenderGroup *group, Texture *back_buffer)
+void draw_render_group(RenderGroup *group, Texture *back_buffer, r2i clip, bool even)
 {
     for (u32 base_address = 0; base_address < group->pushbuffer_sz;) {
         auto header   = (RenderGroupEntryHeader *)(group->pushbuffer_base + base_address);
@@ -1054,16 +991,12 @@ void draw_render_group(RenderGroup *group, Texture *back_buffer)
             } break;
             case RenderGroupEntryType::rect: {
                 auto entry = (RenderGroupEntryRect *)data;
-                v2f coord  = get_screen_space_coord(group, back_buffer, entry->pos);
-                r2f rc     = rect_init_dims(coord, entry->dims * group->meters_to_pixels);
-                draw_rect(back_buffer, rc, entry->color);
+                NOT_IMPLEMENTED;
                 inc_base(entry);
             } break;
             case RenderGroupEntryType::rect_outline: {
                 auto entry = (RenderGroupEntryRectOutline *)data;
-                v2f coord  = get_screen_space_coord(group, back_buffer, entry->pos);
-                r2f rc     = rect_init_dims(coord, entry->dims * group->meters_to_pixels);
-                draw_rect_outline(back_buffer, rc, entry->thickness, entry->color);
+                NOT_IMPLEMENTED;
                 inc_base(entry);
             } break;
             case RenderGroupEntryType::texture: {
@@ -1086,7 +1019,7 @@ void draw_render_group(RenderGroup *group, Texture *back_buffer)
                 v2f origin = coord - 0.5f * x_axis - 0.5f * y_axis;
 
                 // draw_rect_128(back_buffer, origin, x_axis, y_axis, entry->texture);
-                draw_rect_256(back_buffer, origin, x_axis, y_axis, entry->texture);
+                draw_texture_256(back_buffer, origin, x_axis, y_axis, entry->texture, clip, even);
 
 #if 0
                 draw_square(back_buffer, origin, 3, color_u32(yellow));
@@ -1110,17 +1043,54 @@ void draw_render_group(RenderGroup *group, Texture *back_buffer)
                 draw_rect_slowly(back_buffer, origin, x_axis, y_axis, entry->albedo, entry->normal,
                                  entry->top, entry->middle, entry->bottom);
 
-                draw_square(back_buffer, origin, 3, color_u32(yellow));
-                draw_square(back_buffer, origin + x_axis, 3, color_u32(yellow));
-                draw_square(back_buffer, origin + y_axis, 3, color_u32(yellow));
-                draw_square(back_buffer, origin + x_axis + y_axis, 3, color_u32(yellow));
-                draw_square(back_buffer, origin + 0.5f * x_axis + 0.5f * y_axis, 3,
-                            color_u32(orange));
+                // draw_square(back_buffer, origin, 3, color_u32(yellow));
+                // draw_square(back_buffer, origin + x_axis, 3, color_u32(yellow));
+                // draw_square(back_buffer, origin + y_axis, 3, color_u32(yellow));
+                // draw_square(back_buffer, origin + x_axis + y_axis, 3, color_u32(yellow));
+                // draw_square(back_buffer, origin + 0.5f * x_axis + 0.5f * y_axis, 3,
+                //             color_u32(orange));
                 inc_base(entry);
             } break;
             default: INVALID_CODE_PATH;
         }
     }
+}
+
+void do_tile_render_work(void *data)
+{
+    auto work = (TileRenderWork *)data;
+    draw_render_group(work->render_group, work->target, work->clip, true);
+    draw_render_group(work->render_group, work->target, work->clip, false);
+}
+
+void draw_render_group_tiled(WorkQueue *queue, RenderGroup *group, Texture *back_buffer)
+{
+    i32 tile_cnt_x = (back_buffer->width + group->tile_r - 1) / group->tile_r;
+    i32 tile_cnt_y = (back_buffer->height + group->tile_r - 1) / group->tile_r;
+
+    // TODO: arena/bump allocator?
+    auto work_array = plat_malloc<TileRenderWork>(tile_cnt_x * tile_cnt_y);
+
+    u32 work_cnt = 0;
+    for (i32 tile_x = 0; tile_x < tile_cnt_x; ++tile_x) {
+        for (i32 tile_y = 0; tile_y < tile_cnt_y; ++tile_y) {
+            TileRenderWork *work = work_array + work_cnt++;
+            r2i clip;
+            clip.x0 = tile_x * group->tile_r;
+            clip.y0 = tile_y * group->tile_r;
+            clip.x1 = min(back_buffer->width, clip.x0 + group->tile_r);
+            clip.y1 = min(back_buffer->height, clip.y0 + group->tile_r);
+            // clip = rect_shrink(clip, 5);
+
+            work->render_group = group;
+            work->target       = back_buffer;
+            work->clip         = clip;
+
+            work_queue_add_entry(queue, do_tile_render_work, work);
+        }
+    }
+
+    work_queue_complete_all_work(queue);
 }
 
 }  // namespace tom

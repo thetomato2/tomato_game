@@ -12,7 +12,7 @@ namespace tom
 {
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
-// #Game Types
+// Game Types
 
 struct GameSoundOutputBuffer
 {
@@ -27,6 +27,7 @@ struct GameState
     u32 entity_camera_follow_ind;
     Camera camera;
     Arena *tran_arena;
+    WorkQueue render_queue;
 
     u32 player_cnt;
     EntityActions player_acts[4];
@@ -41,6 +42,7 @@ struct GameState
     Texture stair_sprite;
     Texture wall_sprite;
     Texture sword_sprites[4];
+    Texture bg;
 
     b32 debug_draw_collision;
     b32 debug_flag;
@@ -54,7 +56,7 @@ struct GameState
 };
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
-// #Game Functions
+// Game Functions
 struct AppState;
 void game_init(ThreadContext *thread, AppState *app);
 void game_update_and_render(ThreadContext *thread, AppState *app);

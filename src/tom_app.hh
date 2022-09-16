@@ -7,6 +7,7 @@
 #include "tom_memory.hh"
 #include "tom_string.hh"
 #include "tom_time.hh"
+#include "tom_thread.hh"
 #include "tom_texture.hh"
 #if USE_DS5
     #include "tom_DS5.hh"
@@ -22,7 +23,6 @@
 
 namespace tom
 {
-
 
 struct AppMemory
 {
@@ -41,12 +41,14 @@ struct AppState
     AppMemory memory;
     void *memory_block;
     szt total_size;
+    ThreadInfo threads[THREAD_CNT];
     Win32State win32;
     D3D11State d3d11;
     SoundState sound;
     Input input;
     GameState *game;
     Texture back_buffer;
+
     u32 game_update_hertz;
     u32 dpi;
     f32 target_secs_per_frame;

@@ -141,6 +141,9 @@ add_executable(tomato_game WIN32
     # ${SOURCE_DIR}/tom_sound.hh
     ${SOURCE_DIR}/tom_string.hh
     ${SOURCE_DIR}/tom_texture.hh
+    ${SOURCE_DIR}/tom_texture.cc
+    ${SOURCE_DIR}/tom_thread.cc
+    ${SOURCE_DIR}/tom_thread.hh
     ${SOURCE_DIR}/tom_time.hh
     ${SOURCE_DIR}/tom_types.hh
     ${SOURCE_DIR}/tom_win32.cc

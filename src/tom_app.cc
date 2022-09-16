@@ -223,7 +223,7 @@ void app_update(AppState *app)
 
     d3d_Check(d3d11->swap_chain->Present(1, 0));
 
-    handle_cycle_counters();
+    // handle_cycle_counters();
 
 }  // namespace tom
 
@@ -384,6 +384,7 @@ i32 app_start(HINSTANCE hinst)
             one_sec -= 1000.0f;
             app.fps   = (i32)frame_cnt;
             frame_cnt = 0;
+            printf("FPS - %d\n", app.fps);
         }
 
         do_input(&app.input, app.win32.hwnd, app.win32.ms_scroll);

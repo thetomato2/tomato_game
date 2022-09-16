@@ -1,4 +1,5 @@
 #include "tom_game.hh"
+#include "tom_thread.hh"
 #include "tom_input.hh"
 #include "tom_app.hh"
 #include "tom_entity.hh"
@@ -50,6 +51,8 @@ void game_init(ThreadContext *thread, AppState *app)
     game->debug_draw_collision = false;
     game->debug_flag           = false;
 
+    spawn_threads(app->threads, &game->render_queue);
+
     const char *bg = "uv_color_squares_960x540";
 
     // load textures
@@ -79,6 +82,7 @@ void game_init(ThreadContext *thread, AppState *app)
     game->bush_sprite  = texture_load_from_file("../../assets/images/bush.png");
     game->stair_sprite = texture_load_from_file("../../assets/images/stair.png");
     game->wall_sprite  = texture_load_from_file("../../assets/images/wall.png");
+    game->bg           = texture_load_from_file("../../assets/images/bg.png");
 
     // set World render size
 
@@ -94,13 +98,28 @@ void game_init(ThreadContext *thread, AppState *app)
     game->camera.dims *= 1.2f;
     game->camera.dims *= 60.0f / g_meters_to_pixels;
 
-    i32 tree_cnt = 100;
+#if 0
+    i32 tree_cnt = 20;
     f32 x        = 0 - tree_cnt / 2;
     for (i32 i = 0; i < tree_cnt; ++i) {
         Entity *ent = add_entity(game, EntityType::tree, { x, 4.0f, 0.0f });
+        add_entity(game, EntityType::tree, { x, -8.0f, 0.0f });
+        if (i == 0 || i == tree_cnt - 1) {
+            for (i32 j = 3; j > -8; j -= 2) {
+                add_entity(game, EntityType::tree, { x, (f32)j, 0.0f });
+            }
+        }
         x += ent->dims.x + ent->dims.x * 0.1f;
     }
+#else
+    for (i32 tx = 5; tx < 100; ++tx) {
+        for (i32 ty = -1; ty < 100; ++ty) {
+            add_entity(game, EntityType::tree, { (f32)tx, (f32)ty, 0.0f });
+        }
+    }
+#endif
 
+#if 0
     game->env_map_dims = { 512, 256 };
     for (auto &map : game->env_maps) {
         v2i dims = game->env_map_dims;
@@ -151,6 +170,7 @@ void game_init(ThreadContext *thread, AppState *app)
     // make_sphere_nrm_map(&game->test_nrm, 0.0f, 0.0f, 1.0f);
     make_sphere_nrm_map(&game->test_nrm, 0.0f);
     // make_pyramid_nrm_map(&game->test_nrm, 0.0f);
+#endif
 }
 
 void game_update_and_render(ThreadContext *thread, AppState *app)
@@ -202,9 +222,10 @@ void game_update_and_render(ThreadContext *thread, AppState *app)
     RenderGroup *render_group =
         alloc_render_group(&trans_arena, Megabytes(4), g_meters_to_pixels, *cam);
 
-    r2f cam_rc            = rect_init_dims(cam->pos, cam->dims);
-    Color_u32 clear_color = color_u32(black);
-    push_clear(render_group, clear_color);
+    r2f cam_rc         = rect_init_dims(cam->pos, cam->dims);
+    Color_u32 clear_co = color_u32(black);
+    // push_clear(render_group, clear_color);
+    clear_color(&app->back_buffer, clear_co);
 
     for (u32 i = 0; i < game->ent_cnt; ++i) {
         Entity *ent = &game->entities[i];
@@ -229,7 +250,7 @@ void game_update_and_render(ThreadContext *thread, AppState *app)
                     ent_act       = game->player_acts[1];
                     cam->pos      = player->pos.xy;
                     cam_rc        = rect_init_dims(cam->pos, cam->dims);
-                    push_rect(render_group, cam->pos, cam->dims, { 0xff2c2c2c });
+                    // push_rect(render_group, cam->pos, cam->dims, { 0xff2c2c2c });
                 } break;
                 case EntityType::wall: {
                     // do nothing
@@ -327,6 +348,13 @@ void game_update_and_render(ThreadContext *thread, AppState *app)
             case EntityType::none: {
             } break;
             case EntityType::player: {
+                {
+                    m3 model = m3_identity();
+                    model    = m3_set_trans(model, ent->pos.xy);
+                    model    = m3_sca_x(model, cam->dims.x);
+                    model    = m3_sca_y(model, cam->dims.y);
+                    push_texture(render_group, { model }, &game->bg, ent->sprite_off, model);
+                }
                 push_texture_if(&game->player_sprites[ent->dir]);
 
             } break;
@@ -356,7 +384,8 @@ void game_update_and_render(ThreadContext *thread, AppState *app)
         }
     }
 
-    draw_render_group(render_group, back_buffer);
+    render_group->tile_r = 128;
+    draw_render_group_tiled(&game->render_queue, render_group, back_buffer);
 }
 
 }  // namespace tom

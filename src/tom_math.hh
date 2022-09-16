@@ -2004,6 +2004,46 @@ inline bool rect_intersect(r3<T> a, r3<T> b)
 }
 
 template<typename T>
+inline r2<T> rect_clip(r2<T> a, r2<T> b)
+{
+    return { max(a.x0, b.x0), max(a.y0, b.y0), min(a.x1, b.x1), min(a.y1, b.y1) };
+}
+
+template<typename T>
+inline r2<T> rect_shrink(r2<T> a,  T b){
+
+    r2<T> res;
+    res.x0 = a.x0 > 0 ? a.x0 + b : a.x0 - b;
+    res.y0 = a.y0 > 0 ? a.y0 + b : a.y0 - b;
+    res.x1 = a.x1 > 0 ? a.x1 - b : a.x1 + b;
+    res.y1 = a.y1 > 0 ? a.y1 - b : a.y1 + b;
+
+    return res;
+
+}
+
+template<typename T>
+inline r2<T> operator-(r2<T> lhs, T rhs)
+{
+    r2<T> res;
+
+    res.x0 = lhs.x0 - rhs;
+    res.y0 = lhs.y0 - rhs;
+    res.x1 = lhs.x1 - rhs;
+    res.y1 = lhs.y1 - rhs;
+
+    return res;
+}
+
+template<typename T>
+inline r2<T> &operator-=(r2<T> &lhs, T rhs)
+{
+    lhs = lhs - rhs;
+
+    return lhs;
+}
+
+template<typename T>
 inline v2f rect_barycenter(r2f a, v3f p)
 {
     v2f res;
