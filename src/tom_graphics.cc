@@ -1,5 +1,5 @@
 #include "tom_graphics.hh"
-
+#include "tom_color.hh"
 #include "tom_time.hh"
 #include "tom_app.hh"
 
@@ -368,17 +368,181 @@ void draw_rect_128(Texture *buffer, v2f origin, v2f x_axis, v2f y_axis, Texture 
     END_TIMED_BLOCK(DrawRect);
 }
 
+void draw_rect_256(Texture *buffer, v2f origin, v2f x_axis, v2f y_axis, r2i clip, bool even,
+                   Color_u32 color)
+{
+    BEGIN_TIMED_BLOCK(DrawRect);
+
+    f32 x_inv_len_sq = 1.0f / vec_length_sq(x_axis);
+    f32 y_inv_len_sq = 1.0f / vec_length_sq(y_axis);
+
+    i32 max_width  = buffer->width - 1;
+    i32 max_height = buffer->height - 1;
+
+    f32 inv_max_width  = 1.0f / max_width;
+    f32 inv_max_height = 1.0f / max_height;
+
+    f32 x_axis_len = vec_length(x_axis);
+    f32 y_axis_len = vec_length(y_axis);
+
+    r2i rc = { max_width, max_height, 0, 0 };
+
+    v2f points[4] = { origin, origin + x_axis, origin + y_axis, origin + x_axis + y_axis };
+    for (auto p : points) {
+        i32 x_floor = floorf_to_i32(p.x);
+        i32 y_floor = floorf_to_i32(p.y);
+        i32 x_ceil  = ceilf_to_i32(p.x);
+        i32 y_ceil  = ceilf_to_i32(p.y);
+
+        rc.x0 = min(rc.x0, x_floor);
+        rc.y0 = min(rc.y0, y_floor);
+        rc.x1 = max(rc.x1, x_ceil);
+        rc.y1 = max(rc.y1, y_ceil);
+    }
+
+    rc = rect_clip(rc, clip);
+
+    // rc.x0 = max(rc.x0, 0);
+    // rc.y0 = max(rc.y0, 0);
+    // rc.x1 = min(rc.x1, max_width);
+    // rc.y1 = min(rc.y1, max_height);
+
+    if (!even == (rc.y0 % 2 == 0)) ++rc.y0;
+
+    v2f nx_axis = x_inv_len_sq * x_axis;
+    v2f ny_axis = y_inv_len_sq * y_axis;
+
+    f32 one_255         = 255.0f;
+    f32 inv_255         = 1.0f / 255.0f;
+    __m256 inv_255_m256 = _mm256_set1_ps(inv_255);
+
+    __m256 one_m256       = _mm256_set1_ps(1.0f);
+    __m256 four_m256      = _mm256_set1_ps(4.0f);
+    __m256 eight_m256     = _mm256_set1_ps(8.0f);
+    __m256 one_255_m256   = _mm256_set1_ps(255.0f);
+    __m256 zero_m256      = _mm256_set1_ps(0.0f);
+    __m256 mask_ff        = _mm256_set1_epi32(0xff);
+    __m256 nx_axis_x_m256 = _mm256_set1_ps(nx_axis.x);
+    __m256 nx_axis_y_m256 = _mm256_set1_ps(nx_axis.y);
+    __m256 ny_axis_x_m256 = _mm256_set1_ps(ny_axis.x);
+    __m256 ny_axis_y_m256 = _mm256_set1_ps(ny_axis.y);
+    __m256 origin_x_m256  = _mm256_set1_ps(origin.x);
+    __m256 origin_y_m256  = _mm256_set1_ps(origin.y);
+
+    u32 buf_pitch = texture_get_pitch(buffer);
+    u32 row_adv   = buf_pitch * 2;
+    TOM_ASSERT(buffer->type == Texture::Type::R8G8B8A8);
+    byt *row =
+        (byt *)buffer->buf + rc.x0 * texture_get_texel_size(buffer->type) + rc.y0 * buf_pitch;
+
+    BEGIN_TIMED_BLOCK(ProcessPixel);
+    for (i32 y = rc.y0; y < rc.y1; y += 2) {
+        __m256 pixel_py = _mm256_set1_ps((f32)y);
+        pixel_py        = _mm256_sub_ps(pixel_py, origin_y_m256);
+        __m256 pixel_px =
+            _mm256_set_ps((f32)(rc.x0 + 7), (f32)(rc.x0 + 6), (f32)(rc.x0 + 5), (f32)(rc.x0 + 4),
+                          (f32)(rc.x0 + 3), (f32)(rc.x0 + 2), (f32)(rc.x0 + 1), (f32)(rc.x0 + 0));
+        pixel_px = _mm256_sub_ps(pixel_px, origin_x_m256);
+
+        u32 *pixel_ptr = (u32 *)row;
+
+        for (i32 x = rc.x0; x < rc.x1; x += 8) {
+#define mmSquare(a) _mm_mul_ps(a, a)
+#define M(a, i)     ((f32 *)&(a))[i]
+#define MI(a, i)    ((u32 *)&(a))[i]
+
+            __m256i original_dest = _mm256_loadu_si256((__m256i *)pixel_ptr);
+
+            __m256 u = _mm256_add_ps(_mm256_mul_ps(pixel_px, nx_axis_x_m256),
+                                     _mm256_mul_ps(pixel_py, nx_axis_y_m256));
+            __m256 v = _mm256_add_ps(_mm256_mul_ps(pixel_px, ny_axis_x_m256),
+                                     _mm256_mul_ps(pixel_py, ny_axis_y_m256));
+
+            __m256i write_msk = _mm256_castps_si256(_mm256_and_ps(
+                _mm256_and_ps(_mm256_cmp_ps(u, zero_m256, 0x0d), _mm256_cmp_ps(u, one_m256, 0x02)),
+                _mm256_and_ps(_mm256_cmp_ps(v, zero_m256, 0x0d),
+                              _mm256_cmp_ps(v, one_m256, 0x02))));
+
+            u = _mm256_min_ps(_mm256_max_ps(u, zero_m256), one_m256);
+            v = _mm256_min_ps(_mm256_max_ps(v, zero_m256), one_m256);
+
+            v4f color_f = color_u32_to_v4f(color.rgba);
+
+            __m256 texel_r = _mm256_set1_ps(color.r);
+            __m256 texel_g = _mm256_set1_ps(color.g);
+            __m256 texel_b = _mm256_set1_ps(color.b);
+            __m256 texel_a = _mm256_set1_ps(color.a);
+
+            // load destination
+            __m256 dest_r = _mm256_cvtepi32_ps(_mm256_and_si256(original_dest, mask_ff));
+            __m256 dest_g =
+                _mm256_cvtepi32_ps(_mm256_and_si256(_mm256_srli_epi32(original_dest, 8), mask_ff));
+            __m256 dest_b =
+                _mm256_cvtepi32_ps(_mm256_and_si256(_mm256_srli_epi32(original_dest, 16), mask_ff));
+            __m256 dest_a =
+                _mm256_cvtepi32_ps(_mm256_and_si256(_mm256_srli_epi32(original_dest, 24), mask_ff));
+
+            texel_r = _mm256_mul_ps(inv_255_m256, texel_r);
+            texel_g = _mm256_mul_ps(inv_255_m256, texel_g);
+            texel_b = _mm256_mul_ps(inv_255_m256, texel_b);
+            texel_a = _mm256_mul_ps(inv_255_m256, texel_a);
+
+            texel_r = _mm256_mul_ps(texel_r, texel_a);
+            texel_g = _mm256_mul_ps(texel_g, texel_a);
+            texel_b = _mm256_mul_ps(texel_b, texel_a);
+
+            dest_r = _mm256_mul_ps(inv_255_m256, dest_r);
+            dest_g = _mm256_mul_ps(inv_255_m256, dest_g);
+            dest_b = _mm256_mul_ps(inv_255_m256, dest_b);
+            dest_a = _mm256_mul_ps(inv_255_m256, dest_a);
+
+            // linear blend the texel and the back buffer pixel
+            __m256 ita     = _mm256_sub_ps(one_m256, texel_a);
+            __m256 blend_r = _mm256_add_ps(_mm256_mul_ps(ita, dest_r), texel_r);
+            __m256 blend_g = _mm256_add_ps(_mm256_mul_ps(ita, dest_g), texel_g);
+            __m256 blend_b = _mm256_add_ps(_mm256_mul_ps(ita, dest_b), texel_b);
+            __m256 blend_a = _mm256_add_ps(_mm256_mul_ps(ita, dest_a), texel_a);
+
+            // to easily convert to u8 later
+            blend_r = _mm256_mul_ps(one_255_m256, blend_r);
+            blend_g = _mm256_mul_ps(one_255_m256, blend_g);
+            blend_b = _mm256_mul_ps(one_255_m256, blend_b);
+            blend_a = _mm256_mul_ps(one_255_m256, blend_a);
+
+            __m256i int_r = _mm256_cvtps_epi32(blend_r);
+            __m256i int_g = _mm256_cvtps_epi32(blend_g);
+            __m256i int_b = _mm256_cvtps_epi32(blend_b);
+            __m256i int_a = _mm256_cvtps_epi32(blend_a);
+
+            __m256i sr = int_r;
+            __m256i sg = _mm256_slli_epi32(int_g, 8);
+            __m256i sb = _mm256_slli_epi32(int_b, 16);
+            __m256i sa = _mm256_slli_epi32(int_a, 24);
+
+            __m256i out = _mm256_or_si256(_mm256_or_si256(sr, sg), _mm256_or_si256(sb, sa));
+
+            __m256i msk_out = _mm256_or_si256(_mm256_and_si256(write_msk, out),
+                                              _mm256_andnot_si256(write_msk, original_dest));
+            _mm256_storeu_si256((__m256i *)pixel_ptr, msk_out);
+
+            pixel_px = _mm256_add_ps(pixel_px, eight_m256);
+            pixel_ptr += 8;
+        }
+        row += row_adv;
+    }
+    END_TIMED_BLOCK_COUNTED(ProcessPixel, (rc.x1 - rc.x0 + 1) * (rc.y1 - rc.y0 + 1));
+    END_TIMED_BLOCK(DrawRect);
+}
+
 // AVX2
 void draw_texture_256(Texture *buffer, v2f origin, v2f x_axis, v2f y_axis, Texture *albedo,
-                      r2i clip, bool even, v4f color)
+                      r2i clip, bool even)
 {
     TOM_ASSERT(albedo);
     BEGIN_TIMED_BLOCK(DrawRect);
 
     f32 x_inv_len_sq = 1.0f / vec_length_sq(x_axis);
     f32 y_inv_len_sq = 1.0f / vec_length_sq(y_axis);
-
-    color = premultiply_alpha(color);
 
     i32 max_width  = buffer->width - 1;
     i32 max_height = buffer->height - 1;
@@ -921,16 +1085,18 @@ void push_texture(RenderGroup *group, RenderBasis basis, Texture *texture, v2f o
     entry->model   = model;
 }
 
-void push_rect(RenderGroup *group, v2f pos, v2f dims, Color_u32 color)
+void push_rect(RenderGroup *group, v2f pos, v2f dims, Color_u32 color, m3 model)
 {
     auto entry = (RenderGroupEntryRect *)push_render_element(group, RenderGroupEntryType::rect);
     TOM_ASSERT(entry);
     entry->pos   = pos;
     entry->dims  = dims;
     entry->color = color;
+    entry->model = model;
 }
 
-void push_rect_outline(RenderGroup *group, v2f pos, v2f dims, i32 thickness, Color_u32 color)
+void push_rect_outline(RenderGroup *group, v2f pos, v2f dims, i32 thickness, Color_u32 color,
+                       m3 model)
 {
     auto entry = (RenderGroupEntryRectOutline *)push_render_element(
         group, RenderGroupEntryType::rect_outline);
@@ -939,6 +1105,7 @@ void push_rect_outline(RenderGroup *group, v2f pos, v2f dims, i32 thickness, Col
     entry->dims      = dims;
     entry->thickness = thickness;
     entry->color     = color;
+    entry->model     = model;
 }
 
 void push_coord_system(RenderGroup *group, m3 model, Texture *albedo, Texture *normal,
@@ -991,12 +1158,36 @@ void draw_render_group(RenderGroup *group, Texture *back_buffer, r2i clip, bool 
             } break;
             case RenderGroupEntryType::rect: {
                 auto entry = (RenderGroupEntryRect *)data;
-                NOT_IMPLEMENTED;
+                m3 world   = m3_identity(g_meters_to_pixels);
+                m3 view    = entry->model * world;
+                v2f x_axis = view.r[0].xy;
+                v2f y_axis = view.r[1].xy;
+
+                v2f pos    = m3_get_p(entry->model);
+                v2f coord  = get_screen_space_coord(group, back_buffer, pos);
+                v2f origin = coord - 0.5f * x_axis - 0.5f * y_axis;
+
+                draw_rect_256(back_buffer, origin, x_axis, y_axis, clip, even, entry->color);
+
                 inc_base(entry);
             } break;
             case RenderGroupEntryType::rect_outline: {
                 auto entry = (RenderGroupEntryRectOutline *)data;
-                NOT_IMPLEMENTED;
+                m3 world   = m3_identity(g_meters_to_pixels);
+                m3 view    = entry->model * world;
+                v2f x_axis = view.r[0].xy;
+                v2f y_axis = view.r[1].xy;
+
+                v2f pos        = m3_get_p(entry->model);
+                v2f coord      = get_screen_space_coord(group, back_buffer, pos);
+                v2f origin     = coord - 0.5f * x_axis - 0.5f * y_axis;
+                v2f new_y_axis = { 0.0f, (f32)entry->thickness };
+                v2f new_x_axis = { (f32)entry->thickness, 0.0f };
+
+                draw_rect_256(back_buffer, origin, new_x_axis, y_axis, clip, even, entry->color);
+                draw_rect_256(back_buffer, origin, x_axis, new_y_axis, clip, even, entry->color);
+                draw_rect_256(back_buffer, origin + x_axis, new_x_axis, y_axis, clip, even, entry->color);
+                draw_rect_256(back_buffer, origin + y_axis, x_axis, new_y_axis, clip, even, entry->color);
                 inc_base(entry);
             } break;
             case RenderGroupEntryType::texture: {
@@ -1006,29 +1197,13 @@ void draw_render_group(RenderGroup *group, Texture *back_buffer, r2i clip, bool 
                 m3 view    = entry->model * world;
                 v2f x_axis = view.r[0].xy;
                 v2f y_axis = view.r[1].xy;
-                // v2f y_axis = vec_perp(x_axis);
-                // v2f y_axis = vec_normalize(vec_perp(x_axis)) * vec_length(view.r[1].xy);
-
-                // // v2f x_axis     = (200.0f + 20.0f * cos(angle)) * v2f { cos(angle),
-                // sin(angle)
-                // }; v2f x_axis = 200.0f * v2f { 1.0f, 0.0f }; v2f y_axis = vec_perp(x_axis);
-                // // game->debug_origin.x = sin(app->
 
                 v2f pos    = m3_get_p(entry->model);
                 v2f coord  = get_screen_space_coord(group, back_buffer, pos);
                 v2f origin = coord - 0.5f * x_axis - 0.5f * y_axis;
 
-                // draw_rect_128(back_buffer, origin, x_axis, y_axis, entry->texture);
                 draw_texture_256(back_buffer, origin, x_axis, y_axis, entry->texture, clip, even);
 
-#if 0
-                draw_square(back_buffer, origin, 3, color_u32(yellow));
-                draw_square(back_buffer, origin + x_axis, 3, color_u32(yellow));
-                draw_square(back_buffer, origin + y_axis, 3, color_u32(yellow));
-                draw_square(back_buffer, origin + x_axis + y_axis, 3, color_u32(yellow));
-                draw_square(back_buffer, origin + 0.5f * x_axis + 0.5f * y_axis, 3,
-                            color_u32(orange));
-#endif
                 inc_base(entry);
             } break;
             case RenderGroupEntryType::coord_system: {

@@ -94,6 +94,18 @@ inline v4f color_u32_to_v4f(u32 col)
     return res;
 }
 
+inline v4f color_u32_to_v4f_unbiased(u32 col)
+{
+    v4f res;
+
+    res.r = (f32)((col >> 0) & 0xff);
+    res.g = (f32)((col >> 8) & 0xff);
+    res.b = (f32)((col >> 16) & 0xff);
+    res.a = (f32)((col >> 24) & 0xff);
+
+    return res;
+}
+
 fn constexpr Color_u32 color_u32(TomColors col)
 {
     Color_u32 res;

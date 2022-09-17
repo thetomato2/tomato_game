@@ -89,8 +89,8 @@ void game_init(ThreadContext *thread, AppState *app)
     // NOTE: Entity 0 is the null Entity
     ++game->ent_cnt;
 
-    Entity* player =  add_entity(game, EntityType::player);
-    set_flags(player->flags, EntityFlags::nonspatial);
+    Entity *player = add_entity(game, EntityType::player);
+    // set_flags(player->flags, EntityFlags::nonspatial);
     game->player_cnt               = 1;
     game->entity_camera_follow_ind = 1;
     game->camera.pos               = {};
@@ -99,7 +99,7 @@ void game_init(ThreadContext *thread, AppState *app)
     game->camera.dims *= 1.2f;
     game->camera.dims *= 60.0f / g_meters_to_pixels;
 
-#if 0
+#if 1
     i32 tree_cnt = 20;
     f32 x        = 0 - tree_cnt / 2;
     for (i32 i = 0; i < tree_cnt; ++i) {
@@ -341,8 +341,12 @@ void game_update_and_render(ThreadContext *thread, AppState *app)
                 // model    = m3_rot(model, app->time);
 
                 push_texture(render_group, { model }, tex, ent->sprite_off, model);
+                if (game->debug_draw_collision) {
+                    push_rect_outline(render_group, ent->pos.xy, ent->dims.xy, 2, color_u32(red),
+                                      model);
+                }
             } else
-                push_rect(render_group, ent->pos.xy, ent->dims.xy, color_u32(pink));
+                push_rect(render_group, ent->pos.xy, ent->dims.xy, color_u32(pink), {});
         };
 
         switch (ent->type) {
@@ -355,9 +359,12 @@ void game_update_and_render(ThreadContext *thread, AppState *app)
                     model    = m3_sca_x(model, cam->dims.x);
                     model    = m3_sca_y(model, cam->dims.y);
                     push_texture(render_group, { model }, &game->bg, ent->sprite_off, model);
+                    if (game->debug_draw_collision) {
+                        push_rect_outline(render_group, cam->pos, cam->dims, 4,
+                                          color_u32(light_blue), model);
+                    }
                 }
                 push_texture_if(&game->player_sprites[ent->dir]);
-
             } break;
             case EntityType::wall: {
             } break;
@@ -377,11 +384,6 @@ void game_update_and_render(ThreadContext *thread, AppState *app)
             case EntityType::stair: {
             } break;
             default: INVALID_CODE_PATH;
-        }
-
-        if (game->debug_draw_collision) {
-            push_rect_outline(render_group, ent->pos.xy, ent->dims.xy, 2, color_u32(red));
-            push_rect_outline(render_group, cam->pos, cam->dims, 2, color_u32(light_blue));
         }
     }
 
