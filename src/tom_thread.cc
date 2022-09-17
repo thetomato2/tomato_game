@@ -5,14 +5,16 @@ namespace tom
 
 void work_queue_add_entry(WorkQueue *queue, WorkQueueCallback *callback, void *data)
 {
-    TOM_ASSERT(queue->entry_cnt < ARR_CNT(queue->entries));
-    WorkQueueEntry *entry = queue->entries + queue->entry_cnt;
+    u32 new_next_entry_to_write = (queue->next_entry_to_write + 1) % ARR_CNT(queue->entries);
+    // TOM_ASSERT(new_next_entry_to_write != queue->next_entry_to_read);
+    WorkQueueEntry *entry = queue->entries + queue->next_entry_to_write;
     entry->callback       = callback;
     entry->data           = data;
+    ++queue->completion_goal;
     _WriteBarrier();
     _mm_sfence();
     // TODO: use InterlockedCompareExchange()
-    ++queue->entry_cnt;
+    queue->next_entry_to_write = new_next_entry_to_write;
     ReleaseSemaphore(queue->semaphore, 1, NULL);
 }
 
@@ -20,16 +22,17 @@ internal bool work_queue_do_next_work_entry(WorkQueue *queue)
 {
     bool should_sleep = false;
 
-    u32 old_next_entry_to_do = queue->next_entry_to_do;
-    if (queue->next_entry_to_do < queue->entry_cnt) {
+    u32 old_next_entry_to_read = queue->next_entry_to_read;
+    u32 new_next_entry_to_read = (old_next_entry_to_read + 1) % ARR_CNT(queue->entries);
+    if (old_next_entry_to_read != queue->next_entry_to_write) {
         {
-            u32 index = InterlockedCompareExchange((volatile long *)&queue->next_entry_to_do,
-                                                   old_next_entry_to_do + 1, old_next_entry_to_do);
-            if (index == old_next_entry_to_do) {
+            u32 index = InterlockedCompareExchange((volatile long *)&queue->next_entry_to_read,
+                                                   new_next_entry_to_read, old_next_entry_to_read);
+            if (index == old_next_entry_to_read) {
                 WorkQueueEntry *entry = queue->entries + index;
                 entry->callback(entry->data);
 
-                InterlockedIncrement((volatile long *)&queue->entry_cmp_cnt);
+                InterlockedIncrement((volatile long *)&queue->completion_cnt);
             }
         }
     } else {
@@ -42,18 +45,12 @@ internal bool work_queue_do_next_work_entry(WorkQueue *queue)
 void work_queue_complete_all_work(WorkQueue *queue)
 {
     WorkQueueEntry entry {};
-    while (queue->entry_cnt != queue->entry_cmp_cnt) {
+    while (queue->completion_goal != queue->completion_cnt) {
         work_queue_do_next_work_entry(queue);
     }
 
-    queue->entry_cnt        = 0;
-    queue->entry_cmp_cnt    = 0;
-    queue->next_entry_to_do = 0;
-}
-
-bool work_queue_in_progress(WorkQueue *queue)
-{
-    return queue->entry_cnt == queue->entry_cmp_cnt;
+    queue->completion_goal = 0;
+    queue->completion_cnt  = 0;
 }
 
 internal DWORD WINAPI thread_proc(LPVOID lpParameter)

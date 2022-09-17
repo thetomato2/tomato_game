@@ -89,7 +89,8 @@ void game_init(ThreadContext *thread, AppState *app)
     // NOTE: Entity 0 is the null Entity
     ++game->ent_cnt;
 
-    add_entity(game, EntityType::player);
+    Entity* player =  add_entity(game, EntityType::player);
+    set_flags(player->flags, EntityFlags::nonspatial);
     game->player_cnt               = 1;
     game->entity_camera_follow_ind = 1;
     game->camera.pos               = {};

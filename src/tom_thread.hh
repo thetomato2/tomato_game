@@ -22,9 +22,11 @@ struct WorkQueueEntry
 
 struct WorkQueue
 {
-    volatile u32 next_entry_to_do;
-    volatile u32 entry_cnt;
-    volatile u32 entry_cmp_cnt;
+
+    volatile u32 completion_goal;
+    volatile u32 completion_cnt;
+    volatile u32 next_entry_to_write;
+    volatile u32 next_entry_to_read;
     HANDLE semaphore;
     WorkQueueEntry entries[256];
 };
