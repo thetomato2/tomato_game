@@ -219,9 +219,11 @@ void game_update_and_render(ThreadContext *thread, AppState *app)
         g_meters_to_pixels += zoom_inc;
         cam->dims *= old_zoom / g_meters_to_pixels;
     }
+    printf("%f\n", g_meters_to_pixels);
 
     RenderGroup *render_group =
         alloc_render_group(&trans_arena, Megabytes(4), g_meters_to_pixels, *cam);
+    render_group->meters_to_pixels = g_meters_to_pixels;
 
     r2f cam_rc         = rect_init_dims(cam->pos, cam->dims);
     Color_u32 clear_co = color_u32(black);
@@ -340,7 +342,7 @@ void game_update_and_render(ThreadContext *thread, AppState *app)
                 model    = m3_sca_y(model, ent->dims.y);
                 // model    = m3_rot(model, app->time);
 
-                push_texture(render_group, { model }, tex, ent->sprite_off, model);
+                push_texture(render_group, tex, ent->sprite_off, model);
                 if (game->debug_draw_collision) {
                     push_rect_outline(render_group, ent->pos.xy, ent->dims.xy, 2, color_u32(red),
                                       model);
@@ -356,13 +358,17 @@ void game_update_and_render(ThreadContext *thread, AppState *app)
                 {
                     m3 model = m3_identity();
                     model    = m3_set_trans(model, ent->pos.xy);
+                    model    = m3_sca_x(model, 80.0f);
+                    model    = m3_sca_y(model, 80.0f);
+                    push_texture(render_group, &game->bg, ent->sprite_off, model);
+                }
+                if (game->debug_draw_collision) {
+                    m3 model = m3_identity();
+                    model    = m3_set_trans(model, ent->pos.xy);
                     model    = m3_sca_x(model, cam->dims.x);
                     model    = m3_sca_y(model, cam->dims.y);
-                    push_texture(render_group, { model }, &game->bg, ent->sprite_off, model);
-                    if (game->debug_draw_collision) {
-                        push_rect_outline(render_group, cam->pos, cam->dims, 4,
-                                          color_u32(light_blue), model);
-                    }
+                    push_rect_outline(render_group, cam->pos, cam->dims, 4, color_u32(light_blue),
+                                      model);
                 }
                 push_texture_if(&game->player_sprites[ent->dir]);
             } break;

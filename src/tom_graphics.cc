@@ -960,18 +960,6 @@ void draw_rect_slowly(Texture *buffer, v2f origin, v2f x_axis, v2f y_axis, Textu
     }
 }
 
-void draw_rect_slowly(Texture *buffer, m3 model, Texture *albedo, Texture *normal,
-                      EnviromentMap *top, EnviromentMap *middle, EnviromentMap *bottom, v4f color)
-{
-    m3 world   = m3_identity(g_meters_to_pixels);
-    m3 view    = world * model;
-    v2f x_axis = view.r[0].xy;
-    v2f y_axis = view.r[1].xy;
-    // v2f origin = m3_get_p(view);
-    v2f origin = m3_get_p(model) - 0.5f * x_axis - 0.5f * y_axis;
-
-    draw_rect_slowly(buffer, origin, x_axis, y_axis, albedo, normal, top, middle, bottom, color);
-}
 
 void draw_texture(Texture *buffer, Texture *tex, v2f pos)
 {
@@ -1074,25 +1062,22 @@ void push_clear(RenderGroup *group, Color_u32 color)
     entry->clear_color = color;
 }
 
-void push_texture(RenderGroup *group, RenderBasis basis, Texture *texture, v2f offset, m3 model)
+void push_texture(RenderGroup *group, Texture *texture, v2f offset, m3 model)
 {
     auto entry =
         (RenderGroupEntryTexture *)push_render_element(group, RenderGroupEntryType::texture);
     TOM_ASSERT(entry);
-    entry->basis   = basis;
+    entry->model  = model;
     entry->offset  = offset;
     entry->texture = texture;
-    entry->model   = model;
 }
 
 void push_rect(RenderGroup *group, v2f pos, v2f dims, Color_u32 color, m3 model)
 {
     auto entry = (RenderGroupEntryRect *)push_render_element(group, RenderGroupEntryType::rect);
     TOM_ASSERT(entry);
-    entry->pos   = pos;
-    entry->dims  = dims;
+    entry->model  = model;
     entry->color = color;
-    entry->model = model;
 }
 
 void push_rect_outline(RenderGroup *group, v2f pos, v2f dims, i32 thickness, Color_u32 color,
@@ -1101,11 +1086,9 @@ void push_rect_outline(RenderGroup *group, v2f pos, v2f dims, i32 thickness, Col
     auto entry = (RenderGroupEntryRectOutline *)push_render_element(
         group, RenderGroupEntryType::rect_outline);
     TOM_ASSERT(entry);
-    entry->pos       = pos;
-    entry->dims      = dims;
+    entry->model  = model;
     entry->thickness = thickness;
     entry->color     = color;
-    entry->model     = model;
 }
 
 void push_coord_system(RenderGroup *group, m3 model, Texture *albedo, Texture *normal,
@@ -1129,15 +1112,15 @@ internal v2f get_screen_space_coord(RenderGroup *group, Texture *back_buffer, v2
     r2f cam_rc              = rect_init_dims(group->cam.pos, group->cam.dims);
     v2i buf_mid             = { back_buffer->width / 2, back_buffer->height / 2 };
     r2f screen_space_cam_rc = {
-        (f32)buf_mid.x - abs_f32(cam_rc.x0 - group->cam.pos.x) * g_meters_to_pixels,
-        (f32)buf_mid.y - abs_f32(cam_rc.y0 - group->cam.pos.y) * g_meters_to_pixels,
-        (f32)buf_mid.x + abs_f32(group->cam.pos.x - cam_rc.x1) * g_meters_to_pixels,
-        (f32)buf_mid.y + abs_f32(group->cam.pos.y - cam_rc.y1) * g_meters_to_pixels
+        (f32)buf_mid.x - abs_f32(cam_rc.x0 - group->cam.pos.x) * group->meters_to_pixels,
+        (f32)buf_mid.y - abs_f32(cam_rc.y0 - group->cam.pos.y) * group->meters_to_pixels,
+        (f32)buf_mid.x + abs_f32(group->cam.pos.x - cam_rc.x1) * group->meters_to_pixels,
+        (f32)buf_mid.y + abs_f32(group->cam.pos.y - cam_rc.y1) * group->meters_to_pixels
     };
     v2f result;
-    result.x = ((pos.x - cam_rc.x0) * g_meters_to_pixels) + screen_space_cam_rc.x0;
-    result.y = screen_space_cam_rc.y1 - ((pos.y - cam_rc.y0) * g_meters_to_pixels);
-    result.x = ((pos.x - cam_rc.x0) * g_meters_to_pixels) + screen_space_cam_rc.x0;
+    result.x = ((pos.x - cam_rc.x0) * group->meters_to_pixels) + screen_space_cam_rc.x0;
+    result.y = screen_space_cam_rc.y1 - ((pos.y - cam_rc.y0) * group->meters_to_pixels);
+    result.x = ((pos.x - cam_rc.x0) * group->meters_to_pixels) + screen_space_cam_rc.x0;
 
     return result;
 }
@@ -1158,7 +1141,7 @@ void draw_render_group(RenderGroup *group, Texture *back_buffer, r2i clip, bool 
             } break;
             case RenderGroupEntryType::rect: {
                 auto entry = (RenderGroupEntryRect *)data;
-                m3 world   = m3_identity(g_meters_to_pixels);
+                m3 world   = m3_identity(group->meters_to_pixels);
                 m3 view    = entry->model * world;
                 v2f x_axis = view.r[0].xy;
                 v2f y_axis = view.r[1].xy;
@@ -1173,7 +1156,7 @@ void draw_render_group(RenderGroup *group, Texture *back_buffer, r2i clip, bool 
             } break;
             case RenderGroupEntryType::rect_outline: {
                 auto entry = (RenderGroupEntryRectOutline *)data;
-                m3 world   = m3_identity(g_meters_to_pixels);
+                m3 world   = m3_identity(group->meters_to_pixels);
                 m3 view    = entry->model * world;
                 v2f x_axis = view.r[0].xy;
                 v2f y_axis = view.r[1].xy;
@@ -1193,7 +1176,7 @@ void draw_render_group(RenderGroup *group, Texture *back_buffer, r2i clip, bool 
             case RenderGroupEntryType::texture: {
                 auto entry = (RenderGroupEntryTexture *)data;
                 TOM_ASSERT(entry->texture);
-                m3 world   = m3_identity(g_meters_to_pixels);
+                m3 world   = m3_identity(group->meters_to_pixels);
                 m3 view    = entry->model * world;
                 v2f x_axis = view.r[0].xy;
                 v2f y_axis = view.r[1].xy;
@@ -1208,7 +1191,7 @@ void draw_render_group(RenderGroup *group, Texture *back_buffer, r2i clip, bool 
             } break;
             case RenderGroupEntryType::coord_system: {
                 auto entry = (RenderGroupEntryCoordSystem *)data;
-                m3 world   = m3_identity(g_meters_to_pixels);
+                m3 world   = m3_identity(group->meters_to_pixels);
                 // m3 view    = world * entry->model;
                 m3 view    = entry->model * world;
                 v2f x_axis = view.r[0].xy;

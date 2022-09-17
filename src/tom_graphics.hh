@@ -23,7 +23,7 @@ struct EnviromentMap
 
 struct RenderBasis
 {
-    m3 model;
+    f32 meters_to_pixels;
 };
 
 enum class RenderGroupEntryType
@@ -48,27 +48,22 @@ struct RenderGroupEntryClear
 
 struct RenderGroupEntryTexture
 {
-    RenderBasis basis;
+    m3 model;
     Texture *texture;
     v2f offset;
-    m3 model;
 };
 
 struct RenderGroupEntryRect
 {
-    v2f pos;
-    v2f dims;
-    Color_u32 color;
     m3 model;
+    Color_u32 color;
 };
 
 struct RenderGroupEntryRectOutline
 {
-    v2f pos;
-    v2f dims;
+    m3 model;
     i32 thickness;
     Color_u32 color;
-    m3 model;
 };
 
 struct RenderGroupEntryCoordSystem
@@ -92,8 +87,8 @@ struct RenderGroup
 
 struct TileRenderWork
 {
-    RenderGroup* render_group;
-    Texture* target;
+    RenderGroup *render_group;
+    Texture *target;
     r2i clip;
 };
 
@@ -106,7 +101,6 @@ void draw_square(Texture *buffer, v2f pos, f32 radius, Color_u32 color);
 void draw_rect_outline(Texture *buffer, i32 min_x, i32 min_y, f32 max_x, f32 max_y, i32 thickness,
                        Color_u32 color);
 
-
 // SIMD
 void draw_rect_256(Texture *buffer, v2f origin, v2f x_axis, v2f y_axis, r2i clip, bool even,
                    Color_u32 color);
@@ -118,17 +112,15 @@ void draw_texture_256(Texture *buffer, v2f origin, v2f x_axis, v2f y_axis, Textu
 void draw_rect_slowly(Texture *buffer, v2f origin, v2f x_axis, v2f y_axis, Texture *albedo,
                       Texture *normal, EnviromentMap *top, EnviromentMap *middle,
                       EnviromentMap *bottom, v4f color = { 1.0f, 1.0f, 1.0f, 1.0f });
-void draw_rect_slowly(Texture *buffer, m3 model, Texture *albedo, Texture *normal,
-                      EnviromentMap *top, EnviromentMap *middle, EnviromentMap *bottom,
-                      v4f color = { 1.0f, 1.0f, 1.0f, 1.0f });
 
 void draw_texture(Texture *buffer, Texture *tex, v2f pos);
 void clear_color(Texture *buffer, Color_u32 color);
 
 void push_clear(RenderGroup *group, Color_u32 color);
-void push_texture(RenderGroup *group, RenderBasis basis, Texture *texture, v2f offset, m3 model);
+void push_texture(RenderGroup *group, Texture *texture, v2f offset, m3 model);
 void push_rect(RenderGroup *group, v2f pos, v2f dims, Color_u32 color, m3 model);
-void push_rect_outline(RenderGroup *group, v2f pos, v2f dims, i32 thickness, Color_u32 color, m3 model);
+void push_rect_outline(RenderGroup *group, v2f pos, v2f dims, i32 thickness, Color_u32 color,
+                       m3 model);
 void push_coord_system(RenderGroup *group, m3 model, Texture *albedo, Texture *normal,
                        EnviromentMap *top, EnviromentMap *middle, EnviromentMap *bottom,
                        Color_u32 color = { 0xffffffff });
