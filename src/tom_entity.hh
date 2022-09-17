@@ -22,7 +22,11 @@ enum EntityDirection : i32
     north = 0,
     east,
     south,
-    west
+    west,
+    north_east,
+    north_west,
+    south_east,
+    south_west
 };
 
 enum EntityFlags : i32
@@ -73,6 +77,7 @@ struct Entity
     u32 max_hp;
     u32 weapon_i;
     u32 parent_i;
+    f32 next_sprite;
     i32 cur_sprite;
     v2f sprite_off;
     EntityDirection dir;

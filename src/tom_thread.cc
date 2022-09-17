@@ -12,7 +12,6 @@ void work_queue_add_entry(WorkQueue *queue, WorkQueueCallback *callback, void *d
     entry->data           = data;
     ++queue->completion_goal;
     _WriteBarrier();
-    _mm_sfence();
     // TODO: use InterlockedCompareExchange()
     queue->next_entry_to_write = new_next_entry_to_write;
     ReleaseSemaphore(queue->semaphore, 1, NULL);

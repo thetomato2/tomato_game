@@ -1,72 +1,72 @@
 [
 {
-  "directory": "C:/dev/tomato_game/build/windows-debug",
-  "command": "C:\\PROGRA~1\\LLVM\\bin\\CLANG_~1.EXE -DTOM_INTERNAL -DTOM_WIN32 -IC:/dev/tomato_game/src -g -Xclang -gcodeview -O0 -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd -mavx -mavx2 -std=c++20 -o CMakeFiles\\tomato_game.dir\\src\\winmain.cc.obj -c C:\\dev\\tomato_game\\src\\winmain.cc",
+  "directory": "C:/dev/tomato_game/build/windows-release",
+  "command": "C:\\PROGRA~1\\LLVM\\bin\\CLANG_~1.EXE -DTOM_INTERNAL -DTOM_WIN32 -IC:/dev/tomato_game/src -O3 -DNDEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrt -mavx -mavx2 -std=c++20 -o CMakeFiles\\tomato_game.dir\\src\\winmain.cc.obj -c C:\\dev\\tomato_game\\src\\winmain.cc",
   "file": "C:\\dev\\tomato_game\\src\\winmain.cc"
 },
 {
-  "directory": "C:/dev/tomato_game/build/windows-debug",
-  "command": "C:\\PROGRA~1\\LLVM\\bin\\CLANG_~1.EXE -DTOM_INTERNAL -DTOM_WIN32 -IC:/dev/tomato_game/src -g -Xclang -gcodeview -O0 -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd -mavx -mavx2 -std=c++20 -o CMakeFiles\\tomato_game.dir\\src\\tom_app.cc.obj -c C:\\dev\\tomato_game\\src\\tom_app.cc",
+  "directory": "C:/dev/tomato_game/build/windows-release",
+  "command": "C:\\PROGRA~1\\LLVM\\bin\\CLANG_~1.EXE -DTOM_INTERNAL -DTOM_WIN32 -IC:/dev/tomato_game/src -O3 -DNDEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrt -mavx -mavx2 -std=c++20 -o CMakeFiles\\tomato_game.dir\\src\\tom_app.cc.obj -c C:\\dev\\tomato_game\\src\\tom_app.cc",
   "file": "C:\\dev\\tomato_game\\src\\tom_app.cc"
 },
 {
-  "directory": "C:/dev/tomato_game/build/windows-debug",
-  "command": "C:\\PROGRA~1\\LLVM\\bin\\CLANG_~1.EXE -DTOM_INTERNAL -DTOM_WIN32 -IC:/dev/tomato_game/src -g -Xclang -gcodeview -O0 -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd -mavx -mavx2 -std=c++20 -o CMakeFiles\\tomato_game.dir\\src\\tom_d3d11.cc.obj -c C:\\dev\\tomato_game\\src\\tom_d3d11.cc",
+  "directory": "C:/dev/tomato_game/build/windows-release",
+  "command": "C:\\PROGRA~1\\LLVM\\bin\\CLANG_~1.EXE -DTOM_INTERNAL -DTOM_WIN32 -IC:/dev/tomato_game/src -O3 -DNDEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrt -mavx -mavx2 -std=c++20 -o CMakeFiles\\tomato_game.dir\\src\\tom_d3d11.cc.obj -c C:\\dev\\tomato_game\\src\\tom_d3d11.cc",
   "file": "C:\\dev\\tomato_game\\src\\tom_d3d11.cc"
 },
 {
-  "directory": "C:/dev/tomato_game/build/windows-debug",
-  "command": "C:\\PROGRA~1\\LLVM\\bin\\CLANG_~1.EXE -DTOM_INTERNAL -DTOM_WIN32 -IC:/dev/tomato_game/src -g -Xclang -gcodeview -O0 -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd -mavx -mavx2 -std=c++20 -o CMakeFiles\\tomato_game.dir\\src\\tom_DS5.cc.obj -c C:\\dev\\tomato_game\\src\\tom_DS5.cc",
+  "directory": "C:/dev/tomato_game/build/windows-release",
+  "command": "C:\\PROGRA~1\\LLVM\\bin\\CLANG_~1.EXE -DTOM_INTERNAL -DTOM_WIN32 -IC:/dev/tomato_game/src -O3 -DNDEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrt -mavx -mavx2 -std=c++20 -o CMakeFiles\\tomato_game.dir\\src\\tom_DS5.cc.obj -c C:\\dev\\tomato_game\\src\\tom_DS5.cc",
   "file": "C:\\dev\\tomato_game\\src\\tom_DS5.cc"
 },
 {
-  "directory": "C:/dev/tomato_game/build/windows-debug",
-  "command": "C:\\PROGRA~1\\LLVM\\bin\\CLANG_~1.EXE -DTOM_INTERNAL -DTOM_WIN32 -IC:/dev/tomato_game/src -g -Xclang -gcodeview -O0 -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd -mavx -mavx2 -std=c++20 -o CMakeFiles\\tomato_game.dir\\src\\tom_entity.cc.obj -c C:\\dev\\tomato_game\\src\\tom_entity.cc",
+  "directory": "C:/dev/tomato_game/build/windows-release",
+  "command": "C:\\PROGRA~1\\LLVM\\bin\\CLANG_~1.EXE -DTOM_INTERNAL -DTOM_WIN32 -IC:/dev/tomato_game/src -O3 -DNDEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrt -mavx -mavx2 -std=c++20 -o CMakeFiles\\tomato_game.dir\\src\\tom_entity.cc.obj -c C:\\dev\\tomato_game\\src\\tom_entity.cc",
   "file": "C:\\dev\\tomato_game\\src\\tom_entity.cc"
 },
 {
-  "directory": "C:/dev/tomato_game/build/windows-debug",
-  "command": "C:\\PROGRA~1\\LLVM\\bin\\CLANG_~1.EXE -DTOM_INTERNAL -DTOM_WIN32 -IC:/dev/tomato_game/src -g -Xclang -gcodeview -O0 -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd -mavx -mavx2 -std=c++20 -o CMakeFiles\\tomato_game.dir\\src\\tom_extern.cc.obj -c C:\\dev\\tomato_game\\src\\tom_extern.cc",
+  "directory": "C:/dev/tomato_game/build/windows-release",
+  "command": "C:\\PROGRA~1\\LLVM\\bin\\CLANG_~1.EXE -DTOM_INTERNAL -DTOM_WIN32 -IC:/dev/tomato_game/src -O3 -DNDEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrt -mavx -mavx2 -std=c++20 -o CMakeFiles\\tomato_game.dir\\src\\tom_extern.cc.obj -c C:\\dev\\tomato_game\\src\\tom_extern.cc",
   "file": "C:\\dev\\tomato_game\\src\\tom_extern.cc"
 },
 {
-  "directory": "C:/dev/tomato_game/build/windows-debug",
-  "command": "C:\\PROGRA~1\\LLVM\\bin\\CLANG_~1.EXE -DTOM_INTERNAL -DTOM_WIN32 -IC:/dev/tomato_game/src -g -Xclang -gcodeview -O0 -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd -mavx -mavx2 -std=c++20 -o CMakeFiles\\tomato_game.dir\\src\\tom_file_io.cc.obj -c C:\\dev\\tomato_game\\src\\tom_file_io.cc",
+  "directory": "C:/dev/tomato_game/build/windows-release",
+  "command": "C:\\PROGRA~1\\LLVM\\bin\\CLANG_~1.EXE -DTOM_INTERNAL -DTOM_WIN32 -IC:/dev/tomato_game/src -O3 -DNDEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrt -mavx -mavx2 -std=c++20 -o CMakeFiles\\tomato_game.dir\\src\\tom_file_io.cc.obj -c C:\\dev\\tomato_game\\src\\tom_file_io.cc",
   "file": "C:\\dev\\tomato_game\\src\\tom_file_io.cc"
 },
 {
-  "directory": "C:/dev/tomato_game/build/windows-debug",
-  "command": "C:\\PROGRA~1\\LLVM\\bin\\CLANG_~1.EXE -DTOM_INTERNAL -DTOM_WIN32 -IC:/dev/tomato_game/src -g -Xclang -gcodeview -O0 -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd -mavx -mavx2 -std=c++20 -o CMakeFiles\\tomato_game.dir\\src\\tom_game.cc.obj -c C:\\dev\\tomato_game\\src\\tom_game.cc",
+  "directory": "C:/dev/tomato_game/build/windows-release",
+  "command": "C:\\PROGRA~1\\LLVM\\bin\\CLANG_~1.EXE -DTOM_INTERNAL -DTOM_WIN32 -IC:/dev/tomato_game/src -O3 -DNDEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrt -mavx -mavx2 -std=c++20 -o CMakeFiles\\tomato_game.dir\\src\\tom_game.cc.obj -c C:\\dev\\tomato_game\\src\\tom_game.cc",
   "file": "C:\\dev\\tomato_game\\src\\tom_game.cc"
 },
 {
-  "directory": "C:/dev/tomato_game/build/windows-debug",
-  "command": "C:\\PROGRA~1\\LLVM\\bin\\CLANG_~1.EXE -DTOM_INTERNAL -DTOM_WIN32 -IC:/dev/tomato_game/src -g -Xclang -gcodeview -O0 -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd -mavx -mavx2 -std=c++20 -o CMakeFiles\\tomato_game.dir\\src\\tom_graphics.cc.obj -c C:\\dev\\tomato_game\\src\\tom_graphics.cc",
+  "directory": "C:/dev/tomato_game/build/windows-release",
+  "command": "C:\\PROGRA~1\\LLVM\\bin\\CLANG_~1.EXE -DTOM_INTERNAL -DTOM_WIN32 -IC:/dev/tomato_game/src -O3 -DNDEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrt -mavx -mavx2 -std=c++20 -o CMakeFiles\\tomato_game.dir\\src\\tom_graphics.cc.obj -c C:\\dev\\tomato_game\\src\\tom_graphics.cc",
   "file": "C:\\dev\\tomato_game\\src\\tom_graphics.cc"
 },
 {
-  "directory": "C:/dev/tomato_game/build/windows-debug",
-  "command": "C:\\PROGRA~1\\LLVM\\bin\\CLANG_~1.EXE -DTOM_INTERNAL -DTOM_WIN32 -IC:/dev/tomato_game/src -g -Xclang -gcodeview -O0 -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd -mavx -mavx2 -std=c++20 -o CMakeFiles\\tomato_game.dir\\src\\tom_input.cc.obj -c C:\\dev\\tomato_game\\src\\tom_input.cc",
+  "directory": "C:/dev/tomato_game/build/windows-release",
+  "command": "C:\\PROGRA~1\\LLVM\\bin\\CLANG_~1.EXE -DTOM_INTERNAL -DTOM_WIN32 -IC:/dev/tomato_game/src -O3 -DNDEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrt -mavx -mavx2 -std=c++20 -o CMakeFiles\\tomato_game.dir\\src\\tom_input.cc.obj -c C:\\dev\\tomato_game\\src\\tom_input.cc",
   "file": "C:\\dev\\tomato_game\\src\\tom_input.cc"
 },
 {
-  "directory": "C:/dev/tomato_game/build/windows-debug",
-  "command": "C:\\PROGRA~1\\LLVM\\bin\\CLANG_~1.EXE -DTOM_INTERNAL -DTOM_WIN32 -IC:/dev/tomato_game/src -g -Xclang -gcodeview -O0 -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd -mavx -mavx2 -std=c++20 -o CMakeFiles\\tomato_game.dir\\src\\tom_sim.cc.obj -c C:\\dev\\tomato_game\\src\\tom_sim.cc",
+  "directory": "C:/dev/tomato_game/build/windows-release",
+  "command": "C:\\PROGRA~1\\LLVM\\bin\\CLANG_~1.EXE -DTOM_INTERNAL -DTOM_WIN32 -IC:/dev/tomato_game/src -O3 -DNDEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrt -mavx -mavx2 -std=c++20 -o CMakeFiles\\tomato_game.dir\\src\\tom_sim.cc.obj -c C:\\dev\\tomato_game\\src\\tom_sim.cc",
   "file": "C:\\dev\\tomato_game\\src\\tom_sim.cc"
 },
 {
-  "directory": "C:/dev/tomato_game/build/windows-debug",
-  "command": "C:\\PROGRA~1\\LLVM\\bin\\CLANG_~1.EXE -DTOM_INTERNAL -DTOM_WIN32 -IC:/dev/tomato_game/src -g -Xclang -gcodeview -O0 -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd -mavx -mavx2 -std=c++20 -o CMakeFiles\\tomato_game.dir\\src\\tom_texture.cc.obj -c C:\\dev\\tomato_game\\src\\tom_texture.cc",
+  "directory": "C:/dev/tomato_game/build/windows-release",
+  "command": "C:\\PROGRA~1\\LLVM\\bin\\CLANG_~1.EXE -DTOM_INTERNAL -DTOM_WIN32 -IC:/dev/tomato_game/src -O3 -DNDEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrt -mavx -mavx2 -std=c++20 -o CMakeFiles\\tomato_game.dir\\src\\tom_texture.cc.obj -c C:\\dev\\tomato_game\\src\\tom_texture.cc",
   "file": "C:\\dev\\tomato_game\\src\\tom_texture.cc"
 },
 {
-  "directory": "C:/dev/tomato_game/build/windows-debug",
-  "command": "C:\\PROGRA~1\\LLVM\\bin\\CLANG_~1.EXE -DTOM_INTERNAL -DTOM_WIN32 -IC:/dev/tomato_game/src -g -Xclang -gcodeview -O0 -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd -mavx -mavx2 -std=c++20 -o CMakeFiles\\tomato_game.dir\\src\\tom_thread.cc.obj -c C:\\dev\\tomato_game\\src\\tom_thread.cc",
+  "directory": "C:/dev/tomato_game/build/windows-release",
+  "command": "C:\\PROGRA~1\\LLVM\\bin\\CLANG_~1.EXE -DTOM_INTERNAL -DTOM_WIN32 -IC:/dev/tomato_game/src -O3 -DNDEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrt -mavx -mavx2 -std=c++20 -o CMakeFiles\\tomato_game.dir\\src\\tom_thread.cc.obj -c C:\\dev\\tomato_game\\src\\tom_thread.cc",
   "file": "C:\\dev\\tomato_game\\src\\tom_thread.cc"
 },
 {
-  "directory": "C:/dev/tomato_game/build/windows-debug",
-  "command": "C:\\PROGRA~1\\LLVM\\bin\\CLANG_~1.EXE -DTOM_INTERNAL -DTOM_WIN32 -IC:/dev/tomato_game/src -g -Xclang -gcodeview -O0 -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd -mavx -mavx2 -std=c++20 -o CMakeFiles\\tomato_game.dir\\src\\tom_win32.cc.obj -c C:\\dev\\tomato_game\\src\\tom_win32.cc",
+  "directory": "C:/dev/tomato_game/build/windows-release",
+  "command": "C:\\PROGRA~1\\LLVM\\bin\\CLANG_~1.EXE -DTOM_INTERNAL -DTOM_WIN32 -IC:/dev/tomato_game/src -O3 -DNDEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrt -mavx -mavx2 -std=c++20 -o CMakeFiles\\tomato_game.dir\\src\\tom_win32.cc.obj -c C:\\dev\\tomato_game\\src\\tom_win32.cc",
   "file": "C:\\dev\\tomato_game\\src\\tom_win32.cc"
 }
 ]

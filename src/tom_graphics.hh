@@ -30,6 +30,7 @@ enum class RenderGroupEntryType
 {
     clear,
     texture,
+    atlas,
     rect,
     rect_outline,
     coord_system,
@@ -50,7 +51,13 @@ struct RenderGroupEntryTexture
 {
     m3 model;
     Texture *texture;
-    v2f offset;
+};
+
+struct RenderGroupEntryAtlas
+{
+    m3 model;
+    Texture *texture;
+    r2f offset;
 };
 
 struct RenderGroupEntryRect
@@ -92,6 +99,7 @@ struct TileRenderWork
     r2i clip;
 };
 
+
 ////////////////////////////////////////////////////////////////////////////////////////////////
 // #Graphics Functions
 void clear_color(Texture *buffer, Color_u32 color);
@@ -108,6 +116,8 @@ void draw_rect_128(Texture *buffer, v2f origin, v2f x_axis, v2f y_axis, Texture 
                    v4f color = { 1.0f, 1.0f, 1.0f, 1.0f });
 void draw_texture_256(Texture *buffer, v2f origin, v2f x_axis, v2f y_axis, Texture *albedo,
                       r2i clip, bool even);
+void draw_texture_offset_256(Texture *buffer, v2f origin, v2f x_axis, v2f y_axis, Texture *albedo,
+                             r2i clip, bool even, r2f offset);
 // normals and stuff
 void draw_rect_slowly(Texture *buffer, v2f origin, v2f x_axis, v2f y_axis, Texture *albedo,
                       Texture *normal, EnviromentMap *top, EnviromentMap *middle,
@@ -117,7 +127,8 @@ void draw_texture(Texture *buffer, Texture *tex, v2f pos);
 void clear_color(Texture *buffer, Color_u32 color);
 
 void push_clear(RenderGroup *group, Color_u32 color);
-void push_texture(RenderGroup *group, Texture *texture, v2f offset, m3 model);
+void push_texture(RenderGroup *group, Texture *texture, m3 model);
+void push_atlas(RenderGroup *group, Texture *texture, m3 model, r2f offset);
 void push_rect(RenderGroup *group, v2f pos, v2f dims, Color_u32 color, m3 model);
 void push_rect_outline(RenderGroup *group, v2f pos, v2f dims, i32 thickness, Color_u32 color,
                        m3 model);

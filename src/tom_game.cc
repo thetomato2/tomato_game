@@ -8,7 +8,7 @@
 namespace tom
 {
 
-internal void process_keyboard(const Keyboard &kb, EntityActions *entity_action)
+internal void process_keyboard(Entity *player, const Keyboard &kb, EntityActions *entity_action)
 {
     if (entity_action) {
         if (key_pressed(kb.t)) entity_action->start = true;
@@ -18,12 +18,31 @@ internal void process_keyboard(const Keyboard &kb, EntityActions *entity_action)
         if (kb.s.ended_down) entity_action->dir.y += -1.0f;
         if (kb.a.ended_down) entity_action->dir.x += -1.0f;
         if (kb.d.ended_down) entity_action->dir.x += 1.0f;
+        entity_action->dir = vec_noz(entity_action->dir);
         if (key_down(kb.left_shift)) entity_action->sprint = true;
+
+        if (kb.w.ended_down && kb.d.ended_down) {
+            player->dir = EntityDirection::north_east;
+        } else if (kb.w.ended_down && kb.a.ended_down) {
+            player->dir = EntityDirection::north_west;
+        } else if (kb.s.ended_down && kb.d.ended_down) {
+            player->dir = EntityDirection::south_east;
+        } else if (kb.s.ended_down && kb.a.ended_down) {
+            player->dir = EntityDirection::south_west;
+        } else if (kb.w.ended_down) {
+            player->dir = EntityDirection::north;
+        } else if (kb.s.ended_down) {
+            player->dir = EntityDirection::south;
+        } else if (kb.d.ended_down) {
+            player->dir = EntityDirection::east;
+        } else if (kb.a.ended_down) {
+            player->dir = EntityDirection::west;
+        }
     }
 }
 
 #if USE_DS5
-internal void process_ds5(const DS5_State &ds5, EntityActions *entity_action)
+internal void process_ds5(Entity *player, const DS5_State &ds5, EntityActions *entity_action)
 {
     if (entity_action) {
         if (button_pressed(ds5.menu)) entity_action->start = true;
@@ -40,6 +59,94 @@ internal void process_ds5(const DS5_State &ds5, EntityActions *entity_action)
     }
 }
 #endif
+internal r2f calc_player_sprite(Entity *player, SpriteSheet *sheet)
+{
+    r2f result;
+
+    const f32 inv_x = 1.0f / (f32)sheet->x_cnt;
+    const f32 inv_y = 1.0f / (f32)sheet->y_cnt;
+
+    constexpr u32 NORTH      = 0;
+    constexpr u32 NORTH_EAST = 5;
+    constexpr u32 EAST       = 9;
+    constexpr u32 SOUTH_EAST = 13;
+    constexpr u32 SOUTH      = 17;
+
+    bool flipped = false;
+
+    switch (player->dir) {
+        case EntityDirection::north: {
+            if (sheet->cur_y != NORTH) {
+                sheet->cur_y = NORTH;
+                sheet->cur_x = 0;
+            }
+        } break;
+        case EntityDirection::east: {
+            if (sheet->cur_y != EAST) {
+                sheet->cur_y = EAST;
+                sheet->cur_x = 0;
+            }
+        } break;
+        case EntityDirection::south: {
+            if (sheet->cur_y != SOUTH) {
+                sheet->cur_y = SOUTH;
+                sheet->cur_x = 0;
+            }
+        } break;
+        case EntityDirection::west: {
+            // NOTE: need to flip the texture
+            if (sheet->cur_y != EAST) {
+                sheet->cur_y = EAST;
+                sheet->cur_x = 0;
+                flipped      = true;
+            }
+        } break;
+        case EntityDirection::north_east: {
+            // NOTE: need to flip the texture
+            if (sheet->cur_y != NORTH_EAST) {
+                sheet->cur_y = NORTH_EAST;
+                sheet->cur_x = 0;
+            }
+        } break;
+        case EntityDirection::north_west: {
+            // NOTE: need to flip the texture
+            if (sheet->cur_y != NORTH_EAST) {
+                sheet->cur_y = NORTH_EAST;
+                sheet->cur_x = 0;
+                flipped      = true;
+            }
+        } break;
+        case EntityDirection::south_east: {
+            // NOTE: need to flip the texture
+            if (sheet->cur_y != SOUTH_EAST) {
+                sheet->cur_y = SOUTH_EAST;
+                sheet->cur_x = 0;
+            }
+        } break;
+        case EntityDirection::south_west: {
+            // NOTE: need to flip the texture
+            if (sheet->cur_y != SOUTH_EAST) {
+                sheet->cur_y = SOUTH_EAST;
+                sheet->cur_x = 0;
+                flipped      = true;
+            }
+        } break;
+            INVALID_DEFAULT_CASE;
+    }
+
+    result.x0 = (f32)sheet->cur_x * inv_x;
+    result.y0 = (f32)sheet->cur_y * inv_y;
+    result.x1 = result.x0 + inv_x;
+    result.y1 = result.y0 + inv_y;
+
+    if (player->next_sprite > 1.0f) {
+        player->next_sprite = 0.0f;
+        ++sheet->cur_x;
+    }
+    if (sheet->cur_x >= sheet->x_cnt) sheet->cur_x = 0;
+
+    return result;
+}
 
 void game_init(ThreadContext *thread, AppState *app)
 {
@@ -74,6 +181,10 @@ void game_init(ThreadContext *thread, AppState *app)
         texture_load_from_file("../../assets/images/sword_s.png");
     game->sword_sprites[EntityDirection::west] =
         texture_load_from_file("../../assets/images/sword_w.png");
+    game->player_sprite.sheet =
+        texture_load_from_file("../../assets/images/hr-level1_running_gun.png");
+    game->player_sprite.x_cnt = 22;
+    game->player_sprite.y_cnt = 18;
 
     game->cat_sprites[0] = texture_load_from_file("../../assets/images/cat.png");
     game->cat_sprites[1] = texture_load_from_file("../../assets/images/cat.png");
@@ -88,16 +199,17 @@ void game_init(ThreadContext *thread, AppState *app)
 
     // NOTE: Entity 0 is the null Entity
     ++game->ent_cnt;
+    game->meters_to_pixels = 45.0f;
 
     Entity *player = add_entity(game, EntityType::player);
     // set_flags(player->flags, EntityFlags::nonspatial);
     game->player_cnt               = 1;
     game->entity_camera_follow_ind = 1;
     game->camera.pos               = {};
-    game->camera.dims.w            = 16.0f;
-    game->camera.dims.h            = 9.0f;
-    game->camera.dims *= 1.2f;
-    game->camera.dims *= 60.0f / g_meters_to_pixels;
+    game->camera.dims.w            = 45.0f;
+    game->camera.dims.h            = 25.0f;
+    // game->camera.dims *= 1.2f;
+    // game->camera.dims *= 60.0f / game->meters_to_pixels;
 
 #if 1
     i32 tree_cnt = 20;
@@ -193,11 +305,11 @@ void game_update_and_render(ThreadContext *thread, AppState *app)
 
     // NOTE: only doing one player
     EntityActions player_action = {};
-    process_keyboard(kb, &player_action);
+    process_keyboard(player, kb, &player_action);
 #if USE_DS5
     for (u32 i = 0; i < DS5_MAX_CNT; ++i) {
         if (app->input.ds5_context[i].connected) {
-            process_ds5(app->input.ds5_state[i], &player_action);
+            process_ds5(player, app->input.ds5_state[i], &player_action);
         }
     }
 #endif
@@ -206,24 +318,31 @@ void game_update_and_render(ThreadContext *thread, AppState *app)
     if (key_pressed(kb.d1)) game->debug_draw_collision = !game->debug_draw_collision;
 
     local constexpr f32 cam_inc = 0.1f;
-    if (key_down(kb.add)) cam->dims += cam_inc;
-    if (key_down(kb.subtract)) cam->dims -= cam_inc;
+    if (key_down(kb.add)) {
+        cam->dims += cam_inc;
+        printf("Cam dims - (%f, %f)\n", cam->dims.x, cam->dims.y);
+    }
+    if (key_down(kb.subtract)) {
+        printf("Cam dims - (%f, %f)\n", cam->dims.x, cam->dims.y);
+        cam->dims -= cam_inc;
+    }
 
     local constexpr f32 zoom_inc = 0.3f;
-    f32 old_zoom                 = g_meters_to_pixels;
+    f32 old_zoom                 = game->meters_to_pixels;
     if (key_down(kb.down)) {
-        g_meters_to_pixels -= zoom_inc;
-        cam->dims *= old_zoom / g_meters_to_pixels;
+        game->meters_to_pixels -= zoom_inc;
+        cam->dims *= old_zoom / game->meters_to_pixels;
+        printf("Zoom: %f\n", game->meters_to_pixels);
     }
     if (key_down(kb.up)) {
-        g_meters_to_pixels += zoom_inc;
-        cam->dims *= old_zoom / g_meters_to_pixels;
+        game->meters_to_pixels += zoom_inc;
+        cam->dims *= old_zoom / game->meters_to_pixels;
+        printf("Zoom: %f\n", game->meters_to_pixels);
     }
-    printf("%f\n", g_meters_to_pixels);
 
     RenderGroup *render_group =
-        alloc_render_group(&trans_arena, Megabytes(4), g_meters_to_pixels, *cam);
-    render_group->meters_to_pixels = g_meters_to_pixels;
+        alloc_render_group(&trans_arena, Megabytes(4), game->meters_to_pixels, *cam);
+    render_group->meters_to_pixels = game->meters_to_pixels;
 
     r2f cam_rc         = rect_init_dims(cam->pos, cam->dims);
     Color_u32 clear_co = color_u32(black);
@@ -297,20 +416,20 @@ void game_update_and_render(ThreadContext *thread, AppState *app)
 
             constexpr f32 dir_eps = 0.1f;
 
-            if (abs_f32(pv.x) > abs_f32(pv.y)) {
-                if (pv.x > 0.f + dir_eps) {
-                    ent->dir = EntityDirection::east;
-                } else if (pv.x < 0.f - dir_eps) {
-                    ent->dir = EntityDirection::west;
-                }
-
-            } else if (abs_f32(pv.y) > abs_f32(pv.x)) {
-                if (pv.y > 0.f + dir_eps) {
-                    ent->dir = EntityDirection::north;
-                } else if (pv.y < 0.f - dir_eps) {
-                    ent->dir = EntityDirection::south;
-                }
-            }
+            // if (abs_f32(pv.x) > abs_f32(pv.y)) {
+            //     if (pv.x > 0.f + dir_eps) {
+            //         ent->dir = EntityDirection::east;
+            //     } else if (pv.x < 0.f - dir_eps) {
+            //         ent->dir = EntityDirection::west;
+            //     }
+            //
+            // } else if (abs_f32(pv.y) > abs_f32(pv.x)) {
+            //     if (pv.y > 0.f + dir_eps) {
+            //         ent->dir = EntityDirection::north;
+            //     } else if (pv.y < 0.f - dir_eps) {
+            //         ent->dir = EntityDirection::south;
+            //     }
+            // }
 
             ent->hit_cd += dt;
         }
@@ -342,7 +461,7 @@ void game_update_and_render(ThreadContext *thread, AppState *app)
                 model    = m3_sca_y(model, ent->dims.y);
                 // model    = m3_rot(model, app->time);
 
-                push_texture(render_group, tex, ent->sprite_off, model);
+                push_texture(render_group, tex, model);
                 if (game->debug_draw_collision) {
                     push_rect_outline(render_group, ent->pos.xy, ent->dims.xy, 2, color_u32(red),
                                       model);
@@ -357,10 +476,10 @@ void game_update_and_render(ThreadContext *thread, AppState *app)
             case EntityType::player: {
                 {
                     m3 model = m3_identity();
-                    model    = m3_set_trans(model, ent->pos.xy);
-                    model    = m3_sca_x(model, 80.0f);
-                    model    = m3_sca_y(model, 80.0f);
-                    push_texture(render_group, &game->bg, ent->sprite_off, model);
+                    // model    = m3_set_trans(model, ent->pos.xy);
+                    model = m3_sca_x(model, 80.0f);
+                    model = m3_sca_y(model, 80.0f);
+                    push_texture(render_group, &game->bg, model);
                 }
                 if (game->debug_draw_collision) {
                     m3 model = m3_identity();
@@ -370,7 +489,21 @@ void game_update_and_render(ThreadContext *thread, AppState *app)
                     push_rect_outline(render_group, cam->pos, cam->dims, 4, color_u32(light_blue),
                                       model);
                 }
-                push_texture_if(&game->player_sprites[ent->dir]);
+                {
+                    m3 model = m3_identity();
+                    model    = m3_set_trans(model, ent->pos.xy);
+                    model    = m3_sca_x(model, ent->dims.x);
+                    model    = m3_sca_y(model, ent->dims.y);
+                    player->next_sprite += abs_f32(vec_length(player->vel)) * dt * 50.0f;
+                    r2f offset = calc_player_sprite(ent, &game->player_sprite);
+                    if (ent->dir == EntityDirection::west ||
+                        ent->dir == EntityDirection::north_west ||
+                        ent->dir == EntityDirection::south_west) {
+                        model.r[0].xy = -model.r[0].xy;
+                    }
+                    push_atlas(render_group, &game->player_sprite.sheet, model, offset);
+                }
+
             } break;
             case EntityType::wall: {
             } break;

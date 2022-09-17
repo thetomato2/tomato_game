@@ -13,6 +13,14 @@ namespace tom
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
 // Game Types
+struct SpriteSheet
+{
+    u32 x_cnt;
+    u32 y_cnt;
+    u32 cur_x;
+    u32 cur_y;
+    Texture sheet;
+};
 
 struct GameSoundOutputBuffer
 {
@@ -28,6 +36,7 @@ struct GameState
     Camera camera;
     Arena *tran_arena;
     WorkQueue render_queue;
+    f32 meters_to_pixels;
 
     u32 player_cnt;
     EntityActions player_acts[4];
@@ -42,6 +51,7 @@ struct GameState
     Texture stair_sprite;
     Texture wall_sprite;
     Texture sword_sprites[4];
+    SpriteSheet player_sprite;
     Texture bg;
 
     b32 debug_draw_collision;
